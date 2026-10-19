@@ -49,6 +49,11 @@ let osmFeatures: IndexedFeature[] = []
 let osmLayer: L.GeoJSON | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
 
+// Currently selected feature and its rendered layer. The layer reference is
+// rebuilt on every render, so the feature is the source of truth.
+let highlightedFeature: Feature | undefined
+let highlightedLayer: L.Path | undefined
+
 function indexGeometry(geometry: Geometry, bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number }): void {
   switch (geometry.type) {
     case 'Point':
@@ -128,6 +133,30 @@ function popupContent(feature: Feature): string {
   return `<table class="osm-tags">${rows}</table>`
 }
 
+function highlightStyleFor(layer: L.Path): L.PathOptions {
+  if (layer instanceof L.CircleMarker) {
+    const circleStyle: L.CircleMarkerOptions = {
+      color: '#ff7800',
+      weight: 2,
+      fillColor: '#ff7800',
+      fillOpacity: 1,
+      radius: 6,
+    }
+    return circleStyle
+  }
+  return { color: '#ff7800', weight: 5, opacity: 1 }
+}
+
+function setHighlighted(feature: Feature, layer: L.Path): void {
+  if (highlightedLayer && highlightedLayer !== layer) {
+    highlightedLayer.setStyle(styleFor(highlightedFeature as Feature))
+  }
+  highlightedFeature = feature
+  highlightedLayer = layer
+  layer.setStyle(highlightStyleFor(layer))
+  layer.bringToFront()
+}
+
 function renderVisibleFeatures(): void {
   if (!map || osmFeatures.length === 0) {
     return
@@ -148,6 +177,7 @@ function renderVisibleFeatures(): void {
   }
 
   osmLayer?.remove()
+  highlightedLayer = undefined
   osmLayer = L.geoJSON(visible.map((f) => f.feature), {
     style: (feature) => styleFor(feature as Feature),
     pointToLayer: (feature, latlng) =>
@@ -159,9 +189,22 @@ function renderVisibleFeatures(): void {
         fillOpacity: 0.8,
       }).bindPopup(popupContent(feature as Feature)),
     onEachFeature: (feature, layer) => {
-      if (feature.geometry.type !== 'Point') {
-        layer.bindPopup(popupContent(feature as Feature))
+      const path = layer as L.Path
+      const f = feature as Feature
+
+      if (f.geometry.type !== 'Point') {
+        layer.bindPopup(popupContent(f))
       }
+
+      if (highlightedFeature === f) {
+        highlightedLayer = path
+        path.setStyle(highlightStyleFor(path))
+        path.bringToFront()
+      }
+
+      path.on('click', () => {
+        setHighlighted(f, path)
+      })
     },
   }).addTo(map)
 }
@@ -243,6 +286,8 @@ onBeforeUnmount(() => {
   marker = undefined
   accuracyCircle = undefined
   osmLayer = undefined
+  highlightedFeature = undefined
+  highlightedLayer = undefined
 })
 </script>
 
