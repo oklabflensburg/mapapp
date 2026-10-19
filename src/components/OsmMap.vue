@@ -7,6 +7,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { useUserNodesStore } from '../stores/userNodes'
+import type { UserNode } from '../stores/userNodes'
 import type { NodeEditTarget } from './NodeEditorDialog.vue'
 
 export type MapStatus = 'locating' | 'unsupported' | 'unavailable' | 'found'
@@ -68,6 +69,15 @@ let userNodeLayer: L.LayerGroup | undefined
 // rebuilt on every render, so the feature is the source of truth.
 let highlightedFeature: Feature | undefined
 let highlightedLayer: L.Path | undefined
+
+// Popup whose source layer is currently open. Every render rebuilds the
+// layers, and Leaflet closes a popup when its source layer is removed, so the
+// popup is re-opened on the new layer after each rebuild.
+type PopupTarget = { kind: 'osm'; feature: Feature } | { kind: 'userNode'; node: UserNode }
+let openPopupTarget: PopupTarget | undefined
+// True while layers are being rebuilt; popupclose events fired by the rebuild
+// itself must not clear openPopupTarget.
+let rebuildingLayers = false
 
 function indexGeometry(geometry: Geometry, bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number }): void {
   switch (geometry.type) {
@@ -295,6 +305,52 @@ function setHighlighted(feature: Feature, layer: L.Path): void {
   layer.bringToFront()
 }
 
+// Binds the tag popup and tracks it in openPopupTarget so a layer rebuild can
+// re-open it on the new layer. The popupclose handler only clears the target
+// when the user closed this popup (not when the rebuild removed the layer).
+function bindFeaturePopup(path: L.Path, feature: Feature): void {
+  path.bindPopup(() => popupContent(feature))
+  path.on('popupclose', () => {
+    if (!rebuildingLayers && openPopupTarget?.kind === 'osm' && openPopupTarget.feature === feature) {
+      openPopupTarget = undefined
+    }
+  })
+}
+
+function bindNodePopup(marker: L.CircleMarker, node: UserNode): void {
+  marker.bindPopup(() => tagTable(node.tags))
+  marker.on('popupclose', () => {
+    if (!rebuildingLayers && openPopupTarget?.kind === 'userNode' && openPopupTarget.node.providerNodeId === node.providerNodeId) {
+      openPopupTarget = undefined
+    }
+  })
+}
+
+// Re-opens the tracked OSM popup after a rebuild. Feature identity is stable
+// across renders because the layers reference the indexed feature objects.
+// The target is dropped when the feature is no longer rendered, so a popup
+// does not resurface when the user pans back to it later.
+function reopenOsmPopup(): void {
+  if (openPopupTarget?.kind !== 'osm') {
+    return
+  }
+  const target = openPopupTarget
+  let reopened = false
+  osmLayer?.eachLayer((layer) => {
+    if ((layer as { feature?: Feature }).feature === target.feature) {
+      const path = layer as L.Path
+      if (!path.getPopup()) {
+        bindFeaturePopup(path, target.feature)
+      }
+      path.openPopup()
+      reopened = true
+    }
+  })
+  if (!reopened) {
+    openPopupTarget = undefined
+  }
+}
+
 function renderVisibleFeatures(): void {
   if (!map || osmFeatures.length === 0) {
     return
@@ -320,8 +376,12 @@ function renderVisibleFeatures(): void {
   // stacks small features visually above large areas.
   visible.sort((a, b) => bboxArea(b) - bboxArea(a))
 
+  // Removing a layer closes its popup; the flag keeps openPopupTarget alive
+  // so the popup can be re-opened on the rebuilt layer below.
+  rebuildingLayers = true
   osmLayer?.remove()
   highlightedLayer = undefined
+  rebuildingLayers = false
   osmLayer = L.geoJSON(visible.map((f) => f.feature), {
     style: (feature) => styleFor(feature as Feature),
     pointToLayer: (_feature, latlng) =>
@@ -381,8 +441,9 @@ function renderVisibleFeatures(): void {
         // Popup content is built lazily (Leaflet calls the function on open)
         // because pointsInside scans the feature index per click.
         if (!path.getPopup()) {
-          path.bindPopup(() => popupContent(f))
+          bindFeaturePopup(path, f)
         }
+        openPopupTarget = { kind: 'osm', feature: f }
         path.openPopup()
       })
     },
@@ -391,6 +452,10 @@ function renderVisibleFeatures(): void {
   // Rebuild the user-node markers after the OSM layer so they are drawn (and
   // hit-tested) last on the shared canvas renderer.
   renderUserNodes()
+
+  // The rebuild above closed the open popup (Leaflet closes a popup when its
+  // source layer is removed); re-open it on the new layer.
+  reopenOsmPopup()
 }
 
 function scheduleRenderVisibleFeatures(): void {
@@ -405,9 +470,14 @@ function renderUserNodes(): void {
     return
   }
 
+  // Removing a layer closes its popup; the flag keeps openPopupTarget alive so
+  // the popup can be re-opened on the rebuilt marker below.
+  rebuildingLayers = true
   userNodeLayer?.remove()
+  rebuildingLayers = false
   userNodeLayer = L.layerGroup().addTo(map)
 
+  let reopenedUserNode = false
   for (const node of userNodes.nodes) {
     const marker = L.circleMarker([node.latitude, node.longitude], {
       radius: 6,
@@ -428,12 +498,29 @@ function renderUserNodes(): void {
         return
       }
       if (!marker.getPopup()) {
-        marker.bindPopup(() => tagTable(node.tags))
+        bindNodePopup(marker, node)
       }
+      openPopupTarget = { kind: 'userNode', node }
       marker.openPopup()
     })
 
     marker.addTo(userNodeLayer)
+
+    // The layer rebuild above closed the popup; re-open it on the new marker.
+    // Nodes are matched by provider id because saving an edit can replace the
+    // node object.
+    if (openPopupTarget?.kind === 'userNode' && openPopupTarget.node.providerNodeId === node.providerNodeId) {
+      if (!marker.getPopup()) {
+        bindNodePopup(marker, node)
+      }
+      marker.openPopup()
+      reopenedUserNode = true
+    }
+  }
+
+  // The node was deleted; drop the target so its popup does not resurface.
+  if (!reopenedUserNode && openPopupTarget?.kind === 'userNode') {
+    openPopupTarget = undefined
   }
 }
 
@@ -525,6 +612,7 @@ onBeforeUnmount(() => {
   userNodeLayer = undefined
   highlightedFeature = undefined
   highlightedLayer = undefined
+  openPopupTarget = undefined
 })
 </script>
 
