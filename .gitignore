@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env.local
 .DS_Store
+scripts/data/
+public/data/
