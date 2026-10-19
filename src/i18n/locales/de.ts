@@ -1,8 +1,4 @@
 export default {
-  hello: {
-    title: 'Hallo Welt',
-    reload: 'Nachricht neu laden',
-  },
   map: {
     status: {
       locating: 'Dein Standort wird ermittelt…',

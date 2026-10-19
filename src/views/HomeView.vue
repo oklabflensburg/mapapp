@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Button from 'primevue/button'
 import OsmMap, { type MapStatus } from '../components/OsmMap.vue'
-import { useHelloStore } from '../stores/hello'
 
 const { t } = useI18n()
-const hello = useHelloStore()
 const mapStatus = ref<MapStatus>('locating')
 
 const mapStatusMessage = computed(() => {
@@ -21,39 +18,42 @@ const mapStatusMessage = computed(() => {
       return ''
   }
 })
-
-onMounted(() => {
-  hello.fetchHello()
-})
 </script>
 
 <template>
   <main class="home">
-    <h1>{{ t('hello.title') }}</h1>
-    <p v-if="hello.message" data-testid="backend-message">{{ hello.message }}</p>
-    <p v-else-if="hello.error" class="error">{{ hello.error }}</p>
-    <p v-if="mapStatusMessage" class="map-status">{{ mapStatusMessage }}</p>
+    <p v-if="mapStatusMessage" class="map-status" role="status">{{ mapStatusMessage }}</p>
     <OsmMap @status="mapStatus = $event" />
-    <Button class="reload" :label="t('hello.reload')" @click="hello.fetchHello()" />
   </main>
 </template>
 
 <style scoped>
+/* Mobile-first: the map is the app and fills the viewport. dvh tracks the
+   dynamic viewport so mobile browser toolbars don't cut the map off. */
 .home {
-  max-width: 60rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
 }
 
-.error {
-  color: #c0392b;
-}
-
+/* Floating status chip above the map; clear of notches and Leaflet's own
+   top-left zoom controls. */
 .map-status {
-  color: #666;
-}
-
-.reload {
-  margin-top: 1rem;
+  position: absolute;
+  z-index: 1100;
+  top: calc(0.5rem + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--p-content-border-radius);
+  background: var(--p-content-background);
+  color: var(--p-text-muted-color);
+  box-shadow: var(--p-overlay-popover-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  font-size: 0.875rem;
+  white-space: nowrap;
+  max-width: calc(100vw - 2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

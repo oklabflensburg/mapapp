@@ -133,18 +133,26 @@ function popupContent(feature: Feature): string {
   return `<table class="osm-tags">${rows}</table>`
 }
 
+// Leaflet renders paths on a canvas (preferCanvas), which cannot resolve CSS
+// custom properties, so PrimeVue design tokens are read from the computed
+// root style instead.
+function designToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 function highlightStyleFor(layer: L.Path): L.PathOptions {
+  const primary = designToken('--p-primary-color')
   if (layer instanceof L.CircleMarker) {
     const circleStyle: L.CircleMarkerOptions = {
-      color: '#ff7800',
+      color: primary,
       weight: 2,
-      fillColor: '#ff7800',
+      fillColor: primary,
       fillOpacity: 1,
       radius: 6,
     }
     return circleStyle
   }
-  return { color: '#ff7800', weight: 5, opacity: 1 }
+  return { color: primary, weight: 5, opacity: 1 }
 }
 
 function setHighlighted(feature: Feature, layer: L.Path): void {
@@ -298,20 +306,32 @@ onBeforeUnmount(() => {
 <style scoped>
 .map {
   width: 100%;
-  height: 60vh;
-  border-radius: 8px;
+  height: 100%;
   z-index: 0;
 }
 </style>
 
 <style>
 /* Popup tag table lives outside the scoped subtree (Leaflet renders popups
-   into the map container, not the component template). */
+   into the map container, not the component template). Styles use PrimeVue
+   design tokens so popups follow the configured Aura theme. */
+.leaflet-popup-content-wrapper {
+  background: var(--p-overlay-popover-background, var(--p-content-background));
+  color: var(--p-text-color);
+  border-radius: var(--p-content-border-radius);
+  box-shadow: var(--p-overlay-popover-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+}
+
+.leaflet-popup-tip {
+  background: var(--p-overlay-popover-background, var(--p-content-background));
+}
+
 .osm-tags {
   border-collapse: collapse;
   max-height: 40vh;
   overflow-y: auto;
   display: block;
+  color: var(--p-text-color);
 }
 
 .osm-tags th,
@@ -320,10 +340,12 @@ onBeforeUnmount(() => {
   padding: 0.1rem 0.4rem 0.1rem 0;
   font-size: 0.8rem;
   vertical-align: top;
+  border-bottom: 1px solid var(--p-content-border-color);
 }
 
 .osm-tags th {
   white-space: nowrap;
   font-weight: 600;
+  color: var(--p-text-muted-color);
 }
 </style>
