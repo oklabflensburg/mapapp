@@ -23,8 +23,10 @@ PBF="${DATA_DIR}/schleswig-holstein-latest.osm.pbf"
 NOMINATIM_JSON="${DATA_DIR}/nominatim-flensburg.json"
 BOUNDARY_GEOJSON="${DATA_DIR}/flensburg-boundary.geojson"
 
-# Keep only features carrying at least one of these tags.
-TAGS="building/leisure/amenity/shop/tourism/landuse/natural/highway/name"
+# Keep only features carrying at least one of these tags. landuse is left
+# out on purpose: its areas (e.g. residential) cover whole neighbourhoods
+# and would swallow clicks meant for the features inside them.
+TAGS="building/leisure/amenity/shop/tourism/natural/highway/name"
 
 CITY_PBF="${DATA_DIR}/flensburg.osm.pbf"
 FILTERED_PBF="${DATA_DIR}/flensburg-tagged.osm.pbf"

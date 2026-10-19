@@ -97,6 +97,48 @@ function isMinorFeature(feature: Feature): boolean {
   return feature.geometry.type === 'Point' || 'building' in (feature.properties ?? {})
 }
 
+function bboxArea(feature: IndexedFeature): number {
+  return (feature.maxLon - feature.minLon) * (feature.maxLat - feature.minLat)
+}
+
+// Leaflet internals used for hit-testing; not part of the public typings.
+interface HitTestablePath {
+  _containsPoint(point: L.Point): boolean
+  _rings: L.Point[][]
+}
+
+// Closed ways without a highway tag enclose an area (buildings, landuse,
+// natural, ...) but render as outlines only, so Leaflet would hit-test them
+// on the stroke. Highway loops are paths, not areas, and stay stroke-only.
+function isAreaOutline(feature: Feature): boolean {
+  if (feature.geometry.type !== 'LineString') {
+    return false
+  }
+  const coords = feature.geometry.coordinates
+  const first = coords[0]
+  const last = coords[coords.length - 1]
+  return (
+    coords.length > 3 &&
+    first[0] === last[0] &&
+    first[1] === last[1] &&
+    !('highway' in (feature.properties ?? {}))
+  )
+}
+
+// Even-odd ray casting against a projected ring, matching the test Leaflet
+// applies to polygons.
+function pointInRing(point: L.Point, ring: L.Point[]): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[j]
+    const b = ring[i]
+    if ((b.y > point.y) !== (a.y > point.y) && point.x < ((a.x - b.x) * (point.y - b.y)) / (a.y - b.y) + b.x) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
 function styleFor(feature: Feature): L.PathOptions {
   const props = (feature.properties ?? {}) as Record<string, string>
 
@@ -125,12 +167,85 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;')
 }
 
-function popupContent(feature: Feature): string {
-  const props = (feature.properties ?? {}) as Record<string, string>
+function tagTable(props: Record<string, string>): string {
   const rows = Object.entries(props)
     .map(([key, value]) => `<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(String(value))}</td></tr>`)
     .join('')
   return `<table class="osm-tags">${rows}</table>`
+}
+
+// Even-odd test in lon/lat; testing all rings together handles holes.
+function pointInRings(lon: number, lat: number, rings: number[][][]): boolean {
+  let inside = false
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i]
+      const [xj, yj] = ring[j]
+      if ((yi > lat) !== (yj > lat) && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+        inside = !inside
+      }
+    }
+  }
+  return inside
+}
+
+// Shops and other POIs are usually separate point nodes inside the building
+// way, which itself often carries only building=yes. Collect them so the
+// building popup can show what is inside.
+function pointsInside(feature: Feature): Feature[] {
+  if (!('building' in (feature.properties ?? {}))) {
+    return []
+  }
+
+  const geometry = feature.geometry
+  let rings: number[][][]
+  if (geometry.type === 'Polygon') {
+    rings = geometry.coordinates
+  } else if (geometry.type === 'MultiPolygon') {
+    rings = geometry.coordinates.flat()
+  } else if (geometry.type === 'LineString' && isAreaOutline(feature)) {
+    rings = [geometry.coordinates]
+  } else {
+    return []
+  }
+
+  let minLon = Infinity
+  let minLat = Infinity
+  let maxLon = -Infinity
+  let maxLat = -Infinity
+  for (const ring of rings) {
+    for (const [lon, lat] of ring) {
+      minLon = Math.min(minLon, lon)
+      maxLon = Math.max(maxLon, lon)
+      minLat = Math.min(minLat, lat)
+      maxLat = Math.max(maxLat, lat)
+    }
+  }
+
+  return osmFeatures
+    .filter(
+      (indexed) =>
+        indexed.feature.geometry.type === 'Point' &&
+        indexed.minLon >= minLon &&
+        indexed.maxLon <= maxLon &&
+        indexed.minLat >= minLat &&
+        indexed.maxLat <= maxLat &&
+        pointInRings(indexed.minLon, indexed.minLat, rings),
+    )
+    .map((indexed) => indexed.feature)
+}
+
+function popupContent(feature: Feature): string {
+  const props = (feature.properties ?? {}) as Record<string, string>
+  const poiSections = pointsInside(feature)
+    .map((poi) => {
+      const poiProps = (poi.properties ?? {}) as Record<string, string>
+      const title =
+        poiProps.name || poiProps.shop || poiProps.amenity || poiProps.office || poiProps.tourism || poiProps.leisure || 'POI'
+      return `<section><h3 class="osm-poi-title">${escapeHtml(title)}</h3>${tagTable(poiProps)}</section>`
+    })
+    .join('')
+  return tagTable(props) + poiSections
 }
 
 // Leaflet renders paths on a canvas (preferCanvas), which cannot resolve CSS
@@ -184,6 +299,12 @@ function renderVisibleFeatures(): void {
     visible = visible.filter((f) => !isMinorFeature(f.feature))
   }
 
+  // Draw big areas first and small features last. The canvas renderer picks
+  // the topmost hit, so elements inside an area (a building in a park) stay
+  // clickable instead of the surrounding area swallowing the click; it also
+  // stacks small features visually above large areas.
+  visible.sort((a, b) => bboxArea(a) - bboxArea(b))
+
   osmLayer?.remove()
   highlightedLayer = undefined
   osmLayer = L.geoJSON(visible.map((f) => f.feature), {
@@ -199,9 +320,27 @@ function renderVisibleFeatures(): void {
     onEachFeature: (feature, layer) => {
       const path = layer as L.Path
       const f = feature as Feature
+      const props = (f.properties ?? {}) as Record<string, string>
 
+      // Landuse areas (e.g. residential) cover whole neighbourhoods and would
+      // swallow every click inside them; let those clicks pass through to the
+      // features they contain.
+      if ('landuse' in props) {
+        path.options.interactive = false
+        return
+      }
+
+      // Popup content is built lazily (Leaflet calls the function on open)
+      // because pointsInside scans the feature index per click.
       if (f.geometry.type !== 'Point') {
-        layer.bindPopup(popupContent(f))
+        layer.bindPopup(() => popupContent(f))
+      }
+
+      if (isAreaOutline(f)) {
+        const hitPath = path as unknown as HitTestablePath
+        const containsOnStroke = hitPath._containsPoint.bind(hitPath)
+        hitPath._containsPoint = (point) =>
+          containsOnStroke(point) || (hitPath._rings.length > 0 && pointInRing(point, hitPath._rings[0]))
       }
 
       if (highlightedFeature === f) {
@@ -243,7 +382,10 @@ onMounted(() => {
     return
   }
 
-  map = L.map(container.value, { preferCanvas: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
+  // Canvas hit-testing is exact by default, so thin lines (e.g. 1.5px roads)
+  // would need pixel-perfect clicks. tolerance widens the hit area around
+  // every path without changing how it is drawn.
+  map = L.map(container.value, { renderer: L.canvas({ tolerance: 10 }) }).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
 
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -347,5 +489,12 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   font-weight: 600;
   color: var(--p-text-muted-color);
+}
+
+.osm-poi-title {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--p-text-color);
 }
 </style>
