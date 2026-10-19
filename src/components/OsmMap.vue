@@ -318,7 +318,7 @@ function renderVisibleFeatures(): void {
   // the topmost hit, so elements inside an area (a building in a park) stay
   // clickable instead of the surrounding area swallowing the click; it also
   // stacks small features visually above large areas.
-  visible.sort((a, b) => bboxArea(a) - bboxArea(b))
+  visible.sort((a, b) => bboxArea(b) - bboxArea(a))
 
   osmLayer?.remove()
   highlightedLayer = undefined
