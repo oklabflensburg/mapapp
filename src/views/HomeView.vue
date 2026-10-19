@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import Button from 'primevue/button'
 import OsmMap, { type MapStatus } from '../components/OsmMap.vue'
+import NodeEditorDialog, { type NodeEditTarget } from '../components/NodeEditorDialog.vue'
 
 const { t } = useI18n()
 const mapStatus = ref<MapStatus>('locating')
@@ -18,12 +20,31 @@ const mapStatusMessage = computed(() => {
       return ''
   }
 })
+
+const editorVisible = ref(false)
+const editTarget = ref<NodeEditTarget | null>(null)
+const editMode = ref(false)
+
+function openEditor(node: NodeEditTarget): void {
+  editTarget.value = node
+  editorVisible.value = true
+}
 </script>
 
 <template>
   <main class="home">
     <p v-if="mapStatusMessage" class="map-status" role="status">{{ mapStatusMessage }}</p>
-    <OsmMap @status="mapStatus = $event" />
+    <Button
+      class="edit-toggle"
+      :aria-label="t('map.editMode')"
+      :aria-pressed="editMode"
+      icon="pi pi-pencil"
+      :severity="editMode ? 'primary' : 'secondary'"
+      rounded
+      @click="editMode = !editMode"
+    />
+    <OsmMap :edit-mode="editMode" @status="mapStatus = $event" @edit-node="openEditor" />
+    <NodeEditorDialog v-model:visible="editorVisible" :node="editTarget" />
   </main>
 </template>
 
@@ -55,5 +76,18 @@ const mapStatusMessage = computed(() => {
   max-width: calc(100vw - 2rem);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Edit-mode toggle, top-right so it clears the status chip and Leaflet's
+   top-left zoom controls. */
+.edit-toggle {
+  position: absolute;
+  z-index: 1100;
+  top: calc(0.5rem + env(safe-area-inset-top));
+  right: calc(0.5rem + env(safe-area-inset-right));
+  width: 2.5rem;
+  height: 2.5rem;
+  justify-content: center;
+  box-shadow: var(--p-overlay-popover-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
 }
 </style>

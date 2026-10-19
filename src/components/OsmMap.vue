@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as L from 'leaflet'
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { useUserNodesStore } from '../stores/userNodes'
+import type { NodeEditTarget } from './NodeEditorDialog.vue'
 
 export type MapStatus = 'locating' | 'unsupported' | 'unavailable' | 'found'
 
+const props = defineProps<{
+  editMode: boolean
+}>()
+
 const emit = defineEmits<{
   (event: 'status', status: MapStatus): void
+  (event: 'edit-node', node: NodeEditTarget): void
 }>()
 
 const container = ref<HTMLDivElement>()
@@ -48,6 +55,14 @@ interface IndexedFeature {
 let osmFeatures: IndexedFeature[] = []
 let osmLayer: L.GeoJSON | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
+
+// User nodes (saved edits) rendered on top of the OSM layer.
+const userNodes = useUserNodesStore()
+
+// OSM tags by feature id ("n26013095"), so a saved user node can show the
+// original tags of the OSM node it references.
+let osmTagsById: Map<string, Record<string, string>> = new Map()
+let userNodeLayer: L.LayerGroup | undefined
 
 // Currently selected feature and its rendered layer. The layer reference is
 // rebuilt on every render, so the feature is the source of truth.
@@ -309,31 +324,25 @@ function renderVisibleFeatures(): void {
   highlightedLayer = undefined
   osmLayer = L.geoJSON(visible.map((f) => f.feature), {
     style: (feature) => styleFor(feature as Feature),
-    pointToLayer: (feature, latlng) =>
+    pointToLayer: (_feature, latlng) =>
       L.circleMarker(latlng, {
         radius: 4,
         color: '#b06fd4',
         weight: 1,
         fillColor: '#e3c9f0',
         fillOpacity: 0.8,
-      }).bindPopup(popupContent(feature as Feature)),
+      }),
     onEachFeature: (feature, layer) => {
       const path = layer as L.Path
       const f = feature as Feature
-      const props = (f.properties ?? {}) as Record<string, string>
+      const featureProps = (f.properties ?? {}) as Record<string, string>
 
       // Landuse areas (e.g. residential) cover whole neighbourhoods and would
       // swallow every click inside them; let those clicks pass through to the
       // features they contain.
-      if ('landuse' in props) {
+      if ('landuse' in featureProps) {
         path.options.interactive = false
         return
-      }
-
-      // Popup content is built lazily (Leaflet calls the function on open)
-      // because pointsInside scans the feature index per click.
-      if (f.geometry.type !== 'Point') {
-        layer.bindPopup(() => popupContent(f))
       }
 
       if (isAreaOutline(f)) {
@@ -349,11 +358,39 @@ function renderVisibleFeatures(): void {
         path.bringToFront()
       }
 
-      path.on('click', () => {
+      path.on('click', (e: L.LeafletMouseEvent) => {
         setHighlighted(f, path)
+
+        // In edit mode, clicking any feature opens the editor for its user
+        // node; otherwise the click shows the read-only tag popup. Features
+        // without an id (none in the generated data) always show the popup.
+        if (props.editMode && f.id !== undefined && f.id !== null) {
+          const [lon, lat] =
+            f.geometry.type === 'Point'
+              ? (f.geometry.coordinates as [number, number])
+              : [e.latlng.lng, e.latlng.lat]
+          emit('edit-node', {
+            providerNodeId: String(f.id),
+            latitude: lat,
+            longitude: lon,
+            osmTags: featureProps,
+          })
+          return
+        }
+
+        // Popup content is built lazily (Leaflet calls the function on open)
+        // because pointsInside scans the feature index per click.
+        if (!path.getPopup()) {
+          path.bindPopup(() => popupContent(f))
+        }
+        path.openPopup()
       })
     },
   }).addTo(map)
+
+  // Rebuild the user-node markers after the OSM layer so they are drawn (and
+  // hit-tested) last on the shared canvas renderer.
+  renderUserNodes()
 }
 
 function scheduleRenderVisibleFeatures(): void {
@@ -363,6 +400,48 @@ function scheduleRenderVisibleFeatures(): void {
   renderTimer = setTimeout(renderVisibleFeatures, MOVE_RENDER_DEBOUNCE_MS)
 }
 
+function renderUserNodes(): void {
+  if (!map) {
+    return
+  }
+
+  userNodeLayer?.remove()
+  userNodeLayer = L.layerGroup().addTo(map)
+
+  for (const node of userNodes.nodes) {
+    const marker = L.circleMarker([node.latitude, node.longitude], {
+      radius: 6,
+      color: '#2e7d32',
+      weight: 2,
+      fillColor: '#66bb6a',
+      fillOpacity: 0.9,
+    })
+
+    marker.on('click', () => {
+      if (props.editMode) {
+        emit('edit-node', {
+          providerNodeId: node.providerNodeId,
+          latitude: node.latitude,
+          longitude: node.longitude,
+          osmTags: osmTagsById.get(node.providerNodeId) ?? {},
+        })
+        return
+      }
+      if (!marker.getPopup()) {
+        marker.bindPopup(() => tagTable(node.tags))
+      }
+      marker.openPopup()
+    })
+
+    marker.addTo(userNodeLayer)
+  }
+}
+
+watch(
+  () => userNodes.nodes,
+  () => renderUserNodes(),
+)
+
 async function loadOsmFeatures(): Promise<void> {
   try {
     const response = await fetch(OSM_DATA_URL)
@@ -371,6 +450,11 @@ async function loadOsmFeatures(): Promise<void> {
     }
     const collection = (await response.json()) as FeatureCollection
     osmFeatures = indexFeatures(collection)
+    osmTagsById = new Map(
+      collection.features
+        .filter((f) => f.id !== undefined && f.id !== null && f.geometry.type === 'Point')
+        .map((f) => [String(f.id), (f.properties ?? {}) as Record<string, string>]),
+    )
     renderVisibleFeatures()
   } catch (error) {
     console.warn('Failed to load OSM features', error)
@@ -395,6 +479,7 @@ onMounted(() => {
 
   map.on('moveend', scheduleRenderVisibleFeatures)
   void loadOsmFeatures()
+  void userNodes.load()
 
   if (!('geolocation' in navigator)) {
     emit('status', 'unsupported')
@@ -429,6 +514,7 @@ onBeforeUnmount(() => {
     clearTimeout(renderTimer)
   }
   osmLayer?.remove()
+  userNodeLayer?.remove()
   accuracyCircle?.remove()
   marker?.remove()
   map?.remove()
@@ -436,13 +522,14 @@ onBeforeUnmount(() => {
   marker = undefined
   accuracyCircle = undefined
   osmLayer = undefined
+  userNodeLayer = undefined
   highlightedFeature = undefined
   highlightedLayer = undefined
 })
 </script>
 
 <template>
-  <div ref="container" class="map" />
+  <div ref="container" class="map" :class="{ 'map--edit': editMode }" />
 </template>
 
 <style scoped>
@@ -450,6 +537,11 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   z-index: 0;
+}
+
+/* Crosshair signals that clicks open the node editor. */
+.map--edit {
+  cursor: crosshair !important;
 }
 </style>
 

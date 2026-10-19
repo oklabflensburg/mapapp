@@ -1,0 +1,201 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import InputText from 'primevue/inputtext'
+import { useUserNodesStore } from '../stores/userNodes'
+
+// The OSM node a user clicked on, together with its original tags. Saving
+// creates (or updates) the "user" node that references it.
+export interface NodeEditTarget {
+  providerNodeId: string
+  latitude: number
+  longitude: number
+  osmTags: Record<string, string>
+}
+
+interface TagRow {
+  key: string
+  value: string
+}
+
+const props = defineProps<{
+  visible: boolean
+  node: NodeEditTarget | null
+}>()
+
+const emit = defineEmits<{
+  (event: 'update:visible', visible: boolean): void
+}>()
+
+const { t } = useI18n()
+const userNodes = useUserNodesStore()
+
+const rows = ref<TagRow[]>([])
+
+const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (!visible || !props.node) {
+      return
+    }
+    const existing = userNodes.byProviderNodeId.get(props.node.providerNodeId)?.tags ?? {}
+    rows.value = Object.entries(existing).map(([key, value]) => ({ key, value }))
+  },
+)
+
+function addRow(): void {
+  rows.value.push({ key: '', value: '' })
+}
+
+function removeRow(index: number): void {
+  rows.value.splice(index, 1)
+}
+
+function close(): void {
+  emit('update:visible', false)
+}
+
+async function save(): Promise<void> {
+  if (!props.node) {
+    return
+  }
+  const tags: Record<string, string> = {}
+  for (const row of rows.value) {
+    const key = row.key.trim()
+    if (key !== '') {
+      tags[key] = row.value
+    }
+  }
+  const saved = await userNodes.save({
+    providerNodeId: props.node.providerNodeId,
+    latitude: props.node.latitude,
+    longitude: props.node.longitude,
+    tags,
+  })
+  if (saved) {
+    close()
+  }
+}
+</script>
+
+<template>
+  <Dialog
+    :visible="visible"
+    modal
+    :header="t('nodeEditor.title')"
+    :style="{ width: '24rem', maxWidth: 'calc(100vw - 2rem)' }"
+    @update:visible="emit('update:visible', $event)"
+  >
+    <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
+      <h4 class="section-title">{{ t('nodeEditor.osmTags') }}</h4>
+      <table class="tag-table">
+        <tr v-for="[key, value] in osmTagEntries" :key="key">
+          <th>{{ key }}</th>
+          <td>{{ value }}</td>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h4 class="section-title">{{ t('nodeEditor.customTags') }}</h4>
+      <p v-if="rows.length === 0" class="empty-hint">{{ t('nodeEditor.empty') }}</p>
+      <div v-for="(row, index) in rows" :key="index" class="tag-row">
+        <InputText v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
+        <InputText v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
+        <Button
+          :aria-label="t('nodeEditor.removeTag')"
+          icon="pi pi-times"
+          text
+          severity="danger"
+          @click="removeRow(index)"
+        />
+      </div>
+      <Button
+        :label="t('nodeEditor.addTag')"
+        icon="pi pi-plus"
+        text
+        severity="secondary"
+        @click="addRow"
+      />
+      <p v-if="userNodes.saveFailed" class="save-error" role="alert">
+        {{ t('nodeEditor.saveFailed') }}
+      </p>
+    </section>
+
+    <template #footer>
+      <Button :label="t('nodeEditor.cancel')" text severity="secondary" @click="close" />
+      <Button
+        :label="t('nodeEditor.save')"
+        :loading="userNodes.saving"
+        icon="pi pi-check"
+        @click="save"
+      />
+    </template>
+  </Dialog>
+</template>
+
+<style scoped>
+.section-title {
+  margin: 0 0 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+}
+
+.osm-tags-section {
+  margin-bottom: 0.75rem;
+}
+
+.tag-table {
+  border-collapse: collapse;
+  max-height: 12rem;
+  overflow-y: auto;
+  display: block;
+}
+
+.tag-table th,
+.tag-table td {
+  text-align: left;
+  padding: 0.1rem 0.4rem 0.1rem 0;
+  font-size: 0.8rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.tag-table th {
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+}
+
+.empty-hint {
+  margin: 0 0 0.375rem;
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
+.tag-row {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  margin-bottom: 0.375rem;
+}
+
+.tag-key {
+  flex: 1;
+}
+
+.tag-value {
+  flex: 1.5;
+}
+
+.save-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--p-red-500);
+}
+</style>

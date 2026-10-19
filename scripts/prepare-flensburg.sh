@@ -73,8 +73,12 @@ echo "Filtering to tagged features (${TAGS//\//, })..."
 osmium tags-filter --overwrite -o "${FILTERED_PBF}" "${CITY_PBF}" ${TAGS//\// }
 
 echo "Exporting GeoJSON to ${GEOJSON}..."
+# --add-unique-id type_id writes the OSM id (e.g. "node/123", "way/456") into
+# each feature's "id" member, so the frontend can reference the original
+# object when creating user nodes.
 osmium export \
   --geometry-types point,linestring,polygon \
+  --add-unique-id type_id \
   --overwrite \
   -o "${GEOJSON}" \
   "${FILTERED_PBF}"
