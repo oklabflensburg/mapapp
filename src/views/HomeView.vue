@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import OsmMap from '../components/OsmMap.vue'
 import type { MapStatus } from '../map/geolocation'
-import NodeEditorDialog, { type NodeEditTarget } from '../components/NodeEditorDialog.vue'
+import NodeEditorDialog from '../components/NodeEditorDialog.vue'
+import type { NodeEditTarget } from '../stores/userNodes'
 
 const { t } = useI18n()
 const mapStatus = ref<MapStatus>('locating')

@@ -11,6 +11,15 @@ export interface UserNode {
   updatedAt: string
 }
 
+// The OSM node a user clicked on, together with its original tags. Saving
+// creates (or updates) the "user" node that references it.
+export interface NodeEditTarget {
+  providerNodeId: string
+  latitude: number
+  longitude: number
+  osmTags: Record<string, string>
+}
+
 export interface SaveUserNodeInput {
   providerNodeId: string
   latitude: number

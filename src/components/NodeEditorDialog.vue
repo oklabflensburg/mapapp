@@ -4,16 +4,7 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import { useUserNodesStore } from '../stores/userNodes'
-
-// The OSM node a user clicked on, together with its original tags. Saving
-// creates (or updates) the "user" node that references it.
-export interface NodeEditTarget {
-  providerNodeId: string
-  latitude: number
-  longitude: number
-  osmTags: Record<string, string>
-}
+import { useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
 
 interface TagRow {
   key: string

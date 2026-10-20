@@ -2,26 +2,22 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as L from 'leaflet'
-import type { Feature } from 'geojson'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
-import type { UserNode } from '../stores/userNodes'
-import type { NodeEditTarget } from './NodeEditorDialog.vue'
+import type { NodeEditTarget } from '../stores/userNodes'
 import '../map/leafletIcons'
 import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
-  MAX_VISIBLE_FEATURES,
   MOVE_RENDER_DEBOUNCE_MS,
   OSM_TILE_URL,
   OSM_TILE_MAX_ZOOM,
   OSM_TILE_ATTRIBUTION,
 } from '../map/mapConfig'
-import { bboxArea, isMinorFeature, pointsInside, type IndexedFeature } from '../map/featureIndex'
-import { enableAreaHitTest } from '../map/areaHitTest'
-import { highlightStyleFor, POINT_MARKER_OPTIONS, styleFor } from '../map/featureStyling'
-import { osmPopupContent, tagTable, type PopupDependencies } from '../map/popupContent'
 import { loadOsmData } from '../map/osmData'
+import { OsmFeatureLayer, type OsmPopupDeps } from '../map/osmFeatureLayer'
+import { PopupTracker } from '../map/popupTracker'
+import { UserNodeLayer } from '../map/userNodeLayer'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
 
 const props = defineProps<{
@@ -43,34 +39,21 @@ let locationLayers: LocationLayers = {}
 // User nodes (saved edits) rendered on top of the OSM layer.
 const userNodes = useUserNodesStore()
 
-let osmFeatures: IndexedFeature[] = []
-let osmLayer: L.GeoJSON | undefined
-let renderTimer: ReturnType<typeof setTimeout> | undefined
-
 // OSM tags by feature id ("n26013095"), so a saved user node can show the
 // original tags of the OSM node it references.
 let osmTagsById: Map<string, Record<string, string>> = new Map()
-let userNodeLayer: L.LayerGroup | undefined
 
-// Currently selected feature and its rendered layer. The layer reference is
-// rebuilt on every render, so the feature is the source of truth.
-let highlightedFeature: Feature | undefined
-let highlightedLayer: L.Path | undefined
+// Shared between both layers: each rebuild removes layers (which closes
+// their popups) and must not clear the other's tracked popup target.
+const popupTracker = new PopupTracker()
 
-// Popup whose source layer is currently open. Every render rebuilds the
-// layers, and Leaflet closes a popup when its source layer is removed, so the
-// popup is re-opened on the new layer after each rebuild.
-type PopupTarget = { kind: 'osm'; feature: Feature } | { kind: 'userNode'; node: UserNode }
-let openPopupTarget: PopupTarget | undefined
-// True while layers are being rebuilt; popupclose events fired by the rebuild
-// itself must not clear openPopupTarget.
-let rebuildingLayers = false
+let osmFeatureLayer: OsmFeatureLayer | undefined
+let userNodeLayer: UserNodeLayer | undefined
+let renderTimer: ReturnType<typeof setTimeout> | undefined
 
-// Popup content depends on the feature index, the saved user nodes and the
-// active locale; the component wires those runtime sources into the pure
-// content builders.
-const popupDeps: PopupDependencies = {
-  pointsInside: (feature) => pointsInside(osmFeatures, feature),
+// Popup content depends on the saved user nodes and the active locale; the
+// component wires those runtime sources into the pure content builders.
+const popupDeps: OsmPopupDeps = {
   customTags: (providerNodeId) => {
     if (providerNodeId === null || providerNodeId === undefined) {
       return undefined
@@ -80,226 +63,29 @@ const popupDeps: PopupDependencies = {
   customTagsTitle: () => t('nodeEditor.customTags'),
 }
 
-function setHighlighted(feature: Feature, layer: L.Path): void {
-  if (highlightedLayer && highlightedLayer !== layer) {
-    highlightedLayer.setStyle(styleFor(highlightedFeature as Feature))
-  }
-  highlightedFeature = feature
-  highlightedLayer = layer
-  layer.setStyle(highlightStyleFor(layer))
-  layer.bringToFront()
+function onEditNode(target: NodeEditTarget): void {
+  emit('edit-node', target)
 }
 
-// Binds the tag popup and tracks it in openPopupTarget so a layer rebuild can
-// re-open it on the new layer. The popupclose handler only clears the target
-// when the user closed this popup (not when the rebuild removed the layer).
-function bindFeaturePopup(path: L.Path, feature: Feature): void {
-  path.bindPopup(() => osmPopupContent(feature, popupDeps))
-  path.on('popupclose', () => {
-    if (!rebuildingLayers && openPopupTarget?.kind === 'osm' && openPopupTarget.feature === feature) {
-      openPopupTarget = undefined
-    }
-  })
+// Rebuilds the OSM layer first; the user-node markers after it so they are
+// drawn (and hit-tested) last on the shared canvas renderer. Finally the
+// tracked OSM popup is re-opened on its new layer.
+function renderLayers(): void {
+  osmFeatureLayer?.render()
+  userNodeLayer?.render(userNodes.nodes)
+  osmFeatureLayer?.reopenPopup()
 }
 
-function bindNodePopup(marker: L.CircleMarker, node: UserNode): void {
-  marker.bindPopup(() => tagTable(node.tags))
-  marker.on('popupclose', () => {
-    if (!rebuildingLayers && openPopupTarget?.kind === 'userNode' && openPopupTarget.node.providerNodeId === node.providerNodeId) {
-      openPopupTarget = undefined
-    }
-  })
-}
-
-// Re-opens the tracked OSM popup after a rebuild. Feature identity is stable
-// across renders because the layers reference the indexed feature objects.
-// The target is dropped when the feature is no longer rendered, so a popup
-// does not resurface when the user pans back to it later.
-function reopenOsmPopup(): void {
-  if (openPopupTarget?.kind !== 'osm') {
-    return
-  }
-  const target = openPopupTarget
-  let reopened = false
-  osmLayer?.eachLayer((layer) => {
-    if ((layer as { feature?: Feature }).feature === target.feature) {
-      const path = layer as L.Path
-      if (!path.getPopup()) {
-        bindFeaturePopup(path, target.feature)
-      }
-      path.openPopup()
-      reopened = true
-    }
-  })
-  if (!reopened) {
-    openPopupTarget = undefined
-  }
-}
-
-function renderVisibleFeatures(): void {
-  if (!map || osmFeatures.length === 0) {
-    return
-  }
-
-  const bounds = map.getBounds().pad(0.1)
-  const minLon = bounds.getWest()
-  const minLat = bounds.getSouth()
-  const maxLon = bounds.getEast()
-  const maxLat = bounds.getNorth()
-
-  let visible = osmFeatures.filter(
-    (f) => f.maxLon >= minLon && f.minLon <= maxLon && f.maxLat >= minLat && f.minLat <= maxLat,
-  )
-
-  if (visible.length > MAX_VISIBLE_FEATURES) {
-    visible = visible.filter((f) => !isMinorFeature(f.feature))
-  }
-
-  // Draw big areas first and small features last. The canvas renderer picks
-  // the topmost hit, so elements inside an area (a building in a park) stay
-  // clickable instead of the surrounding area swallowing the click; it also
-  // stacks small features visually above large areas.
-  visible.sort((a, b) => bboxArea(b) - bboxArea(a))
-
-  // Removing a layer closes its popup; the flag keeps openPopupTarget alive
-  // so the popup can be re-opened on the rebuilt layer below.
-  rebuildingLayers = true
-  osmLayer?.remove()
-  highlightedLayer = undefined
-  rebuildingLayers = false
-  osmLayer = L.geoJSON(visible.map((f) => f.feature), {
-    style: (feature) => styleFor(feature as Feature),
-    pointToLayer: (_feature, latlng) => L.circleMarker(latlng, POINT_MARKER_OPTIONS),
-    onEachFeature: (feature, layer) => {
-      const path = layer as L.Path
-      const f = feature as Feature
-      const featureProps = (f.properties ?? {}) as Record<string, string>
-
-      // Landuse areas (e.g. residential) cover whole neighbourhoods and would
-      // swallow every click inside them; let those clicks pass through to the
-      // features they contain.
-      if ('landuse' in featureProps) {
-        path.options.interactive = false
-        return
-      }
-
-      enableAreaHitTest(path, f)
-
-      if (highlightedFeature === f) {
-        highlightedLayer = path
-        path.setStyle(highlightStyleFor(path))
-        path.bringToFront()
-      }
-
-      path.on('click', (e: L.LeafletMouseEvent) => {
-        setHighlighted(f, path)
-
-        // In edit mode, clicking any feature opens the editor for its user
-        // node; otherwise the click shows the read-only tag popup. Features
-        // without an id (none in the generated data) always show the popup.
-        if (props.editMode && f.id !== undefined && f.id !== null) {
-          const [lon, lat] =
-            f.geometry.type === 'Point'
-              ? (f.geometry.coordinates as [number, number])
-              : [e.latlng.lng, e.latlng.lat]
-          emit('edit-node', {
-            providerNodeId: String(f.id),
-            latitude: lat,
-            longitude: lon,
-            osmTags: featureProps,
-          })
-          return
-        }
-
-        // Popup content is built lazily (Leaflet calls the function on open)
-        // because pointsInside scans the feature index per click.
-        if (!path.getPopup()) {
-          bindFeaturePopup(path, f)
-        }
-        openPopupTarget = { kind: 'osm', feature: f }
-        path.openPopup()
-      })
-    },
-  }).addTo(map)
-
-  // Rebuild the user-node markers after the OSM layer so they are drawn (and
-  // hit-tested) last on the shared canvas renderer.
-  renderUserNodes()
-
-  // The rebuild above closed the open popup (Leaflet closes a popup when its
-  // source layer is removed); re-open it on the new layer.
-  reopenOsmPopup()
-}
-
-function scheduleRenderVisibleFeatures(): void {
+function scheduleRenderLayers(): void {
   if (renderTimer) {
     clearTimeout(renderTimer)
   }
-  renderTimer = setTimeout(renderVisibleFeatures, MOVE_RENDER_DEBOUNCE_MS)
-}
-
-function renderUserNodes(): void {
-  if (!map) {
-    return
-  }
-
-  // Removing a layer closes its popup; the flag keeps openPopupTarget alive so
-  // the popup can be re-opened on the rebuilt marker below.
-  rebuildingLayers = true
-  userNodeLayer?.remove()
-  rebuildingLayers = false
-  userNodeLayer = L.layerGroup().addTo(map)
-
-  let reopenedUserNode = false
-  for (const node of userNodes.nodes) {
-    const marker = L.circleMarker([node.latitude, node.longitude], {
-      radius: 6,
-      color: '#2e7d32',
-      weight: 2,
-      fillColor: '#66bb6a',
-      fillOpacity: 0.9,
-    })
-
-    marker.on('click', () => {
-      if (props.editMode) {
-        emit('edit-node', {
-          providerNodeId: node.providerNodeId,
-          latitude: node.latitude,
-          longitude: node.longitude,
-          osmTags: osmTagsById.get(node.providerNodeId) ?? {},
-        })
-        return
-      }
-      if (!marker.getPopup()) {
-        bindNodePopup(marker, node)
-      }
-      openPopupTarget = { kind: 'userNode', node }
-      marker.openPopup()
-    })
-
-    marker.addTo(userNodeLayer)
-
-    // The layer rebuild above closed the popup; re-open it on the new marker.
-    // Nodes are matched by provider id because saving an edit can replace the
-    // node object.
-    if (openPopupTarget?.kind === 'userNode' && openPopupTarget.node.providerNodeId === node.providerNodeId) {
-      if (!marker.getPopup()) {
-        bindNodePopup(marker, node)
-      }
-      marker.openPopup()
-      reopenedUserNode = true
-    }
-  }
-
-  // The node was deleted; drop the target so its popup does not resurface.
-  if (!reopenedUserNode && openPopupTarget?.kind === 'userNode') {
-    openPopupTarget = undefined
-  }
+  renderTimer = setTimeout(renderLayers, MOVE_RENDER_DEBOUNCE_MS)
 }
 
 watch(
   () => userNodes.nodes,
-  () => renderUserNodes(),
+  () => userNodeLayer?.render(userNodes.nodes),
 )
 
 async function loadOsmFeatures(): Promise<void> {
@@ -307,9 +93,9 @@ async function loadOsmFeatures(): Promise<void> {
   if (!data) {
     return
   }
-  osmFeatures = data.features
   osmTagsById = data.tagsById
-  renderVisibleFeatures()
+  osmFeatureLayer?.setFeatures(data.features)
+  renderLayers()
 }
 
 onMounted(() => {
@@ -327,7 +113,22 @@ onMounted(() => {
     attribution: OSM_TILE_ATTRIBUTION,
   }).addTo(map)
 
-  map.on('moveend', scheduleRenderVisibleFeatures)
+  osmFeatureLayer = new OsmFeatureLayer({
+    map,
+    isEditMode: () => props.editMode,
+    onEditNode,
+    popupDeps,
+    popupTracker,
+  })
+  userNodeLayer = new UserNodeLayer({
+    map,
+    isEditMode: () => props.editMode,
+    onEditNode,
+    getOsmTags: (providerNodeId) => osmTagsById.get(providerNodeId) ?? {},
+    popupTracker,
+  })
+
+  map.on('moveend', scheduleRenderLayers)
   void loadOsmFeatures()
   void userNodes.load()
 
@@ -338,18 +139,16 @@ onBeforeUnmount(() => {
   if (renderTimer) {
     clearTimeout(renderTimer)
   }
-  osmLayer?.remove()
-  userNodeLayer?.remove()
+  osmFeatureLayer?.destroy()
+  userNodeLayer?.destroy()
   locationLayers.accuracyCircle?.remove()
   locationLayers.marker?.remove()
   map?.remove()
   map = undefined
-  osmLayer = undefined
+  osmFeatureLayer = undefined
   userNodeLayer = undefined
   locationLayers = {}
-  highlightedFeature = undefined
-  highlightedLayer = undefined
-  openPopupTarget = undefined
+  popupTracker.clear()
 })
 </script>
 
