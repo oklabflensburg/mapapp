@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import Button from 'primevue/button'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
-import type { NodeEditTarget } from '../stores/userNodes'
+import { nodeKey, type NodeEditTarget, type SaveUserNodeInput } from '../stores/userNodes'
 import '../map/leafletIcons'
 import {
   DEFAULT_CENTER,
@@ -13,7 +15,7 @@ import {
   OSM_TILE_MAX_ZOOM,
   OSM_TILE_ATTRIBUTION,
 } from '../map/mapConfig'
-import { loadOsmData } from '../map/osmData'
+import { useOsmDataStore } from '../stores/osmData'
 import { OsmFeatureLayer } from '../map/osmFeatureLayer'
 import { UserNodeLayer } from '../map/userNodeLayer'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
@@ -25,6 +27,11 @@ const emit = defineEmits<{
 }>()
 
 const container = ref<HTMLDivElement>()
+const { t } = useI18n()
+const createMode = ref(false)
+const creating = ref(false)
+const createFailed = ref(false)
+let pendingCreation: SaveUserNodeInput | undefined
 
 let map: L.Map | undefined
 let locationLayers: LocationLayers = {}
@@ -43,12 +50,67 @@ function clearSelection(): void {
   osmFeatureLayer?.clearSelection()
 }
 
-function onEditNode(target: NodeEditTarget): void {
+function onEditNode(target: NodeEditTarget, click: L.LatLng): boolean {
   clickOnFeature = true
+  if (createMode.value || creating.value) {
+    void createNode(click, target)
+    return false
+  }
   // The selection moved to another element; drop the previous highlight.
   clearSelection()
-  selectedProviderNodeId = target.providerNodeId
+  selectedProviderNodeId = nodeKey(target)
   emit('edit-node', target)
+  return true
+}
+
+function toggleCreateMode(): void {
+  if (creating.value) return
+  createMode.value = !createMode.value
+  createFailed.value = false
+  pendingCreation = undefined
+  if (createMode.value) {
+    clearSelection()
+    emit('deselect-node')
+  }
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && createMode.value && !creating.value) toggleCreateMode()
+}
+
+async function createNode(click: L.LatLng, parent?: NodeEditTarget): Promise<void> {
+  if (creating.value) return
+  // Retain the complete request after failure: retries cannot create a second
+  // node if the server committed but its response was lost.
+  pendingCreation ??= {
+    provider: 'local',
+    providerNodeId: crypto.randomUUID(),
+    latitude: click.lat,
+    longitude: click.lng,
+    tags: {},
+    ...(parent ? { parent: parent.id !== undefined
+      ? { id: parent.id }
+      : { providerNodeId: parent.providerNodeId, latitude: parent.latitude, longitude: parent.longitude } } : {}),
+  }
+  creating.value = true
+  createFailed.value = false
+  const saved = await userNodes.save(pendingCreation)
+  creating.value = false
+  if (!saved) {
+    createFailed.value = true
+    return
+  }
+  pendingCreation = undefined
+  createMode.value = false
+  clearSelection()
+  selectedProviderNodeId = nodeKey(saved)
+  emit('edit-node', { ...saved, osmTags: {} })
+}
+
+function retryCreation(): void {
+  if (pendingCreation) {
+    void createNode(L.latLng(pendingCreation.latitude, pendingCreation.longitude))
+  }
 }
 
 // Exposed so the view can drop the map highlight when the panel is closed.
@@ -56,10 +118,7 @@ defineExpose({ clearSelection })
 
 // User nodes (saved edits) rendered on top of the OSM layer.
 const userNodes = useUserNodesStore()
-
-// OSM tags by feature id ("n26013095"), so a saved user node can show the
-// original tags of the OSM node it references.
-let osmTagsById: Map<string, Record<string, string>> = new Map()
+const osmData = useOsmDataStore()
 
 let osmFeatureLayer: OsmFeatureLayer | undefined
 let userNodeLayer: UserNodeLayer | undefined
@@ -85,11 +144,10 @@ watch(
 )
 
 async function loadOsmFeatures(): Promise<void> {
-  const data = await loadOsmData()
+  const data = await osmData.load()
   if (!data) {
     return
   }
-  osmTagsById = data.tagsById
   osmFeatureLayer?.setFeatures(data.features)
   renderLayers()
 }
@@ -103,6 +161,7 @@ onMounted(() => {
   // would need pixel-perfect clicks. tolerance widens the hit area around
   // every path without changing how it is drawn.
   map = L.map(container.value, { renderer: L.canvas({ tolerance: 10 }) }).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
+  window.addEventListener('keydown', onKeydown)
 
   L.tileLayer(OSM_TILE_URL, {
     maxZoom: OSM_TILE_MAX_ZOOM,
@@ -112,18 +171,23 @@ onMounted(() => {
   osmFeatureLayer = new OsmFeatureLayer({
     map,
     onEditNode,
+    onSelect: () => userNodeLayer?.bringToFront(),
   })
   userNodeLayer = new UserNodeLayer({
     map,
     onEditNode,
-    getOsmTags: (providerNodeId) => osmTagsById.get(providerNodeId) ?? {},
+    getOsmTags: (providerNodeId) => osmData.tagsById?.get(providerNodeId) ?? {},
   })
 
   // Moving or zooming the map rebuilds the layers but never deselects; only
   // a click on empty space (no feature hit) drops the selection.
-  map.on('click', () => {
+  map.on('click', (event: L.LeafletMouseEvent) => {
     if (clickOnFeature) {
       clickOnFeature = false
+      return
+    }
+    if (createMode.value || creating.value) {
+      void createNode(event.latlng)
       return
     }
     if (selectedProviderNodeId !== undefined) {
@@ -140,6 +204,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
   if (renderTimer) {
     clearTimeout(renderTimer)
   }
@@ -156,7 +221,25 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="map" />
+  <div ref="container" class="map" :class="{ 'create-mode': createMode }" />
+  <div class="create-controls">
+    <Button
+      class="create-toggle"
+      :class="{ active: createMode }"
+      icon="pi pi-plus"
+      :aria-label="t('map.create.add')"
+      :title="t('map.create.add')"
+      :aria-pressed="createMode"
+      :severity="createMode ? 'primary' : 'secondary'"
+      :disabled="creating"
+      @click="toggleCreateMode"
+    />
+    <p v-if="createMode" role="status">{{ t('map.create.hint') }}</p>
+    <div v-if="createFailed" role="alert">
+      <p>{{ t('map.create.failed') }}</p>
+      <Button :label="t('map.create.retry')" :disabled="creating" @click="retryCreation" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -164,5 +247,35 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   z-index: 0;
+}
+
+.map.create-mode,
+.map.create-mode :deep(.leaflet-interactive) {
+  cursor: crosshair;
+}
+
+.create-controls {
+  position: absolute;
+  z-index: 1000;
+  top: calc(5.5rem + env(safe-area-inset-top));
+  left: 0.75rem;
+  max-width: min(20rem, calc(100vw - 1.5rem));
+}
+
+.create-controls p {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--p-content-background);
+  border-radius: var(--p-content-border-radius);
+  box-shadow: 0 2px 6px #0002;
+  font-size: 0.875rem;
+}
+
+.create-toggle.active {
+  background: var(--p-primary-color, #059669);
+  border-color: var(--p-primary-color, #059669);
+  color: var(--p-primary-contrast-color, #fff);
+  outline: 2px solid var(--p-primary-color, #059669);
+  outline-offset: 2px;
 }
 </style>

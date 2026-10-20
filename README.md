@@ -44,6 +44,47 @@ npm run dev
 
 Production build: `npm run build` (type-checks with `vue-tsc`, then Vite build incl. PWA assets).
 
+## Adding nodes
+
+Press the map's **Add node** (+) button, then click the map. The node is saved
+immediately and its tag editor opens. Clicking an existing node or OSM feature
+creates a child of that feature. Create mode ends after one successful addition;
+press Escape or toggle the button to cancel.
+
+Apply database migrations after updating the backend:
+
+```bash
+cd backend
+docker compose exec php php bin/console doctrine:migrations:migrate --no-interaction
+```
+
+`POST /api/nodes` accepts `provider` (`OSM` by default, or `local`),
+`providerNodeId`, coordinates and tags. Local nodes use a generated UUID as their
+provider ID; reusing that identity updates the node. An optional `parent` is
+either `{ "id": 123 }` for a saved node or an OSM reference containing
+`providerNodeId`, `latitude`, and `longitude`. Parent links are additive and
+ordinary tag saves preserve them. Responses include `provider`, `parentIds`, and
+`childIds`; each node can have multiple parents and children. The `parents` and
+`children` summaries include each related node's ID, provider, provider ID,
+nullable saved name and saved custom `tags`. The edit panel displays these
+relations above the tags, including OSM reference parents that do not appear as
+user markers. Each parent shows read-only OSM and custom tags in separate
+groups. Original OSM tags come from the shared map dataset, including buildings
+and areas; unavailable OSM data is distinguished from a parent with no tags.
+
+Run the deterministic creation browser check with the dev server running:
+
+```bash
+node scripts/check-node-creation.mjs
+node scripts/check-node-selection.mjs
+```
+
+It uses intercepted API/OSM fixtures and does not change the development database.
+
+The selection check covers overlapping children and highlighted OSM parents.
+When saved markers overlap, the most recently created node receives the click;
+editing an older node does not change that priority.
+
 ## OSM map data (Flensburg)
 
 The map renders a read-only OSM feature layer (buildings, parks, streets, POIs

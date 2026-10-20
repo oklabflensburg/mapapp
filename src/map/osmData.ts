@@ -22,7 +22,7 @@ export async function loadOsmData(): Promise<OsmData | undefined> {
       features: indexFeatures(collection),
       tagsById: new Map(
         collection.features
-          .filter((f) => f.id !== undefined && f.id !== null && f.geometry.type === 'Point')
+          .filter((f) => f.id !== undefined && f.id !== null)
           .map((f) => [String(f.id), (f.properties ?? {}) as Record<string, string>]),
       ),
     }

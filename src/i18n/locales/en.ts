@@ -1,5 +1,11 @@
 export default {
   map: {
+    create: {
+      add: 'Add node',
+      hint: 'Click the map to add a node. Press Escape to cancel.',
+      failed: 'Could not add the node. Retry the same position or cancel create mode.',
+      retry: 'Retry',
+    },
     status: {
       locating: 'Determining your location…',
       unsupported: 'Geolocation is not supported by this browser.',
@@ -8,6 +14,14 @@ export default {
   },
   nodeEditor: {
     title: 'Edit node',
+    relations: 'Relations',
+    parents: 'Parents',
+    children: 'Children',
+    noRelations: 'No relations',
+    parentCustomTags: 'Custom tags',
+    noParentTags: 'No tags',
+    parentOsmLoading: 'Loading parent OSM tags…',
+    parentOsmUnavailable: 'Parent OSM tags are unavailable.',
     osmTags: 'OSM tags',
     customTags: 'Your tags',
     key: 'Key',

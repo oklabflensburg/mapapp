@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import OsmMap from '../components/OsmMap.vue'
 import type { MapStatus } from '../map/geolocation'
 import NodeTagPanel from '../components/NodeTagPanel.vue'
-import type { NodeEditTarget } from '../stores/userNodes'
+import { nodeKey, type NodeEditTarget } from '../stores/userNodes'
 const { t } = useI18n()
 const mapStatus = ref<MapStatus>('locating')
 
@@ -27,7 +27,7 @@ const editTarget = ref<NodeEditTarget | null>(null)
 function selectNode(node: NodeEditTarget): void {
   // Re-clicking the selected element keeps it (and the panel's unsaved
   // edits); only a click elsewhere changes or clears the selection.
-  if (editTarget.value?.providerNodeId !== node.providerNodeId) {
+  if (!editTarget.value || nodeKey(editTarget.value) !== nodeKey(node)) {
     editTarget.value = node
   }
 }

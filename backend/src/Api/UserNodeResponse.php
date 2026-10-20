@@ -15,6 +15,15 @@ final readonly class UserNodeResponse
         public array $tags,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
+        public string $provider,
+        /** @var list<int> */
+        public array $parentIds,
+        /** @var list<int> */
+        public array $childIds,
+        /** @var list<RelatedNodeResponse> */
+        public array $parents,
+        /** @var list<RelatedNodeResponse> */
+        public array $children,
     ) {
     }
 }

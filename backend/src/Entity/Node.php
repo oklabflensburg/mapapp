@@ -49,9 +49,19 @@ class Node
     #[ORM\JoinTable(name: 'nodes_tags')]
     private Collection $tags;
 
+    /** @var Collection<int, NodeRelation> */
+    #[ORM\OneToMany(mappedBy: 'child', targetEntity: NodeRelation::class)]
+    private Collection $parentRelations;
+
+    /** @var Collection<int, NodeRelation> */
+    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: NodeRelation::class)]
+    private Collection $childRelations;
+
     public function __construct()
     {
         $this->tags = new ArrayCollection();
+        $this->parentRelations = new ArrayCollection();
+        $this->childRelations = new ArrayCollection();
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
         $this->updatedAt = $now;
@@ -147,5 +157,32 @@ class Node
     public function setTags(array $tags): void
     {
         $this->tags = new ArrayCollection($tags);
+    }
+
+    /** @return Collection<int, NodeRelation> */
+    public function getParentRelations(): Collection
+    {
+        return $this->parentRelations;
+    }
+
+    /** @return Collection<int, NodeRelation> */
+    public function getChildRelations(): Collection
+    {
+        return $this->childRelations;
+    }
+
+    public function addParent(Node $parent): ?NodeRelation
+    {
+        foreach ($this->parentRelations as $relation) {
+            if ($relation->getParent() === $parent) {
+                return null;
+            }
+        }
+
+        $relation = new NodeRelation($parent, $this);
+        $this->parentRelations->add($relation);
+        $parent->childRelations->add($relation);
+
+        return $relation;
     }
 }

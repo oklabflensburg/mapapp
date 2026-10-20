@@ -2,19 +2,21 @@
 
 namespace App\Service;
 
+use App\Api\RelatedNodeResponse;
 use App\Api\SaveUserNodeRequest;
 use App\Api\SaveUserNodeResult;
 use App\Api\UserNodeResponse;
 use App\Entity\Node;
 use App\Entity\NodeProvider;
+use App\Entity\NodeRelation;
 use App\Entity\NodeType;
 use App\Entity\Tag;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
- * Creates and updates nodes of the "user" type: user-authored copies of
- * provider nodes (currently OSM) carrying custom tags.
+ * Persists local nodes, OSM tag edits and their directed parent relations.
  */
 final class UserNodeManager
 {
@@ -29,26 +31,49 @@ final class UserNodeManager
 
     public function save(SaveUserNodeRequest $request): SaveUserNodeResult
     {
-        $node = $this->findUserNode($request->providerNodeId);
+        return $this->entityManager->wrapInTransaction(function () use ($request): SaveUserNodeResult {
+            $node = $this->findNode($request->provider, $request->providerNodeId);
+            $parent = null;
+            if ($request->parent !== null) {
+                $reference = $request->parent;
+                if ($reference->id !== null) {
+                    $parent = $this->entityManager->find(Node::class, $reference->id);
+                    if ($parent === null) {
+                        throw new UnprocessableEntityHttpException('Parent node does not exist.');
+                    }
+                } else {
+                    if ($request->provider === self::NODE_PROVIDER_OSM && $reference->providerNodeId === $request->providerNodeId) {
+                        throw new UnprocessableEntityHttpException('A node cannot be its own parent.');
+                    }
+                    $parent = $this->findNode(self::NODE_PROVIDER_OSM, $reference->providerNodeId);
+                    if ($parent === null) {
+                        $parent = $this->newNode(self::NODE_PROVIDER_OSM, $reference->providerNodeId, 'osm');
+                        $parent->setLatitude($reference->latitude);
+                        $parent->setLongitude($reference->longitude);
+                    }
+                }
+                if ($parent === $node) {
+                    throw new UnprocessableEntityHttpException('A node cannot be its own parent.');
+                }
+            }
 
-        $created = false;
-        if ($node === null) {
-            $created = true;
-            $node = new Node();
+            $created = $node === null;
+            $node ??= $this->newNode($request->provider, $request->providerNodeId, self::NODE_TYPE_USER);
             $node->setNodeType($this->nodeType(self::NODE_TYPE_USER));
-            $node->setNodeProvider($this->nodeProvider(self::NODE_PROVIDER_OSM));
-            $node->setProviderNodeId($request->providerNodeId);
-            $node->setCreatedByUser($this->defaultUser());
-            $this->entityManager->persist($node);
-        }
+            $node->setLatitude($request->latitude);
+            $node->setLongitude($request->longitude);
+            $node->setTags($this->tagsFor($request->tags));
+            $node->touch();
+            if ($parent !== null) {
+                $relation = $node->addParent($parent);
+                if ($relation !== null) {
+                    $this->entityManager->persist($relation);
+                }
+            }
+            $this->entityManager->flush();
 
-        $node->setLatitude($request->latitude);
-        $node->setLongitude($request->longitude);
-        $node->setTags($this->tagsFor($request->tags));
-        $node->touch();
-        $this->entityManager->flush();
-
-        return new SaveUserNodeResult($this->toResponse($node), $created);
+            return new SaveUserNodeResult($this->toResponse($node), $created);
+        });
     }
 
     /**
@@ -69,16 +94,28 @@ final class UserNodeManager
         return array_map($this->toResponse(...), $nodes);
     }
 
-    private function findUserNode(string $providerNodeId): ?Node
+    private function newNode(string $provider, string $providerNodeId, string $type): Node
+    {
+        $node = new Node();
+        $node->setNodeType($this->nodeType($type));
+        $node->setNodeProvider($this->nodeProvider($provider));
+        $node->setProviderNodeId($providerNodeId);
+        $node->setCreatedByUser($this->defaultUser());
+        $this->entityManager->persist($node);
+
+        return $node;
+    }
+
+    private function findNode(string $provider, string $providerNodeId): ?Node
     {
         $repository = $this->entityManager->getRepository(Node::class);
 
         /** @var Node|null $node */
         $node = $repository->createQueryBuilder('n')
-            ->join('n.nodeType', 't')
-            ->where('t.name = :type')
+            ->join('n.nodeProvider', 'p')
+            ->where('p.name = :provider')
             ->andWhere('n.providerNodeId = :providerNodeId')
-            ->setParameter('type', self::NODE_TYPE_USER)
+            ->setParameter('provider', $provider)
             ->setParameter('providerNodeId', $providerNodeId)
             ->setMaxResults(1)
             ->getQuery()
@@ -168,6 +205,31 @@ final class UserNodeManager
             $tags,
             $node->getCreatedAt(),
             $node->getUpdatedAt(),
+            $node->getNodeProvider()->getName(),
+            array_values($node->getParentRelations()->map(static fn (NodeRelation $relation): int => $relation->getParent()->getId())->toArray()),
+            array_values($node->getChildRelations()->map(static fn (NodeRelation $relation): int => $relation->getChild()->getId())->toArray()),
+            array_values($node->getParentRelations()->map(fn (NodeRelation $relation): RelatedNodeResponse => $this->relatedNodeResponse($relation->getParent()))->toArray()),
+            array_values($node->getChildRelations()->map(fn (NodeRelation $relation): RelatedNodeResponse => $this->relatedNodeResponse($relation->getChild()))->toArray()),
+        );
+    }
+
+    private function relatedNodeResponse(Node $node): RelatedNodeResponse
+    {
+        $name = null;
+        $tags = [];
+        foreach ($node->getTags() as $tag) {
+            $tags[$tag->getKey()] = $tag->getValue();
+            if ($tag->getKey() === 'name' && trim($tag->getValue()) !== '') {
+                $name = $tag->getValue();
+            }
+        }
+
+        return new RelatedNodeResponse(
+            $node->getId(),
+            $node->getNodeProvider()->getName(),
+            $node->getProviderNodeId(),
+            $name,
+            $tags,
         );
     }
 }

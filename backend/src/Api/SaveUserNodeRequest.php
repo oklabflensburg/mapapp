@@ -25,6 +25,12 @@ final class SaveUserNodeRequest
         ])]
         #[Assert\Callback([self::class, 'validateTagKeys'])]
         public array $tags = [],
+
+        #[Assert\Choice(choices: ['OSM', 'local'])]
+        public string $provider = 'OSM',
+
+        #[Assert\Valid]
+        public ?ParentNodeRequest $parent = null,
     ) {
     }
 

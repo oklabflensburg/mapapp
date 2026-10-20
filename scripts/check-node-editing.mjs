@@ -119,7 +119,16 @@ if (!dialogShown) {
 await page.getByRole('button', { name: 'Add tag' }).click()
 await page.getByPlaceholder('Key').last().fill('check')
 await page.getByPlaceholder('Value').last().fill(TAG_VALUE)
+const saveResponse = page.waitForResponse((response) =>
+  response.request().method() === 'POST' && response.url().endsWith('/api/nodes'),
+)
 await page.getByRole('button', { name: 'Save' }).click()
+const savedResponse = await saveResponse
+if (!savedResponse.ok()) {
+  console.error('saving failed:', savedResponse.status(), await savedResponse.text())
+  await browser.close()
+  process.exit(1)
+}
 // Saving keeps the panel open: it stays as long as the element is selected.
 await page.waitForSelector('.p-drawer', { timeout: 5000 })
 console.log('panel stays open after save')

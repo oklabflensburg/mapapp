@@ -1,5 +1,11 @@
 export default {
   map: {
+    create: {
+      add: 'Knoten hinzufügen',
+      hint: 'Klicke auf die Karte, um einen Knoten hinzuzufügen. Escape bricht ab.',
+      failed: 'Der Knoten konnte nicht hinzugefügt werden. Erneut versuchen oder den Erstellmodus abbrechen.',
+      retry: 'Erneut versuchen',
+    },
     status: {
       locating: 'Dein Standort wird ermittelt…',
       unsupported: 'Geolocation wird von diesem Browser nicht unterstützt.',
@@ -8,6 +14,14 @@ export default {
   },
   nodeEditor: {
     title: 'Knoten bearbeiten',
+    relations: 'Beziehungen',
+    parents: 'Übergeordnete Knoten',
+    children: 'Untergeordnete Knoten',
+    noRelations: 'Keine Beziehungen',
+    parentCustomTags: 'Eigene Tags',
+    noParentTags: 'Keine Tags',
+    parentOsmLoading: 'OSM-Tags des übergeordneten Knotens werden geladen…',
+    parentOsmUnavailable: 'OSM-Tags des übergeordneten Knotens sind nicht verfügbar.',
     osmTags: 'OSM-Tags',
     customTags: 'Deine Tags',
     key: 'Schlüssel',

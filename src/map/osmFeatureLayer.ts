@@ -8,7 +8,8 @@ import { MAX_VISIBLE_FEATURES } from './mapConfig'
 
 export interface OsmFeatureLayerDeps {
   map: L.Map
-  onEditNode: (target: NodeEditTarget) => void
+  onEditNode: (target: NodeEditTarget, click: L.LatLng) => boolean
+  onSelect: () => void
 }
 
 // Renders the indexed OSM features intersecting the current viewport:
@@ -98,13 +99,16 @@ export class OsmFeatureLayer {
             f.geometry.type === 'Point'
               ? (f.geometry.coordinates as [number, number])
               : [e.latlng.lng, e.latlng.lat]
-          this.deps.onEditNode({
+          const select = this.deps.onEditNode({
+            provider: 'OSM',
             providerNodeId: String(f.id),
             latitude: lat,
             longitude: lon,
             osmTags: featureProps,
-          })
-          this.select(f, path)
+          }, this.deps.map.mouseEventToLatLng(e.originalEvent))
+          if (select) {
+            this.select(f, path)
+          }
         })
       },
     }).addTo(this.deps.map)
@@ -135,5 +139,6 @@ export class OsmFeatureLayer {
     this.highlightedLayer = layer
     layer.setStyle(highlightStyleFor(layer))
     layer.bringToFront()
+    this.deps.onSelect()
   }
 }

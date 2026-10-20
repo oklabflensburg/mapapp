@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
-import { useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
+import ParentNodeTags from './ParentNodeTags.vue'
+import { nodeKey, useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
 
 interface TagRow {
   key: string
@@ -26,6 +27,11 @@ const userNodes = useUserNodesStore()
 const rows = ref<TagRow[]>([])
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
+const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
+const relationGroups = computed(() => [
+  { label: 'nodeEditor.parents', nodes: savedNode.value?.parents ?? [] },
+  { label: 'nodeEditor.children', nodes: savedNode.value?.children ?? [] },
+])
 
 watch(
   () => [props.visible, props.node] as const,
@@ -33,7 +39,7 @@ watch(
     if (!visible || !node) {
       return
     }
-    const existing = userNodes.byProviderNodeId.get(node.providerNodeId)?.tags ?? {}
+    const existing = userNodes.byIdentity.get(nodeKey(node))?.tags ?? {}
     rows.value = Object.entries(existing).map(([key, value]) => ({ key, value }))
   },
 )
@@ -64,6 +70,7 @@ async function save(): Promise<void> {
   // Saving keeps the panel open: it stays as long as the element is
   // selected, and only closing it deselects.
   await userNodes.save({
+    provider: props.node.provider,
     providerNodeId: props.node.providerNodeId,
     latitude: props.node.latitude,
     longitude: props.node.longitude,
@@ -81,6 +88,25 @@ async function save(): Promise<void> {
     :style="{ width: '24rem', maxWidth: '100vw' }"
     @update:visible="emit('update:visible', $event)"
   >
+    <section v-if="savedNode" class="relations-section" :aria-label="t('nodeEditor.relations')">
+      <h4 class="section-title">{{ t('nodeEditor.relations') }}</h4>
+      <p v-if="!savedNode.parents.length && !savedNode.children.length" class="empty-hint">
+        {{ t('nodeEditor.noRelations') }}
+      </p>
+      <template v-for="group in relationGroups" :key="group.label">
+        <div v-if="group.nodes.length" class="relation-group">
+          <h5 class="relation-heading">{{ t(group.label) }}</h5>
+          <ul class="relation-list">
+            <li v-for="related in group.nodes" :key="related.id" class="relation-item">
+              <span>{{ related.name || related.providerNodeId }}</span>
+              <small>{{ related.provider }}<template v-if="related.name"> · {{ related.providerNodeId }}</template></small>
+              <ParentNodeTags v-if="group.label === 'nodeEditor.parents'" :parent="related" />
+            </li>
+          </ul>
+        </div>
+      </template>
+    </section>
+
     <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
       <h4 class="section-title">{{ t('nodeEditor.osmTags') }}</h4>
       <table class="tag-table">
@@ -137,8 +163,35 @@ async function save(): Promise<void> {
   color: var(--p-text-muted-color);
 }
 
-.osm-tags-section {
+.osm-tags-section,
+.relations-section {
   margin-bottom: 0.75rem;
+}
+
+.relation-heading {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.relation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.relation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.relation-item small {
+  color: var(--p-text-muted-color);
 }
 
 .tag-table {

@@ -3,7 +3,7 @@ import type { NodeEditTarget, UserNode } from '../stores/userNodes'
 
 export interface UserNodeLayerDeps {
   map: L.Map
-  onEditNode: (target: NodeEditTarget) => void
+  onEditNode: (target: NodeEditTarget, click: L.LatLng) => void
   // Original OSM tags of the node a user node references; empty when the
   // user node has no matching OSM node.
   getOsmTags: (providerNodeId: string) => Record<string, string>
@@ -32,22 +32,35 @@ export class UserNodeLayer {
     this.layer?.remove()
     this.layer = L.layerGroup().addTo(this.deps.map)
 
-    for (const node of nodes) {
+    // API results are ordered by last edit, which must not determine hit
+    // priority. Draw newer nodes last so a child stays above its parent.
+    const ordered = [...nodes].sort((a, b) =>
+      Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id - b.id,
+    )
+    for (const node of ordered) {
       const marker = L.circleMarker([node.latitude, node.longitude], USER_NODE_MARKER_OPTIONS)
 
       // Clicking a marker selects it (also when it is already selected);
       // only clicking somewhere else deselects.
-      marker.on('click', () => {
+      marker.on('click', (event: L.LeafletMouseEvent) => {
         this.deps.onEditNode({
+          id: node.id,
+          provider: node.provider,
           providerNodeId: node.providerNodeId,
           latitude: node.latitude,
           longitude: node.longitude,
-          osmTags: this.deps.getOsmTags(node.providerNodeId),
-        })
+          osmTags: node.provider === 'OSM' ? this.deps.getOsmTags(node.providerNodeId) : {},
+        }, this.deps.map.mouseEventToLatLng(event.originalEvent))
       })
 
       marker.addTo(this.layer)
     }
+  }
+
+  bringToFront(): void {
+    this.layer?.eachLayer((layer) => {
+      if (layer instanceof L.Path) layer.bringToFront()
+    })
   }
 
   destroy(): void {
