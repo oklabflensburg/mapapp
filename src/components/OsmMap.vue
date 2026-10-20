@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as L from 'leaflet'
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import 'leaflet/dist/leaflet.css'
@@ -20,6 +21,8 @@ const emit = defineEmits<{
   (event: 'status', status: MapStatus): void
   (event: 'edit-node', node: NodeEditTarget): void
 }>()
+
+const { t } = useI18n()
 
 const container = ref<HTMLDivElement>()
 
@@ -260,6 +263,19 @@ function pointsInside(feature: Feature): Feature[] {
     .map((indexed) => indexed.feature)
 }
 
+// Section listing the custom tags the user saved for the feature with this
+// provider id; empty when the feature has no user node (or no tags).
+function customTagsSection(providerNodeId: string | number | null | undefined): string {
+  if (providerNodeId === null || providerNodeId === undefined) {
+    return ''
+  }
+  const node = userNodes.byProviderNodeId.get(String(providerNodeId))
+  if (!node || Object.keys(node.tags).length === 0) {
+    return ''
+  }
+  return `<section><h3 class="osm-poi-title">${escapeHtml(t('nodeEditor.customTags'))}</h3>${tagTable(node.tags)}</section>`
+}
+
 function popupContent(feature: Feature): string {
   const props = (feature.properties ?? {}) as Record<string, string>
   const poiSections = pointsInside(feature)
@@ -267,10 +283,10 @@ function popupContent(feature: Feature): string {
       const poiProps = (poi.properties ?? {}) as Record<string, string>
       const title =
         poiProps.name || poiProps.shop || poiProps.amenity || poiProps.office || poiProps.tourism || poiProps.leisure || 'POI'
-      return `<section><h3 class="osm-poi-title">${escapeHtml(title)}</h3>${tagTable(poiProps)}</section>`
+      return `<section><h3 class="osm-poi-title">${escapeHtml(title)}</h3>${tagTable(poiProps)}${customTagsSection(poi.id)}</section>`
     })
     .join('')
-  return tagTable(props) + poiSections
+  return tagTable(props) + customTagsSection(feature.id) + poiSections
 }
 
 // Leaflet renders paths on a canvas (preferCanvas), which cannot resolve CSS
