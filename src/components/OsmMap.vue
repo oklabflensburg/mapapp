@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
@@ -15,26 +14,45 @@ import {
   OSM_TILE_ATTRIBUTION,
 } from '../map/mapConfig'
 import { loadOsmData } from '../map/osmData'
-import { OsmFeatureLayer, type OsmPopupDeps } from '../map/osmFeatureLayer'
-import { PopupTracker } from '../map/popupTracker'
+import { OsmFeatureLayer } from '../map/osmFeatureLayer'
 import { UserNodeLayer } from '../map/userNodeLayer'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
-
-const props = defineProps<{
-  editMode: boolean
-}>()
 
 const emit = defineEmits<{
   (event: 'status', status: MapStatus): void
   (event: 'edit-node', node: NodeEditTarget): void
+  (event: 'deselect-node'): void
 }>()
-
-const { t } = useI18n()
 
 const container = ref<HTMLDivElement>()
 
 let map: L.Map | undefined
 let locationLayers: LocationLayers = {}
+
+// The selected node's provider id; null while nothing is selected. The node
+// panel stays open as long as an element is selected.
+let selectedProviderNodeId: string | undefined
+
+// Set when a click hit a rendered feature; Leaflet fires the feature's click
+// handlers before the map-level click, so the map handler can tell feature
+// clicks and clicks on empty space apart.
+let clickOnFeature = false
+
+function clearSelection(): void {
+  selectedProviderNodeId = undefined
+  osmFeatureLayer?.clearSelection()
+}
+
+function onEditNode(target: NodeEditTarget): void {
+  clickOnFeature = true
+  // The selection moved to another element; drop the previous highlight.
+  clearSelection()
+  selectedProviderNodeId = target.providerNodeId
+  emit('edit-node', target)
+}
+
+// Exposed so the view can drop the map highlight when the panel is closed.
+defineExpose({ clearSelection })
 
 // User nodes (saved edits) rendered on top of the OSM layer.
 const userNodes = useUserNodesStore()
@@ -43,37 +61,15 @@ const userNodes = useUserNodesStore()
 // original tags of the OSM node it references.
 let osmTagsById: Map<string, Record<string, string>> = new Map()
 
-// Shared between both layers: each rebuild removes layers (which closes
-// their popups) and must not clear the other's tracked popup target.
-const popupTracker = new PopupTracker()
-
 let osmFeatureLayer: OsmFeatureLayer | undefined
 let userNodeLayer: UserNodeLayer | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
 
-// Popup content depends on the saved user nodes and the active locale; the
-// component wires those runtime sources into the pure content builders.
-const popupDeps: OsmPopupDeps = {
-  customTags: (providerNodeId) => {
-    if (providerNodeId === null || providerNodeId === undefined) {
-      return undefined
-    }
-    return userNodes.byProviderNodeId.get(String(providerNodeId))?.tags
-  },
-  customTagsTitle: () => t('nodeEditor.customTags'),
-}
-
-function onEditNode(target: NodeEditTarget): void {
-  emit('edit-node', target)
-}
-
-// Rebuilds the OSM layer first; the user-node markers after it so they are
-// drawn (and hit-tested) last on the shared canvas renderer. Finally the
-// tracked OSM popup is re-opened on its new layer.
+// Rebuilds the OSM layer first, then the user-node markers after it so they
+// are drawn (and hit-tested) last on the shared canvas renderer.
 function renderLayers(): void {
   osmFeatureLayer?.render()
   userNodeLayer?.render(userNodes.nodes)
-  osmFeatureLayer?.reopenPopup()
 }
 
 function scheduleRenderLayers(): void {
@@ -115,17 +111,25 @@ onMounted(() => {
 
   osmFeatureLayer = new OsmFeatureLayer({
     map,
-    isEditMode: () => props.editMode,
     onEditNode,
-    popupDeps,
-    popupTracker,
   })
   userNodeLayer = new UserNodeLayer({
     map,
-    isEditMode: () => props.editMode,
     onEditNode,
     getOsmTags: (providerNodeId) => osmTagsById.get(providerNodeId) ?? {},
-    popupTracker,
+  })
+
+  // Moving or zooming the map rebuilds the layers but never deselects; only
+  // a click on empty space (no feature hit) drops the selection.
+  map.on('click', () => {
+    if (clickOnFeature) {
+      clickOnFeature = false
+      return
+    }
+    if (selectedProviderNodeId !== undefined) {
+      clearSelection()
+      emit('deselect-node')
+    }
   })
 
   map.on('moveend', scheduleRenderLayers)
@@ -148,12 +152,11 @@ onBeforeUnmount(() => {
   osmFeatureLayer = undefined
   userNodeLayer = undefined
   locationLayers = {}
-  popupTracker.clear()
 })
 </script>
 
 <template>
-  <div ref="container" class="map" :class="{ 'map--edit': editMode }" />
+  <div ref="container" class="map" />
 </template>
 
 <style scoped>
@@ -161,56 +164,5 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   z-index: 0;
-}
-
-/* Crosshair signals that clicks open the node editor. */
-.map--edit {
-  cursor: crosshair !important;
-}
-</style>
-
-<style>
-/* Popup tag table lives outside the scoped subtree (Leaflet renders popups
-   into the map container, not the component template). Styles use PrimeVue
-   design tokens so popups follow the configured Aura theme. */
-.leaflet-popup-content-wrapper {
-  background: var(--p-overlay-popover-background, var(--p-content-background));
-  color: var(--p-text-color);
-  border-radius: var(--p-content-border-radius);
-  box-shadow: var(--p-overlay-popover-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
-}
-
-.leaflet-popup-tip {
-  background: var(--p-overlay-popover-background, var(--p-content-background));
-}
-
-.osm-tags {
-  border-collapse: collapse;
-  max-height: 40vh;
-  overflow-y: auto;
-  display: block;
-  color: var(--p-text-color);
-}
-
-.osm-tags th,
-.osm-tags td {
-  text-align: left;
-  padding: 0.1rem 0.4rem 0.1rem 0;
-  font-size: 0.8rem;
-  vertical-align: top;
-  border-bottom: 1px solid var(--p-content-border-color);
-}
-
-.osm-tags th {
-  white-space: nowrap;
-  font-weight: 600;
-  color: var(--p-text-muted-color);
-}
-
-.osm-poi-title {
-  margin: 0.75rem 0 0.25rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--p-text-color);
 }
 </style>

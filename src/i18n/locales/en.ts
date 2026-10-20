@@ -1,6 +1,5 @@
 export default {
   map: {
-    editMode: 'Edit mode',
     status: {
       locating: 'Determining your location…',
       unsupported: 'Geolocation is not supported by this browser.',

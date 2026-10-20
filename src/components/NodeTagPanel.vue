@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
-import Dialog from 'primevue/dialog'
+import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import { useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
 
@@ -28,12 +28,12 @@ const rows = ref<TagRow[]>([])
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 
 watch(
-  () => props.visible,
-  (visible) => {
-    if (!visible || !props.node) {
+  () => [props.visible, props.node] as const,
+  ([visible, node]) => {
+    if (!visible || !node) {
       return
     }
-    const existing = userNodes.byProviderNodeId.get(props.node.providerNodeId)?.tags ?? {}
+    const existing = userNodes.byProviderNodeId.get(node.providerNodeId)?.tags ?? {}
     rows.value = Object.entries(existing).map(([key, value]) => ({ key, value }))
   },
 )
@@ -61,24 +61,24 @@ async function save(): Promise<void> {
       tags[key] = row.value
     }
   }
-  const saved = await userNodes.save({
+  // Saving keeps the panel open: it stays as long as the element is
+  // selected, and only closing it deselects.
+  await userNodes.save({
     providerNodeId: props.node.providerNodeId,
     latitude: props.node.latitude,
     longitude: props.node.longitude,
     tags,
   })
-  if (saved) {
-    close()
-  }
 }
 </script>
 
 <template>
-  <Dialog
+  <Drawer
     :visible="visible"
-    modal
+    position="right"
+    :modal="false"
     :header="t('nodeEditor.title')"
-    :style="{ width: '24rem', maxWidth: 'calc(100vw - 2rem)' }"
+    :style="{ width: '24rem', maxWidth: '100vw' }"
     @update:visible="emit('update:visible', $event)"
   >
     <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
@@ -126,7 +126,7 @@ async function save(): Promise<void> {
         @click="save"
       />
     </template>
-  </Dialog>
+  </Drawer>
 </template>
 
 <style scoped>
@@ -188,5 +188,15 @@ async function save(): Promise<void> {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
   color: var(--p-red-500);
+}
+</style>
+
+<style>
+/* The panel reflects the selection state instead of appearing transiently,
+   so it shows and hides instantly rather than sliding. The classes are
+   global because PrimeVue renders the drawer in a portal. */
+.p-drawer-enter-active,
+.p-drawer-leave-active {
+  animation: none !important;
 }
 </style>

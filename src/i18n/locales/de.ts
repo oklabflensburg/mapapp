@@ -1,6 +1,5 @@
 export default {
   map: {
-    editMode: 'Bearbeitungsmodus',
     status: {
       locating: 'Dein Standort wird ermittelt…',
       unsupported: 'Geolocation wird von diesem Browser nicht unterstützt.',

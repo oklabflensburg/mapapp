@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Button from 'primevue/button'
 import OsmMap from '../components/OsmMap.vue'
 import type { MapStatus } from '../map/geolocation'
-import NodeEditorDialog from '../components/NodeEditorDialog.vue'
+import NodeTagPanel from '../components/NodeTagPanel.vue'
 import type { NodeEditTarget } from '../stores/userNodes'
-
 const { t } = useI18n()
 const mapStatus = ref<MapStatus>('locating')
 
@@ -23,30 +21,40 @@ const mapStatusMessage = computed(() => {
   }
 })
 
-const editorVisible = ref(false)
+const mapRef = ref<InstanceType<typeof OsmMap> | null>(null)
 const editTarget = ref<NodeEditTarget | null>(null)
-const editMode = ref(false)
 
-function openEditor(node: NodeEditTarget): void {
-  editTarget.value = node
-  editorVisible.value = true
+function selectNode(node: NodeEditTarget): void {
+  // Re-clicking the selected element keeps it (and the panel's unsaved
+  // edits); only a click elsewhere changes or clears the selection.
+  if (editTarget.value?.providerNodeId !== node.providerNodeId) {
+    editTarget.value = node
+  }
+}
+
+// Closing the panel deselects the element, so the map drops its highlight.
+function deselectNode(): void {
+  editTarget.value = null
+  mapRef.value?.clearSelection()
+}
+
+function onPanelVisible(visible: boolean): void {
+  if (!visible) {
+    deselectNode()
+  }
 }
 </script>
 
 <template>
   <main class="home">
     <p v-if="mapStatusMessage" class="map-status" role="status">{{ mapStatusMessage }}</p>
-    <Button
-      class="edit-toggle"
-      :aria-label="t('map.editMode')"
-      :aria-pressed="editMode"
-      icon="pi pi-pencil"
-      :severity="editMode ? 'primary' : 'secondary'"
-      rounded
-      @click="editMode = !editMode"
+    <OsmMap
+      ref="mapRef"
+      @status="mapStatus = $event"
+      @edit-node="selectNode"
+      @deselect-node="deselectNode"
     />
-    <OsmMap :edit-mode="editMode" @status="mapStatus = $event" @edit-node="openEditor" />
-    <NodeEditorDialog v-model:visible="editorVisible" :node="editTarget" />
+    <NodeTagPanel :visible="editTarget !== null" :node="editTarget" @update:visible="onPanelVisible" />
   </main>
 </template>
 
@@ -78,18 +86,5 @@ function openEditor(node: NodeEditTarget): void {
   max-width: calc(100vw - 2rem);
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Edit-mode toggle, top-right so it clears the status chip and Leaflet's
-   top-left zoom controls. */
-.edit-toggle {
-  position: absolute;
-  z-index: 1100;
-  top: calc(0.5rem + env(safe-area-inset-top));
-  right: calc(0.5rem + env(safe-area-inset-right));
-  width: 2.5rem;
-  height: 2.5rem;
-  justify-content: center;
-  box-shadow: var(--p-overlay-popover-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
 }
 </style>

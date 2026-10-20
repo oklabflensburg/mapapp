@@ -49,10 +49,11 @@ export function indexFeatures(collection: FeatureCollection): IndexedFeature[] {
   })
 }
 
-// Buildings and points are the most numerous features and the first to be
-// dropped when the visible set exceeds MAX_VISIBLE_FEATURES.
+// Buildings are the most numerous features and the first to be dropped when
+// the visible set exceeds MAX_VISIBLE_FEATURES. Point nodes stay rendered at
+// every zoom so nodes inside areas (e.g. a place=square) stay selectable.
 export function isMinorFeature(feature: Feature): boolean {
-  return feature.geometry.type === 'Point' || 'building' in (feature.properties ?? {})
+  return 'building' in (feature.properties ?? {})
 }
 
 export function bboxArea(feature: IndexedFeature): number {
@@ -75,65 +76,4 @@ export function isAreaOutline(feature: Feature): boolean {
     first[1] === last[1] &&
     !('highway' in (feature.properties ?? {}))
   )
-}
-
-// Even-odd test in lon/lat; testing all rings together handles holes.
-function pointInRings(lon: number, lat: number, rings: number[][][]): boolean {
-  let inside = false
-  for (const ring of rings) {
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const [xi, yi] = ring[i]
-      const [xj, yj] = ring[j]
-      if ((yi > lat) !== (yj > lat) && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
-        inside = !inside
-      }
-    }
-  }
-  return inside
-}
-
-// Shops and other POIs are usually separate point nodes inside the building
-// way, which itself often carries only building=yes. Collect them so the
-// building popup can show what is inside.
-export function pointsInside(features: IndexedFeature[], feature: Feature): Feature[] {
-  if (!('building' in (feature.properties ?? {}))) {
-    return []
-  }
-
-  const geometry = feature.geometry
-  let rings: number[][][]
-  if (geometry.type === 'Polygon') {
-    rings = geometry.coordinates
-  } else if (geometry.type === 'MultiPolygon') {
-    rings = geometry.coordinates.flat()
-  } else if (geometry.type === 'LineString' && isAreaOutline(feature)) {
-    rings = [geometry.coordinates]
-  } else {
-    return []
-  }
-
-  let minLon = Infinity
-  let minLat = Infinity
-  let maxLon = -Infinity
-  let maxLat = -Infinity
-  for (const ring of rings) {
-    for (const [lon, lat] of ring) {
-      minLon = Math.min(minLon, lon)
-      maxLon = Math.max(maxLon, lon)
-      minLat = Math.min(minLat, lat)
-      maxLat = Math.max(maxLat, lat)
-    }
-  }
-
-  return features
-    .filter(
-      (indexed) =>
-        indexed.feature.geometry.type === 'Point' &&
-        indexed.minLon >= minLon &&
-        indexed.maxLon <= maxLon &&
-        indexed.minLat >= minLat &&
-        indexed.maxLat <= maxLat &&
-        pointInRings(indexed.minLon, indexed.minLat, rings),
-    )
-    .map((indexed) => indexed.feature)
 }

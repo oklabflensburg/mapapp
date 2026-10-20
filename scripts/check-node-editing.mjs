@@ -3,8 +3,9 @@
 //
 //   npm run dev -- --port 5199 & node scripts/check-node-editing.mjs
 //
-// Verifies: edit-mode toggle -> clicking an OSM node opens the editor
-// dialog -> adding a tag and saving persists the user node in the backend.
+// Verifies: clicking an OSM node opens the editor dialog (info and edit in
+// one window) -> adding a tag and saving persists the user node in the
+// backend.
 
 import { readFileSync } from 'node:fs'
 import { chromium } from '@playwright/test'
@@ -96,28 +97,22 @@ console.log('geojson status:', (await geojsonResponse).status())
 // Wait for the fetch + parse + first render to finish.
 await page.waitForTimeout(4000)
 
-// Without edit mode, clicking the node shows the read-only popup.
+// Clicking the node opens the node window with the existing tags.
 await page.mouse.click(clickX, clickY)
-let popupShown = false
+let dialogShown = false
 try {
-  await page.waitForSelector('.osm-tags', { timeout: 2000 })
-  popupShown = true
+  await page.waitForSelector('.p-drawer', { timeout: 2000 })
+  dialogShown = true
 } catch {
-  // The exact pixel can miss by a few px; the edit-mode click below has the
-  // same tolerance, so a miss here means a miss there too.
+  // The exact pixel can miss by a few px; the way click below has the same
+  // tolerance.
 }
-console.log('read-only popup without edit mode:', popupShown)
-if (!popupShown) {
+console.log('node window opened:', dialogShown && Boolean(await page.getByText('Edit node').count()))
+if (!dialogShown) {
   console.error('click did not hit the target node')
   await browser.close()
   process.exit(1)
 }
-
-// Activate edit mode; the same click must now open the editor dialog.
-await page.click('.edit-toggle')
-await page.mouse.click(clickX, clickY)
-await page.waitForSelector('.p-dialog', { timeout: 5000 })
-console.log('editor dialog opened:', Boolean(await page.getByText('Edit node').count()))
 
 // Add a custom tag and save. The dialog may already show rows for an
 // existing user node; the new row is always the last one.
@@ -125,8 +120,9 @@ await page.getByRole('button', { name: 'Add tag' }).click()
 await page.getByPlaceholder('Key').last().fill('check')
 await page.getByPlaceholder('Value').last().fill(TAG_VALUE)
 await page.getByRole('button', { name: 'Save' }).click()
-await page.waitForSelector('.p-dialog', { state: 'hidden', timeout: 5000 })
-console.log('dialog closed after save')
+// Saving keeps the panel open: it stays as long as the element is selected.
+await page.waitForSelector('.p-drawer', { timeout: 5000 })
+console.log('panel stays open after save')
 
 // The user node must be persisted in the backend.
 const response = await fetch(`${API_URL}/api/nodes`)
@@ -139,7 +135,22 @@ if (!saved) {
 }
 console.log('persisted user node:', saved.providerNodeId, JSON.stringify(saved.tags))
 
-// Clicking a way (e.g. a building) in edit mode must also open the editor.
+// Clicking the selected node again must keep it selected; the panel stays
+// open and only closes when the user dismisses it or clicks elsewhere.
+await page.mouse.click(clickX, clickY)
+try {
+  await page.waitForSelector('.p-drawer', { timeout: 2000 })
+  console.log('panel stays open after re-clicking the selected node')
+} catch {
+  console.error('panel closed after re-clicking the selected node')
+  await browser.close()
+  process.exit(1)
+}
+await page.getByRole('button', { name: 'Cancel' }).click()
+await page.waitForSelector('.p-drawer', { state: 'hidden', timeout: 2000 })
+console.log('panel closed via cancel')
+
+// Clicking a way (e.g. a building) must also open the node window.
 const building = nearestBuildingCenter(geojson)
 const [bx, by] = project(building.lon, building.lat, ZOOM)
 const buildingClick = { x: VIEWPORT.width / 2 + (bx - centerX), y: VIEWPORT.height / 2 + (by - centerY) }
@@ -160,7 +171,7 @@ const spots = [
 for (const [x, y] of spots) {
   await page.mouse.click(x, y)
   try {
-    await page.waitForSelector('.p-dialog', { timeout: 2000 })
+    await page.waitForSelector('.p-drawer', { timeout: 2000 })
     wayDialogShown = true
     break
   } catch {
@@ -170,7 +181,7 @@ for (const [x, y] of spots) {
 console.log('way click opened editor:', wayDialogShown)
 if (wayDialogShown) {
   await page.getByRole('button', { name: 'Cancel' }).click()
-  await page.waitForSelector('.p-dialog', { state: 'hidden', timeout: 2000 })
+  await page.waitForSelector('.p-drawer', { state: 'hidden', timeout: 2000 })
 }
 
 await browser.close()
