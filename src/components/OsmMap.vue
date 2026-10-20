@@ -2,16 +2,27 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as L from 'leaflet'
-import type { Feature, FeatureCollection, Geometry } from 'geojson'
+import type { Feature } from 'geojson'
 import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { useUserNodesStore } from '../stores/userNodes'
 import type { UserNode } from '../stores/userNodes'
 import type { NodeEditTarget } from './NodeEditorDialog.vue'
-
-export type MapStatus = 'locating' | 'unsupported' | 'unavailable' | 'found'
+import '../map/leafletIcons'
+import {
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  MAX_VISIBLE_FEATURES,
+  MOVE_RENDER_DEBOUNCE_MS,
+  OSM_TILE_URL,
+  OSM_TILE_MAX_ZOOM,
+  OSM_TILE_ATTRIBUTION,
+} from '../map/mapConfig'
+import { bboxArea, isMinorFeature, pointsInside, type IndexedFeature } from '../map/featureIndex'
+import { enableAreaHitTest } from '../map/areaHitTest'
+import { highlightStyleFor, POINT_MARKER_OPTIONS, styleFor } from '../map/featureStyling'
+import { osmPopupContent, tagTable, type PopupDependencies } from '../map/popupContent'
+import { loadOsmData } from '../map/osmData'
+import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
 
 const props = defineProps<{
   editMode: boolean
@@ -27,41 +38,14 @@ const { t } = useI18n()
 const container = ref<HTMLDivElement>()
 
 let map: L.Map | undefined
-let marker: L.Marker | undefined
-let accuracyCircle: L.Circle | undefined
+let locationLayers: LocationLayers = {}
 
-// Bundle-resolved marker icons (Leaflet's defaults reference image URLs that
-// break with bundlers).
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
-
-const DEFAULT_CENTER: L.LatLngExpression = [54.791, 9.437] // Flensburg
-const DEFAULT_ZOOM = 14
-const LOCATION_ZOOM = 16
-
-const OSM_DATA_URL = '/data/flensburg.geojson'
-// Above this many visible features, buildings and points are dropped until
-// zooming in; streets, parks and landuse stay visible at every zoom.
-const MAX_VISIBLE_FEATURES = 20_000
-const MOVE_RENDER_DEBOUNCE_MS = 150
-
-interface IndexedFeature {
-  feature: Feature
-  minLon: number
-  minLat: number
-  maxLon: number
-  maxLat: number
-}
+// User nodes (saved edits) rendered on top of the OSM layer.
+const userNodes = useUserNodesStore()
 
 let osmFeatures: IndexedFeature[] = []
 let osmLayer: L.GeoJSON | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
-
-// User nodes (saved edits) rendered on top of the OSM layer.
-const userNodes = useUserNodesStore()
 
 // OSM tags by feature id ("n26013095"), so a saved user node can show the
 // original tags of the OSM node it references.
@@ -82,233 +66,18 @@ let openPopupTarget: PopupTarget | undefined
 // itself must not clear openPopupTarget.
 let rebuildingLayers = false
 
-function indexGeometry(geometry: Geometry, bbox: { minLon: number; minLat: number; maxLon: number; maxLat: number }): void {
-  switch (geometry.type) {
-    case 'Point':
-      bbox.minLon = Math.min(bbox.minLon, geometry.coordinates[0])
-      bbox.maxLon = Math.max(bbox.maxLon, geometry.coordinates[0])
-      bbox.minLat = Math.min(bbox.minLat, geometry.coordinates[1])
-      bbox.maxLat = Math.max(bbox.maxLat, geometry.coordinates[1])
-      break
-    case 'MultiPoint':
-    case 'LineString':
-      for (const [lon, lat] of geometry.coordinates) {
-        bbox.minLon = Math.min(bbox.minLon, lon)
-        bbox.maxLon = Math.max(bbox.maxLon, lon)
-        bbox.minLat = Math.min(bbox.minLat, lat)
-        bbox.maxLat = Math.max(bbox.maxLat, lat)
-      }
-      break
-    case 'MultiPolygon':
-    case 'Polygon':
-      for (const ring of geometry.coordinates as number[][][]) {
-        for (const [lon, lat] of ring) {
-          bbox.minLon = Math.min(bbox.minLon, lon)
-          bbox.maxLon = Math.max(bbox.maxLon, lon)
-          bbox.minLat = Math.min(bbox.minLat, lat)
-          bbox.maxLat = Math.max(bbox.maxLat, lat)
-        }
-      }
-      break
-  }
-}
-
-function indexFeatures(collection: FeatureCollection): IndexedFeature[] {
-  return collection.features.map((feature) => {
-    const bbox = { minLon: Infinity, minLat: Infinity, maxLon: -Infinity, maxLat: -Infinity }
-    indexGeometry(feature.geometry, bbox)
-    return { feature, ...bbox }
-  })
-}
-
-function isMinorFeature(feature: Feature): boolean {
-  return feature.geometry.type === 'Point' || 'building' in (feature.properties ?? {})
-}
-
-function bboxArea(feature: IndexedFeature): number {
-  return (feature.maxLon - feature.minLon) * (feature.maxLat - feature.minLat)
-}
-
-// Leaflet internals used for hit-testing; not part of the public typings.
-interface HitTestablePath {
-  _containsPoint(point: L.Point): boolean
-  _rings: L.Point[][]
-}
-
-// Closed ways without a highway tag enclose an area (buildings, landuse,
-// natural, ...) but render as outlines only, so Leaflet would hit-test them
-// on the stroke. Highway loops are paths, not areas, and stay stroke-only.
-function isAreaOutline(feature: Feature): boolean {
-  if (feature.geometry.type !== 'LineString') {
-    return false
-  }
-  const coords = feature.geometry.coordinates
-  const first = coords[0]
-  const last = coords[coords.length - 1]
-  return (
-    coords.length > 3 &&
-    first[0] === last[0] &&
-    first[1] === last[1] &&
-    !('highway' in (feature.properties ?? {}))
-  )
-}
-
-// Even-odd ray casting against a projected ring, matching the test Leaflet
-// applies to polygons.
-function pointInRing(point: L.Point, ring: L.Point[]): boolean {
-  let inside = false
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const a = ring[j]
-    const b = ring[i]
-    if ((b.y > point.y) !== (a.y > point.y) && point.x < ((a.x - b.x) * (point.y - b.y)) / (a.y - b.y) + b.x) {
-      inside = !inside
+// Popup content depends on the feature index, the saved user nodes and the
+// active locale; the component wires those runtime sources into the pure
+// content builders.
+const popupDeps: PopupDependencies = {
+  pointsInside: (feature) => pointsInside(osmFeatures, feature),
+  customTags: (providerNodeId) => {
+    if (providerNodeId === null || providerNodeId === undefined) {
+      return undefined
     }
-  }
-  return inside
-}
-
-function styleFor(feature: Feature): L.PathOptions {
-  const props = (feature.properties ?? {}) as Record<string, string>
-
-  if (props.building) {
-    return { color: '#9c8f7f', weight: 0.5, fillColor: '#d9d0c9', fillOpacity: 0.7 }
-  }
-  if (props.leisure === 'park' || props.leisure === 'garden' || props.leisure === 'playground' ||
-      props.landuse === 'forest' || props.landuse === 'grass' || props.landuse === 'recreation_ground' ||
-      props.natural === 'wood' || props.natural === 'scrub') {
-    return { color: '#4a7a3a', weight: 0.5, fillColor: '#a8d5a2', fillOpacity: 0.6 }
-  }
-  if (props.natural === 'water' || props.waterway) {
-    return { color: '#3a7ab8', weight: 1, fillColor: '#aadaff', fillOpacity: 0.7 }
-  }
-  if (props.highway) {
-    return { color: '#888888', weight: 1.5, opacity: 0.8 }
-  }
-  return { color: '#b06fd4', weight: 1, fillColor: '#e3c9f0', fillOpacity: 0.5 }
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-}
-
-function tagTable(props: Record<string, string>): string {
-  const rows = Object.entries(props)
-    .map(([key, value]) => `<tr><th>${escapeHtml(key)}</th><td>${escapeHtml(String(value))}</td></tr>`)
-    .join('')
-  return `<table class="osm-tags">${rows}</table>`
-}
-
-// Even-odd test in lon/lat; testing all rings together handles holes.
-function pointInRings(lon: number, lat: number, rings: number[][][]): boolean {
-  let inside = false
-  for (const ring of rings) {
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const [xi, yi] = ring[i]
-      const [xj, yj] = ring[j]
-      if ((yi > lat) !== (yj > lat) && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
-        inside = !inside
-      }
-    }
-  }
-  return inside
-}
-
-// Shops and other POIs are usually separate point nodes inside the building
-// way, which itself often carries only building=yes. Collect them so the
-// building popup can show what is inside.
-function pointsInside(feature: Feature): Feature[] {
-  if (!('building' in (feature.properties ?? {}))) {
-    return []
-  }
-
-  const geometry = feature.geometry
-  let rings: number[][][]
-  if (geometry.type === 'Polygon') {
-    rings = geometry.coordinates
-  } else if (geometry.type === 'MultiPolygon') {
-    rings = geometry.coordinates.flat()
-  } else if (geometry.type === 'LineString' && isAreaOutline(feature)) {
-    rings = [geometry.coordinates]
-  } else {
-    return []
-  }
-
-  let minLon = Infinity
-  let minLat = Infinity
-  let maxLon = -Infinity
-  let maxLat = -Infinity
-  for (const ring of rings) {
-    for (const [lon, lat] of ring) {
-      minLon = Math.min(minLon, lon)
-      maxLon = Math.max(maxLon, lon)
-      minLat = Math.min(minLat, lat)
-      maxLat = Math.max(maxLat, lat)
-    }
-  }
-
-  return osmFeatures
-    .filter(
-      (indexed) =>
-        indexed.feature.geometry.type === 'Point' &&
-        indexed.minLon >= minLon &&
-        indexed.maxLon <= maxLon &&
-        indexed.minLat >= minLat &&
-        indexed.maxLat <= maxLat &&
-        pointInRings(indexed.minLon, indexed.minLat, rings),
-    )
-    .map((indexed) => indexed.feature)
-}
-
-// Section listing the custom tags the user saved for the feature with this
-// provider id; empty when the feature has no user node (or no tags).
-function customTagsSection(providerNodeId: string | number | null | undefined): string {
-  if (providerNodeId === null || providerNodeId === undefined) {
-    return ''
-  }
-  const node = userNodes.byProviderNodeId.get(String(providerNodeId))
-  if (!node || Object.keys(node.tags).length === 0) {
-    return ''
-  }
-  return `<section><h3 class="osm-poi-title">${escapeHtml(t('nodeEditor.customTags'))}</h3>${tagTable(node.tags)}</section>`
-}
-
-function popupContent(feature: Feature): string {
-  const props = (feature.properties ?? {}) as Record<string, string>
-  const poiSections = pointsInside(feature)
-    .map((poi) => {
-      const poiProps = (poi.properties ?? {}) as Record<string, string>
-      const title =
-        poiProps.name || poiProps.shop || poiProps.amenity || poiProps.office || poiProps.tourism || poiProps.leisure || 'POI'
-      return `<section><h3 class="osm-poi-title">${escapeHtml(title)}</h3>${tagTable(poiProps)}${customTagsSection(poi.id)}</section>`
-    })
-    .join('')
-  return tagTable(props) + customTagsSection(feature.id) + poiSections
-}
-
-// Leaflet renders paths on a canvas (preferCanvas), which cannot resolve CSS
-// custom properties, so PrimeVue design tokens are read from the computed
-// root style instead.
-function designToken(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-}
-
-function highlightStyleFor(layer: L.Path): L.PathOptions {
-  const primary = designToken('--p-primary-color')
-  if (layer instanceof L.CircleMarker) {
-    const circleStyle: L.CircleMarkerOptions = {
-      color: primary,
-      weight: 2,
-      fillColor: primary,
-      fillOpacity: 1,
-      radius: 6,
-    }
-    return circleStyle
-  }
-  return { color: primary, weight: 5, opacity: 1 }
+    return userNodes.byProviderNodeId.get(String(providerNodeId))?.tags
+  },
+  customTagsTitle: () => t('nodeEditor.customTags'),
 }
 
 function setHighlighted(feature: Feature, layer: L.Path): void {
@@ -325,7 +94,7 @@ function setHighlighted(feature: Feature, layer: L.Path): void {
 // re-open it on the new layer. The popupclose handler only clears the target
 // when the user closed this popup (not when the rebuild removed the layer).
 function bindFeaturePopup(path: L.Path, feature: Feature): void {
-  path.bindPopup(() => popupContent(feature))
+  path.bindPopup(() => osmPopupContent(feature, popupDeps))
   path.on('popupclose', () => {
     if (!rebuildingLayers && openPopupTarget?.kind === 'osm' && openPopupTarget.feature === feature) {
       openPopupTarget = undefined
@@ -400,14 +169,7 @@ function renderVisibleFeatures(): void {
   rebuildingLayers = false
   osmLayer = L.geoJSON(visible.map((f) => f.feature), {
     style: (feature) => styleFor(feature as Feature),
-    pointToLayer: (_feature, latlng) =>
-      L.circleMarker(latlng, {
-        radius: 4,
-        color: '#b06fd4',
-        weight: 1,
-        fillColor: '#e3c9f0',
-        fillOpacity: 0.8,
-      }),
+    pointToLayer: (_feature, latlng) => L.circleMarker(latlng, POINT_MARKER_OPTIONS),
     onEachFeature: (feature, layer) => {
       const path = layer as L.Path
       const f = feature as Feature
@@ -421,12 +183,7 @@ function renderVisibleFeatures(): void {
         return
       }
 
-      if (isAreaOutline(f)) {
-        const hitPath = path as unknown as HitTestablePath
-        const containsOnStroke = hitPath._containsPoint.bind(hitPath)
-        hitPath._containsPoint = (point) =>
-          containsOnStroke(point) || (hitPath._rings.length > 0 && pointInRing(point, hitPath._rings[0]))
-      }
+      enableAreaHitTest(path, f)
 
       if (highlightedFeature === f) {
         highlightedLayer = path
@@ -546,22 +303,13 @@ watch(
 )
 
 async function loadOsmFeatures(): Promise<void> {
-  try {
-    const response = await fetch(OSM_DATA_URL)
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    const collection = (await response.json()) as FeatureCollection
-    osmFeatures = indexFeatures(collection)
-    osmTagsById = new Map(
-      collection.features
-        .filter((f) => f.id !== undefined && f.id !== null && f.geometry.type === 'Point')
-        .map((f) => [String(f.id), (f.properties ?? {}) as Record<string, string>]),
-    )
-    renderVisibleFeatures()
-  } catch (error) {
-    console.warn('Failed to load OSM features', error)
+  const data = await loadOsmData()
+  if (!data) {
+    return
   }
+  osmFeatures = data.features
+  osmTagsById = data.tagsById
+  renderVisibleFeatures()
 }
 
 onMounted(() => {
@@ -574,42 +322,16 @@ onMounted(() => {
   // every path without changing how it is drawn.
   map = L.map(container.value, { renderer: L.canvas({ tolerance: 10 }) }).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  L.tileLayer(OSM_TILE_URL, {
+    maxZoom: OSM_TILE_MAX_ZOOM,
+    attribution: OSM_TILE_ATTRIBUTION,
   }).addTo(map)
 
   map.on('moveend', scheduleRenderVisibleFeatures)
   void loadOsmFeatures()
   void userNodes.load()
 
-  if (!('geolocation' in navigator)) {
-    emit('status', 'unsupported')
-    return
-  }
-
-  emit('status', 'locating')
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const center: L.LatLngExpression = [position.coords.latitude, position.coords.longitude]
-
-      map?.setView(center, LOCATION_ZOOM)
-      marker = L.marker(center).addTo(map as L.Map)
-      accuracyCircle = L.circle(center, { radius: position.coords.accuracy }).addTo(map as L.Map)
-
-      emit('status', 'found')
-    },
-    () => {
-      emit('status', 'unavailable')
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10_000,
-      maximumAge: 30_000,
-    },
-  )
+  locationLayers = locateUser(() => map, (status) => emit('status', status))
 })
 
 onBeforeUnmount(() => {
@@ -618,14 +340,13 @@ onBeforeUnmount(() => {
   }
   osmLayer?.remove()
   userNodeLayer?.remove()
-  accuracyCircle?.remove()
-  marker?.remove()
+  locationLayers.accuracyCircle?.remove()
+  locationLayers.marker?.remove()
   map?.remove()
   map = undefined
-  marker = undefined
-  accuracyCircle = undefined
   osmLayer = undefined
   userNodeLayer = undefined
+  locationLayers = {}
   highlightedFeature = undefined
   highlightedLayer = undefined
   openPopupTarget = undefined
