@@ -5,11 +5,13 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
 #[ORM\UniqueConstraint(name: 'uq_users_email', columns: ['email'])]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -21,6 +23,9 @@ class User
 
     #[ORM\Column(length: 255)]
     private string $email = '';
+
+    #[ORM\Column]
+    private string $password = '';
 
     /** @var Collection<int, UserRole> */
     #[ORM\ManyToMany(targetEntity: UserRole::class)]
@@ -55,6 +60,42 @@ class User
     public function setEmail(string $email): void
     {
         $this->email = $email;
+    }
+
+    public function getPassword(): string
+    {
+        return $this->password;
+    }
+
+    public function setPassword(string $password): void
+    {
+        $this->password = $password;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * Maps the stored role names ("admin", "editor") to Symfony roles.
+     *
+     * @return list<string>
+     */
+    public function getRoles(): array
+    {
+        $roles = [];
+        foreach ($this->userRoles as $userRole) {
+            $name = $userRole->getName();
+            $roles[] = str_starts_with($name, 'ROLE_') ? $name : 'ROLE_'.mb_strtoupper($name);
+        }
+
+        return array_values(array_unique($roles));
+    }
+
+    public function eraseCredentials(): void
+    {
+        // The plaintext password is never stored on the entity, nothing to clear.
     }
 
     /** @return Collection<int, UserRole> */

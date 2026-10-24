@@ -1,4 +1,12 @@
 export default {
+  auth: {
+    login: 'Anmelden',
+    loginTitle: 'Anmelden',
+    logout: 'Abmelden',
+    email: 'E-Mail',
+    password: 'Passwort',
+    loginFailed: 'Anmeldung fehlgeschlagen. Prüfe E-Mail und Passwort.',
+  },
   map: {
     create: {
       add: 'Knoten hinzufügen',
@@ -32,5 +40,6 @@ export default {
     save: 'Speichern',
     cancel: 'Abbrechen',
     saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.',
+    loginRequired: 'Melde dich als Editor an, um Knoten hinzuzufügen oder zu bearbeiten.',
   },
 }

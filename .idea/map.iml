@@ -5,6 +5,13 @@
       <sourceFolder url="file://$MODULE_DIR$/backend/src" isTestSource="false" packagePrefix="App\" />
       <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" packagePrefix="App\Tests\" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/psr/clock" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/clock" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/password-hasher" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-core" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-csrf" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-http" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

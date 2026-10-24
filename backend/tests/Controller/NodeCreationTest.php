@@ -8,6 +8,15 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class NodeCreationTest extends WebTestCase
 {
+    use CreatesUsers;
+
+    private const EDITOR_EMAIL = 'editor@example.test';
+
+    private function loginEditor(KernelBrowser $client): void
+    {
+        $client->loginUser($this->createUser(self::EDITOR_EMAIL, ['editor']));
+    }
+
     /** @var list<int> */
     private array $nodeIds = [];
 
@@ -48,6 +57,7 @@ final class NodeCreationTest extends WebTestCase
     public function testStandaloneCreationRetryAndProviderIdentity(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $payload = $this->payload();
         $node = $this->save($client, $payload);
         self::assertSame('local', $node['provider']);
@@ -63,6 +73,7 @@ final class NodeCreationTest extends WebTestCase
     public function testMultipleParentsChildrenAndTagUpdates(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $parentTags = ['name' => 'Named parent', 'access' => 'yes'];
         $parent = $this->save($client, array_replace($this->payload(), ['tags' => $parentTags]));
         $otherParent = $this->save($client, $this->payload());
@@ -104,6 +115,7 @@ final class NodeCreationTest extends WebTestCase
     public function testOsmReferenceCanBecomeEditedNodeWithoutDuplication(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $reference = ['providerNodeId' => 'n-test-'.bin2hex(random_bytes(8)), 'latitude' => 54.79, 'longitude' => 9.43];
         $child = $this->save($client, $this->payload() + ['parent' => $reference]);
         $parentId = $child['parentIds'][0];
@@ -134,6 +146,7 @@ final class NodeCreationTest extends WebTestCase
     public function testRejectsInvalidParentSelfRelationAndCoordinates(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $payload = $this->payload();
         $node = $this->save($client, $payload);
         $this->save($client, $payload + ['parent' => ['id' => $node['id']]], 422);
@@ -151,6 +164,7 @@ final class NodeCreationTest extends WebTestCase
     public function testDeletingParentRemovesLinksButPreservesChild(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $parent = $this->save($client, $this->payload());
         $child = $this->save($client, $this->payload() + ['parent' => ['id' => $parent['id']]]);
         $manager = static::getContainer()->get('doctrine')->getManager();

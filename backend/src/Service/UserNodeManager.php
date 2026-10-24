@@ -14,6 +14,7 @@ use App\Entity\Tag;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
  * Persists local nodes, OSM tag edits and their directed parent relations.
@@ -26,6 +27,7 @@ final class UserNodeManager
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly TokenStorageInterface $tokenStorage,
     ) {
     }
 
@@ -152,6 +154,13 @@ final class UserNodeManager
 
     private function defaultUser(): User
     {
+        // Saves require an authenticated editor; only fall back to the
+        // anonymous user when no token is present (e.g. data load).
+        $token = $this->tokenStorage->getToken();
+        if ($token !== null && $token->getUser() instanceof User) {
+            return $token->getUser();
+        }
+
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => self::DEFAULT_USER_EMAIL]);
 
         if ($user === null) {

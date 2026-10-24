@@ -1,4 +1,12 @@
 export default {
+  auth: {
+    login: 'Log in',
+    loginTitle: 'Log in',
+    logout: 'Log out',
+    email: 'Email',
+    password: 'Password',
+    loginFailed: 'Login failed. Check your email and password.',
+  },
   map: {
     create: {
       add: 'Add node',
@@ -32,5 +40,6 @@ export default {
     save: 'Save',
     cancel: 'Cancel',
     saveFailed: 'Saving failed. Please try again.',
+    loginRequired: 'Log in as an editor to add or edit nodes.',
   },
 }

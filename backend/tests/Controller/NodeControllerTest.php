@@ -3,10 +3,20 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Node;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class NodeControllerTest extends WebTestCase
 {
+    use CreatesUsers;
+
+    private const EDITOR_EMAIL = 'editor@example.test';
+
+    private function loginEditor(KernelBrowser $client): void
+    {
+        $client->loginUser($this->createUser(self::EDITOR_EMAIL, ['editor']));
+    }
+
     private const PROVIDER_NODE_ID = 'n26013095';
 
     private function removeNodeUnderTest(): void
@@ -24,6 +34,7 @@ final class NodeControllerTest extends WebTestCase
     public function testCreateUserNode(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $this->removeNodeUnderTest();
         $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], (string) json_encode([
             'providerNodeId' => self::PROVIDER_NODE_ID,
@@ -45,6 +56,7 @@ final class NodeControllerTest extends WebTestCase
     public function testSavingSameNodeAgainUpdatesItInsteadOfDuplicating(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $this->removeNodeUnderTest();
         $payload = static fn (array $tags): string => (string) json_encode([
             'providerNodeId' => self::PROVIDER_NODE_ID,
@@ -78,6 +90,7 @@ final class NodeControllerTest extends WebTestCase
     public function testRejectsOutOfRangeLatitude(): void
     {
         $client = static::createClient();
+        $this->loginEditor($client);
         $this->removeNodeUnderTest();
         $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], (string) json_encode([
             'providerNodeId' => self::PROVIDER_NODE_ID,

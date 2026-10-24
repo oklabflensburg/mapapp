@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import OsmMap from '../components/OsmMap.vue'
+import UserBar from '../components/UserBar.vue'
 import type { MapStatus } from '../map/geolocation'
 import NodeTagPanel from '../components/NodeTagPanel.vue'
 import { nodeKey, type NodeEditTarget } from '../stores/userNodes'
@@ -48,6 +49,7 @@ function onPanelVisible(visible: boolean): void {
 <template>
   <main class="home">
     <p v-if="mapStatusMessage" class="map-status" role="status">{{ mapStatusMessage }}</p>
+    <UserBar />
     <OsmMap
       ref="mapRef"
       @status="mapStatus = $event"

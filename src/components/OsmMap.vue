@@ -6,6 +6,7 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
 import { nodeKey, type NodeEditTarget, type SaveUserNodeInput } from '../stores/userNodes'
+import { useAuthStore } from '../stores/auth'
 import '../map/leafletIcons'
 import {
   DEFAULT_CENTER,
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 
 const container = ref<HTMLDivElement>()
 const { t } = useI18n()
+const auth = useAuthStore()
 const createMode = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
@@ -222,7 +224,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="container" class="map" :class="{ 'create-mode': createMode }" />
-  <div class="create-controls">
+  <!-- Adding nodes requires an editor; anonymous visitors can only browse. -->
+  <div v-if="auth.canEdit" class="create-controls">
     <Button
       class="create-toggle"
       :class="{ active: createMode }"

@@ -99,6 +99,13 @@
       <path value="$PROJECT_DIR$/backend/vendor/symfony/property-info" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/type-info" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/backend/vendor/psr/clock" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/clock" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/security-http" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/security-core" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/password-hasher" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/security-csrf" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/security-bundle" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.5" />

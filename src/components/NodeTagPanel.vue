@@ -6,6 +6,7 @@ import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import ParentNodeTags from './ParentNodeTags.vue'
 import { nodeKey, useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
+import { useAuthStore } from '../stores/auth'
 
 interface TagRow {
   key: string
@@ -23,6 +24,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const userNodes = useUserNodesStore()
+const auth = useAuthStore()
 
 const rows = ref<TagRow[]>([])
 
@@ -119,25 +121,36 @@ async function save(): Promise<void> {
 
     <section>
       <h4 class="section-title">{{ t('nodeEditor.customTags') }}</h4>
-      <p v-if="rows.length === 0" class="empty-hint">{{ t('nodeEditor.empty') }}</p>
-      <div v-for="(row, index) in rows" :key="index" class="tag-row">
-        <InputText v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
-        <InputText v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
+      <p v-if="rows.length === 0 && auth.canEdit" class="empty-hint">{{ t('nodeEditor.empty') }}</p>
+      <p v-if="!auth.canEdit" class="empty-hint">{{ t('nodeEditor.loginRequired') }}</p>
+      <template v-if="auth.canEdit">
+        <div v-for="(row, index) in rows" :key="index" class="tag-row">
+          <InputText v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
+          <InputText v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
+          <Button
+            :aria-label="t('nodeEditor.removeTag')"
+            icon="pi pi-times"
+            text
+            severity="danger"
+            @click="removeRow(index)"
+          />
+        </div>
         <Button
-          :aria-label="t('nodeEditor.removeTag')"
-          icon="pi pi-times"
+          :label="t('nodeEditor.addTag')"
+          icon="pi pi-plus"
           text
-          severity="danger"
-          @click="removeRow(index)"
+          severity="secondary"
+          @click="addRow"
         />
-      </div>
-      <Button
-        :label="t('nodeEditor.addTag')"
-        icon="pi pi-plus"
-        text
-        severity="secondary"
-        @click="addRow"
-      />
+      </template>
+      <template v-else>
+        <table v-if="rows.length > 0" class="tag-table">
+          <tr v-for="row in rows" :key="row.key">
+            <th>{{ row.key }}</th>
+            <td>{{ row.value }}</td>
+          </tr>
+        </table>
+      </template>
       <p v-if="userNodes.saveFailed" class="save-error" role="alert">
         {{ t('nodeEditor.saveFailed') }}
       </p>
@@ -146,6 +159,7 @@ async function save(): Promise<void> {
     <template #footer>
       <Button :label="t('nodeEditor.cancel')" text severity="secondary" @click="close" />
       <Button
+        v-if="auth.canEdit"
         :label="t('nodeEditor.save')"
         :loading="userNodes.saving"
         icon="pi pi-check"
