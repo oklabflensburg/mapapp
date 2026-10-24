@@ -13,6 +13,8 @@ services:
       GRAPHHOPPER_BASE_URL: ${GRAPHHOPPER_BASE_URL:-http://routing:8989}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      # Frontend app URL, embedded in the admin node edit page
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
       # Run "composer require symfony/orm-pack" to install and configure Doctrine ORM
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-map}?serverVersion=${POSTGRES_VERSION:-17}&charset=${POSTGRES_CHARSET:-utf8}
       # Run "composer require symfony/mercure-bundle" to install and configure the Mercure integration

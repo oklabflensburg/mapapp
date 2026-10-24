@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import OsmMap from '../components/OsmMap.vue'
 import UserBar from '../components/UserBar.vue'
@@ -7,7 +8,23 @@ import type { MapStatus } from '../map/geolocation'
 import NodeTagPanel from '../components/NodeTagPanel.vue'
 import { nodeKey, type NodeEditTarget } from '../stores/userNodes'
 const { t } = useI18n()
-const mapStatus = ref<MapStatus>('locating')
+const route = useRoute()
+
+// URL deep link (?lat=&lon=&zoom=) pins the start position; the admin node
+// preview uses it to open the map on a specific node. Without both
+// coordinates the app falls back to geolocation.
+function queryNumber(name: 'lat' | 'lon' | 'zoom'): number {
+  const value = route.query[name]
+  return typeof value === 'string' ? Number(value) : Number.NaN
+}
+const linkLatitude = queryNumber('lat')
+const linkLongitude = queryNumber('lon')
+const previewCenter = Number.isFinite(linkLatitude) && Number.isFinite(linkLongitude)
+  ? { latitude: linkLatitude, longitude: linkLongitude, zoom: queryNumber('zoom') }
+  : undefined
+
+// A pinned position skips geolocation, so its status flow never starts.
+const mapStatus = ref<MapStatus>(previewCenter ? 'found' : 'locating')
 
 const mapStatusMessage = computed(() => {
   switch (mapStatus.value) {
@@ -52,6 +69,7 @@ function onPanelVisible(visible: boolean): void {
     <UserBar />
     <OsmMap
       ref="mapRef"
+      :preview-center="previewCenter"
       @status="mapStatus = $event"
       @edit-node="selectNode"
       @deselect-node="deselectNode"

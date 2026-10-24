@@ -1,0 +1,60 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% extends '@EasyAdmin/crud/edit.html.twig' %}
+
+{# Node edit page: the form on the left, the app frontend centered on the
+   node on the right. The frontend accepts ?lat=&lon=&zoom= to pin its start
+   position (see src/views/HomeView.vue in the frontend app). #}
+{% block main %}
+    {% set node = entity.instance %}
+    {% set frontend_url = app_frontend_url|default('http://localhost:5173')|trim('/') %}
+    {% set preview_src = frontend_url ~ '/?lat=' ~ node.latitude ~ '&lon=' ~ node.longitude ~ '&zoom=' ~ 18 %}
+    <div class="node-edit-split">
+        <div class="node-edit-split-form">
+            {{ block('edit_form') }}
+        </div>
+        <aside class="node-edit-split-preview">
+            <iframe src="{{ preview_src }}" title="App frontend preview of this node" loading="lazy"></iframe>
+        </aside>
+    </div>
+    {{ block('delete_form') }}
+
+    <style>
+        .node-edit-split {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .node-edit-split-form {
+            flex: 1 1 50%;
+            min-width: 0;
+        }
+
+        .node-edit-split-preview {
+            flex: 1 1 50%;
+            min-width: 0;
+            position: sticky;
+            top: 1rem;
+        }
+
+        .node-edit-split-preview iframe {
+            width: 100%;
+            height: calc(100vh - 12rem);
+            min-height: 24rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--body-bg);
+        }
+
+        @media (max-width: 991px) {
+            .node-edit-split {
+                flex-direction: column;
+            }
+
+            .node-edit-split-preview iframe {
+                height: 24rem;
+            }
+        }
+    </style>
+{% endblock %}

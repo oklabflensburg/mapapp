@@ -1,5 +1,10 @@
 twig:
     file_name_pattern: '*.twig'
+    globals:
+        # Base URL of the frontend app, embedded in the admin node edit page.
+        # Defaults to the Vite dev server; set APP_FRONTEND_URL to the
+        # deployed frontend in other environments.
+        app_frontend_url: '%env(default::APP_FRONTEND_URL)%'
 
 when@test:
     twig:

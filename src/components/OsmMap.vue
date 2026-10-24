@@ -11,6 +11,7 @@ import '../map/leafletIcons'
 import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
+  FOCUS_ZOOM,
   MOVE_RENDER_DEBOUNCE_MS,
   OSM_TILE_URL,
   OSM_TILE_MAX_ZOOM,
@@ -20,6 +21,12 @@ import { useOsmDataStore } from '../stores/osmData'
 import { OsmFeatureLayer } from '../map/osmFeatureLayer'
 import { UserNodeLayer } from '../map/userNodeLayer'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
+
+// When set, the map starts centered on this position instead of the visitor's
+// location and skips the locating status flow.
+const props = defineProps<{
+  previewCenter?: { latitude: number; longitude: number; zoom?: number }
+}>()
 
 const emit = defineEmits<{
   (event: 'status', status: MapStatus): void
@@ -208,7 +215,11 @@ onMounted(() => {
   void loadOsmFeatures()
   void userNodes.load()
 
-  locationLayers = locateUser(() => map, (status) => emit('status', status), locationLayers)
+  if (props.previewCenter) {
+    map.setView([props.previewCenter.latitude, props.previewCenter.longitude], props.previewCenter.zoom ?? FOCUS_ZOOM)
+  } else {
+    locationLayers = locateUser(() => map, (status) => emit('status', status), locationLayers)
+  }
 })
 
 onBeforeUnmount(() => {

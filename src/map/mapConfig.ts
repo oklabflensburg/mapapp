@@ -3,6 +3,9 @@ import type * as L from 'leaflet'
 export const DEFAULT_CENTER: L.LatLngExpression = [54.791, 9.437] // Flensburg
 export const DEFAULT_ZOOM = 14
 export const LOCATION_ZOOM = 16
+// Zoom used when the URL pins the start position (?lat=&lon=&zoom=), e.g. the
+// admin node preview: close enough to recognize a building.
+export const FOCUS_ZOOM = 18
 
 export const OSM_DATA_URL = '/data/flensburg.geojson'
 // Above this many visible features, buildings and points are dropped until

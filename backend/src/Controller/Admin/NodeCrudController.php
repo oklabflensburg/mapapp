@@ -22,7 +22,10 @@ final class NodeCrudController extends AbstractCrudController
         return $crud
             ->setEntityLabelInSingular('Node')
             ->setEntityLabelInPlural('Nodes')
-            ->setSearchFields(['providerNodeId']);
+            ->setSearchFields(['providerNodeId'])
+            // The edit page shows the edit form next to the app frontend
+            // centered on the node (see templates/admin/node_edit.html.twig).
+            ->overrideTemplate('crud/edit', 'admin/node_edit.html.twig');
     }
 
     public function configureFields(string $pageName): iterable
