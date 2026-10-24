@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
@@ -7,6 +8,7 @@ import InputText from 'primevue/inputtext'
 import { useAuthStore } from '../stores/auth'
 
 const { t } = useI18n()
+const router = useRouter()
 const auth = useAuthStore()
 
 const loginVisible = ref(false)
@@ -42,6 +44,13 @@ async function logout(): Promise<void> {
 <template>
   <div v-if="auth.user" class="user-bar">
     <span class="user-name">{{ auth.user.name }}</span>
+    <Button
+      :aria-label="t('auth.profile')"
+      icon="pi pi-user"
+      text
+      severity="secondary"
+      @click="router.push({ name: 'profile' })"
+    />
     <Button
       :label="t('auth.logout')"
       icon="pi pi-sign-out"

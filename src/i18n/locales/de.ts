@@ -6,6 +6,7 @@ export default {
     email: 'E-Mail',
     password: 'Passwort',
     loginFailed: 'Anmeldung fehlgeschlagen. Prüfe E-Mail und Passwort.',
+    profile: 'Profil',
   },
   map: {
     create: {
@@ -53,5 +54,29 @@ export default {
     cancel: 'Abbrechen',
     saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.',
     loginRequired: 'Melde dich als Editor an, um Knoten hinzuzufügen oder zu bearbeiten.',
+  },
+  profile: {
+    title: 'Profil',
+    back: 'Zurück',
+    account: 'Konto',
+    name: 'Name',
+    email: 'E-Mail',
+    roles: 'Rollen',
+    loginRequired: 'Melde dich an, um dein Profil zu sehen.',
+    settings: {
+      title: 'Einstellungen',
+      language: {
+        label: 'Sprache',
+        hint: 'Wird sofort angewendet und auf diesem Gerät gespeichert.',
+        en: 'Englisch',
+        de: 'Deutsch',
+      },
+      routing: {
+        label: 'Route-Typ',
+        hint: 'Das Profil, das für die Planung von Fußrouten verwendet wird.',
+        shortest: 'Kürzeste Route',
+        wheelchair: 'Rollstuhlgerecht',
+      },
+    },
   },
 }

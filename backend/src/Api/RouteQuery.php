@@ -2,6 +2,7 @@
 
 namespace App\Api;
 
+use App\Service\Routing;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -23,6 +24,9 @@ final class RouteQuery
         #[Assert\NotBlank]
         #[Assert\Range(min: -180, max: 180)]
         public readonly ?float $toLon = null,
+        // Routing profile configured in backend/routing/graphhopper.yml.
+        #[Assert\Choice(callback: [Routing::class, 'profiles'])]
+        public readonly ?string $profile = null,
     ) {
     }
 }

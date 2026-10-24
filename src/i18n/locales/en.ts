@@ -6,6 +6,7 @@ export default {
     email: 'Email',
     password: 'Password',
     loginFailed: 'Login failed. Check your email and password.',
+    profile: 'Profile',
   },
   map: {
     create: {
@@ -53,5 +54,29 @@ export default {
     cancel: 'Cancel',
     saveFailed: 'Saving failed. Please try again.',
     loginRequired: 'Log in as an editor to add or edit nodes.',
+  },
+  profile: {
+    title: 'Profile',
+    back: 'Back',
+    account: 'Account',
+    name: 'Name',
+    email: 'Email',
+    roles: 'Roles',
+    loginRequired: 'Log in to see your profile.',
+    settings: {
+      title: 'Settings',
+      language: {
+        label: 'Language',
+        hint: 'Applied immediately and remembered on this device.',
+        en: 'English',
+        de: 'German',
+      },
+      routing: {
+        label: 'Route type',
+        hint: 'The profile used when planning walking routes.',
+        shortest: 'Shortest route',
+        wheelchair: 'Wheelchair-friendly',
+      },
+    },
   },
 }

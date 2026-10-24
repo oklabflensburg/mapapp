@@ -21,7 +21,7 @@ import { useOsmDataStore } from '../stores/osmData'
 import { OsmFeatureLayer } from '../map/osmFeatureLayer'
 import { UserNodeLayer } from '../map/userNodeLayer'
 import { RoutingLayer } from '../map/routingLayer'
-import { useRoutingStore, type RouteResult } from '../stores/routing'
+import { useRoutingStore } from '../stores/routing'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
 
 // When set, the map starts centered on this position instead of the visitor's

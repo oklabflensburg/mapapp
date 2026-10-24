@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { useSettingsStore } from './settings'
 
 export interface RoutePoint {
   latitude: number
@@ -77,6 +78,8 @@ export const useRoutingStore = defineStore('routing', () => {
         fromLon: String(start.value.longitude),
         toLat: String(end.value.latitude),
         toLon: String(end.value.longitude),
+        // The profile is a settings choice: shortest or wheelchair-friendly.
+        profile: useSettingsStore().routingProfile,
       })
       const response = await fetch(`/api/route?${query}`)
       if (response.status === 422) {

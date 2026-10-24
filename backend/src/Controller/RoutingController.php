@@ -31,6 +31,7 @@ final class RoutingController extends AbstractController
                 $query->fromLon,
                 $query->toLat,
                 $query->toLon,
+                $query->profile ?? Routing::DEFAULT_PROFILE,
             );
         } catch (NoRouteFoundException) {
             return $this->json(['error' => 'no_route'], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
