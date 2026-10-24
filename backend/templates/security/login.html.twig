@@ -3,68 +3,15 @@
 {% block title %}Admin login{% endblock %}
 
 {% block stylesheets %}
-    <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f4f5f7;
-            color: #1f2933;
-        }
-        .login {
-            width: min(22rem, calc(100vw - 3rem));
-            padding: 2rem;
-            background: #fff;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px #0001;
-        }
-        .login h1 {
-            margin: 0 0 1.5rem;
-            font-size: 1.25rem;
-        }
-        .login label {
-            display: block;
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-        }
-        .login input {
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 1rem;
-            padding: 0.5rem 0.75rem;
-            font: inherit;
-            border: 1px solid #cbd2d9;
-            border-radius: 0.375rem;
-        }
-        .login button {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            font: inherit;
-            border: 0;
-            border-radius: 0.375rem;
-            background: #059669;
-            color: #fff;
-            cursor: pointer;
-        }
-        .login-error {
-            margin: 0 0 1rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem;
-            background: #fef2f2;
-            color: #b91c1c;
-            font-size: 0.875rem;
-        }
-    </style>
+    {% include 'security/_auth_styles.html.twig' %}
 {% endblock %}
 
 {% block body %}
-    <form class="login" method="post" action="{{ path('app_login_form') }}">
+    <form class="auth-card" method="post" action="{{ path('app_login_form') }}">
         <h1>AccessApp Admin</h1>
 
         {% if error %}
-            <p class="login-error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
+            <p class="auth-error">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
         {% endif %}
 
         <label for="email">Email</label>

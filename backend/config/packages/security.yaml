@@ -37,6 +37,7 @@ security:
                 username_parameter: email
                 password_parameter: password
                 enable_csrf: true
+            access_denied_handler: App\Security\AdminAccessDeniedHandler
             logout:
                 path: app_admin_logout
         main:

@@ -46,7 +46,7 @@ final class AdminLoginFormTest extends WebTestCase
         $client->followRedirect();
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.login-error', 'Invalid credentials.');
+        self::assertSelectorTextContains('.auth-error', 'Invalid credentials.');
     }
 
     public function testLoginFormAuthenticatesAdminsAndOpensTheDashboard(): void

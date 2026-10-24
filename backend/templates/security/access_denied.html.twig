@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Access denied{% endblock %}
+
+{% block stylesheets %}
+    {% include 'security/_auth_styles.html.twig' %}
+{% endblock %}
+
+{% block body %}
+    <div class="auth-card">
+        <h1>AccessApp Admin</h1>
+
+        <p class="auth-error">
+            This account does not have admin rights. Log in with an admin account to manage the map data.
+        </p>
+
+        <p class="auth-actions">
+            <a href="{{ path('app_admin_logout') }}">Log out</a>
+            <a href="{{ path('app_login_form') }}">Back to login</a>
+        </p>
+    </div>
+{% endblock %}

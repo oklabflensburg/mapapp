@@ -21,13 +21,17 @@ final class AdminDashboardTest extends WebTestCase
         self::assertResponseRedirects('/admin/login');
     }
 
-    public function testAdminDashboardForbidsEditors(): void
+    public function testAdminDashboardShowsStyledDeniedPageForEditors(): void
     {
         $client = static::createClient();
         $client->loginUser($this->createUser('editor-admin-test@example.test', ['editor']), 'admin');
         $client->request('GET', '/admin');
 
         self::assertResponseStatusCodeSame(403);
+        self::assertSelectorExists('.auth-card');
+        self::assertSelectorTextContains('.auth-error', 'does not have admin rights');
+        self::assertSelectorExists('a[href="/admin/logout"]');
+        self::assertSelectorExists('a[href="/admin/login"]');
     }
 
     public function testAdminDashboardIsRenderedForAdmins(): void
