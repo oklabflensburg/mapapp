@@ -77,6 +77,7 @@ export default {
       hint: 'Lege fest, wie stark du bestimmte Tags bevorzugst oder meidest. Wird beim Routenplanen angewendet und auf diesem Gerät gespeichert.',
       tags: {
         stairs: 'Treppen',
+        toilets: 'Toiletten',
       },
       levels: {
         neutral: 'Keine Präferenz',

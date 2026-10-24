@@ -1,7 +1,10 @@
 # GraphHopper configuration for AccessApp. A single profile based on the foot
 # encoder (walker) is served:
-# - foot_wheelchair: wheelchair-friendly walking route that avoids steps,
-#   fords, hiking trails and rough surfaces
+# - foot: walking route that avoids fords, hiking trails and rough surfaces.
+#   Stairs are NOT excluded here: a user's per-request tag priorities decide
+#   (the backend sends a custom model that penalizes road_class == STEPS for
+#   "avoid"/"try to avoid" stairs). Per-request rules can only restrict, so
+#   the base profile must keep stairs passable.
 # Paths refer to the compose mounts: the OSM extract is read-only under
 # /data/osm, the prepared graph persists in the graphhopper_graphs volume.
 graphhopper:
@@ -9,10 +12,10 @@ graphhopper:
   graph.location: /data/graphhopper
 
   profiles:
-    - name: foot_wheelchair
+    - name: foot
       custom_model:
         priority:
-          - if: "!foot_access || road_class == STEPS || road_environment == FORD || hike_rating >= 1"
+          - if: "!foot_access || road_environment == FORD || hike_rating >= 1"
             multiply_by: "0"
           - if: "surface == COBBLESTONE || surface == GRAVEL || surface == GROUND || surface == DIRT || surface == SAND || surface == GRASS"
             multiply_by: "0.3"
@@ -25,7 +28,7 @@ graphhopper:
   # Landmark (hybrid mode) preparation keeps queries fast without the
   # memory cost of CH; custom-model profiles cannot use CH.
   profiles_lm:
-    - profile: foot_wheelchair
+    - profile: foot
 
   graph.encoded_values: |
     foot_access, foot_average_speed, foot_road_access, hike_rating,

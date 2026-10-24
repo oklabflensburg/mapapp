@@ -21,7 +21,7 @@ const TAG_PRIORITY_LEVELS: readonly TagPriority[] = [
 
 // Tags a user can prioritize on the profile page. Keep in sync with
 // TagPriorityManager::tags() in the backend.
-const PRIORITIZABLE_TAGS = ['stairs'] as const
+export const PRIORITIZABLE_TAGS = ['stairs', 'toilets'] as const
 export type PrioritizableTag = (typeof PRIORITIZABLE_TAGS)[number]
 
 function readStored<T extends string>(key: string, fallback: T, allowed: readonly T[]): T {

@@ -77,6 +77,7 @@ export default {
       hint: 'Tell routing how strongly you prefer or avoid certain tags. Applied when planning routes and remembered on this device.',
       tags: {
         stairs: 'Stairs',
+        toilets: 'Toilets',
       },
       levels: {
         neutral: 'No preference',

@@ -17,13 +17,15 @@ final class TagPriorityManager
 
     /**
      * Tags a user can prioritize; must stay in sync with the frontend's
-     * PRIORITIZABLE_TAGS list in src/stores/settings.ts.
+     * PRIORITIZABLE_TAGS list in src/stores/settings.ts. "stairs" also maps
+     * to OSM steps (road_class == STEPS); the others are custom tags that
+     * only apply to app nodes tagged with them.
      *
      * @return list<string>
      */
     public static function tags(): array
     {
-        return ['stairs'];
+        return ['stairs', 'toilets'];
     }
 
     /**
@@ -32,6 +34,24 @@ final class TagPriorityManager
     public static function levels(): array
     {
         return ['neutral', 'avoid', 'try_to_avoid', 'prefer', 'strongly_prefer'];
+    }
+
+    /**
+     * The tags whose level produces routing rules, i.e. whose tagged nodes
+     * the router must know about. Every non-neutral level counts: avoid
+     * levels penalize the tagged nodes' areas, prefer levels penalize
+     * everything outside them.
+     *
+     * @param array<string, string> $tagPriorities
+     *
+     * @return list<string>
+     */
+    public static function tagsRelevantForRouting(array $tagPriorities): array
+    {
+        return array_keys(array_filter(
+            $tagPriorities,
+            static fn (string $level): bool => $level !== self::DEFAULT_LEVEL,
+        ));
     }
 
     public function __construct(

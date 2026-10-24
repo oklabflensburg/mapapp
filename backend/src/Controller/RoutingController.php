@@ -3,9 +3,12 @@
 namespace App\Controller;
 
 use App\Api\RouteQuery;
+use App\Entity\User;
+use App\Repository\NodeRepository;
 use App\Service\NoRouteFoundException;
 use App\Service\Routing;
 use App\Service\RoutingUnavailableException;
+use App\Service\TagPriorityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,18 +22,34 @@ final class RoutingController extends AbstractController
 {
     public function __construct(
         private readonly Routing $routing,
+        private readonly TagPriorityManager $tagPriorityManager,
+        private readonly NodeRepository $nodeRepository,
     ) {
     }
 
     #[Route('/api/route', name: 'app_route', methods: ['GET'])]
     public function route(#[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)] RouteQuery $query): JsonResponse
     {
+        // The user's tag priorities from the profile page shape the route:
+        // avoid levels detour around tagged nodes (and OSM steps for
+        // stairs), prefer levels bias routes toward tagged nodes. Anonymous
+        // visitors get the neutral default of the routing profile.
+        $user = $this->getUser();
+        $tagPriorities = $user instanceof User
+            ? $this->tagPriorityManager->getPriorities($user)
+            : [];
+        $taggedNodes = $this->nodeRepository->findTaggedNodeCoordinates(
+            TagPriorityManager::tagsRelevantForRouting($tagPriorities),
+        );
+
         try {
             $route = $this->routing->findShortestFootRoute(
                 $query->fromLat,
                 $query->fromLon,
                 $query->toLat,
                 $query->toLon,
+                $tagPriorities,
+                $taggedNodes,
             );
         } catch (NoRouteFoundException) {
             return $this->json(['error' => 'no_route'], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);

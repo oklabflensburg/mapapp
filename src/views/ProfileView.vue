@@ -5,7 +5,13 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useAuthStore } from '../stores/auth'
-import { useSettingsStore, type AppLocale, type TagPriority } from '../stores/settings'
+import {
+  PRIORITIZABLE_TAGS,
+  useSettingsStore,
+  type AppLocale,
+  type PrioritizableTag,
+  type TagPriority,
+} from '../stores/settings'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -96,15 +102,15 @@ onMounted(() => {
       <h2 class="card-title">{{ t('profile.tagPriorities.title') }}</h2>
       <p class="hint">{{ t('profile.tagPriorities.hint') }}</p>
 
-      <div class="setting">
-        <label for="setting-tag-priority-stairs">{{ t('profile.tagPriorities.tags.stairs') }}</label>
+      <div v-for="tag in PRIORITIZABLE_TAGS" :key="tag" class="setting">
+        <label :for="`setting-tag-priority-${tag}`">{{ t(`profile.tagPriorities.tags.${tag}`) }}</label>
         <Select
-          id="setting-tag-priority-stairs"
-          :model-value="settings.tagPriorities.stairs"
+          :id="`setting-tag-priority-${tag}`"
+          :model-value="settings.tagPriorities[tag]"
           :options="tagPriorityOptions"
           option-label="label"
           option-value="value"
-          @update:model-value="settings.setTagPriority('stairs', $event as TagPriority)"
+          @update:model-value="settings.setTagPriority(tag as PrioritizableTag, $event as TagPriority)"
         />
       </div>
     </section>
