@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import * as L from 'leaflet'
@@ -20,6 +20,8 @@ import {
 import { useOsmDataStore } from '../stores/osmData'
 import { OsmFeatureLayer } from '../map/osmFeatureLayer'
 import { UserNodeLayer } from '../map/userNodeLayer'
+import { RoutingLayer } from '../map/routingLayer'
+import { useRoutingStore, type RouteResult } from '../stores/routing'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
 
 // When set, the map starts centered on this position instead of the visitor's
@@ -35,8 +37,9 @@ const emit = defineEmits<{
 }>()
 
 const container = ref<HTMLDivElement>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const auth = useAuthStore()
+const routing = useRoutingStore()
 const createMode = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
@@ -61,6 +64,11 @@ function clearSelection(): void {
 
 function onEditNode(target: NodeEditTarget, click: L.LatLng): boolean {
   clickOnFeature = true
+  if (routing.mode) {
+    // Routing points are plain positions; feature selection is suppressed.
+    routing.setPoint({ latitude: click.lat, longitude: click.lng })
+    return false
+  }
   if (createMode.value || creating.value) {
     void createNode(click, target)
     return false
@@ -72,19 +80,38 @@ function onEditNode(target: NodeEditTarget, click: L.LatLng): boolean {
   return true
 }
 
+// Entering one map mode always leaves the other: create mode adds nodes,
+// routing mode places route points, and both interpret map clicks.
 function toggleCreateMode(): void {
   if (creating.value) return
   createMode.value = !createMode.value
   createFailed.value = false
   pendingCreation = undefined
   if (createMode.value) {
+    routing.exit()
     clearSelection()
     emit('deselect-node')
   }
 }
 
+function toggleRoutingMode(): void {
+  if (routing.mode) {
+    routing.exit()
+    return
+  }
+  createMode.value = false
+  pendingCreation = undefined
+  createFailed.value = false
+  clearSelection()
+  emit('deselect-node')
+  routing.enter()
+}
+
 function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && createMode.value && !creating.value) toggleCreateMode()
+  if (event.key === 'Escape') {
+    if (createMode.value && !creating.value) toggleCreateMode()
+    else if (routing.mode) routing.exit()
+  }
 }
 
 async function createNode(click: L.LatLng, parent?: NodeEditTarget): Promise<void> {
@@ -135,15 +162,31 @@ defineExpose({ clearSelection })
 const userNodes = useUserNodesStore()
 const osmData = useOsmDataStore()
 
+// "1.2 km · 14 min walk" style summary of the found route.
+const routeSummary = computed(() => {
+  const route = routing.route
+  if (!route) return ''
+  const distance = route.distance < 1000
+    ? `${Math.round(route.distance)} m`
+    : `${new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(route.distance / 1000)} km`
+  return t('map.routing.summary', {
+    distance,
+    minutes: Math.max(1, Math.round(route.time / 60)),
+  })
+})
+
 let osmFeatureLayer: OsmFeatureLayer | undefined
 let userNodeLayer: UserNodeLayer | undefined
+let routingLayer: RoutingLayer | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
 
-// Rebuilds the OSM layer first, then the user-node markers after it so they
-// are drawn (and hit-tested) last on the shared canvas renderer.
+// Rebuilds the OSM layer first, then the user-node markers after it, and the
+// routing layer last, so they are drawn (and hit-tested) in that order on the
+// shared canvas renderer.
 function renderLayers(): void {
   osmFeatureLayer?.render()
   userNodeLayer?.render(userNodes.nodes)
+  routingLayer?.render(routing.start, routing.end, routing.route)
 }
 
 function scheduleRenderLayers(): void {
@@ -156,6 +199,11 @@ function scheduleRenderLayers(): void {
 watch(
   () => userNodes.nodes,
   () => userNodeLayer?.render(userNodes.nodes),
+)
+
+watch(
+  [() => routing.start, () => routing.end, () => routing.route],
+  () => routingLayer?.render(routing.start, routing.end, routing.route),
 )
 
 async function loadOsmFeatures(): Promise<void> {
@@ -193,12 +241,17 @@ onMounted(() => {
     onEditNode,
     getOsmTags: (providerNodeId) => osmData.tagsById?.get(providerNodeId) ?? {},
   })
+  routingLayer = new RoutingLayer(map)
 
   // Moving or zooming the map rebuilds the layers but never deselects; only
   // a click on empty space (no feature hit) drops the selection.
   map.on('click', (event: L.LeafletMouseEvent) => {
     if (clickOnFeature) {
       clickOnFeature = false
+      return
+    }
+    if (routing.mode) {
+      routing.setPoint({ latitude: event.latlng.lat, longitude: event.latlng.lng })
       return
     }
     if (createMode.value || creating.value) {
@@ -229,18 +282,20 @@ onBeforeUnmount(() => {
   }
   osmFeatureLayer?.destroy()
   userNodeLayer?.destroy()
+  routingLayer?.destroy()
   locationLayers.accuracyCircle?.remove()
   locationLayers.marker?.remove()
   map?.remove()
   map = undefined
   osmFeatureLayer = undefined
   userNodeLayer = undefined
+  routingLayer = undefined
   locationLayers = {}
 })
 </script>
 
 <template>
-  <div ref="container" class="map" :class="{ 'create-mode': createMode }" />
+  <div ref="container" class="map" :class="{ 'create-mode': createMode, 'routing-mode': routing.mode }" />
   <Button
     class="locate-button"
     icon="pi pi-map-marker"
@@ -249,19 +304,38 @@ onBeforeUnmount(() => {
     :title="t('map.locate.button')"
     @click="locateSelf"
   />
-  <!-- Adding nodes requires an editor; anonymous visitors can only browse. -->
-  <div v-if="auth.canEdit" class="create-controls">
-    <Button
-      class="create-toggle"
-      :class="{ active: createMode }"
-      icon="pi pi-plus"
-      :aria-label="t('map.create.add')"
-      :title="t('map.create.add')"
-      :aria-pressed="createMode"
-      :severity="createMode ? 'primary' : 'secondary'"
-      :disabled="creating"
-      @click="toggleCreateMode"
-    />
+  <!-- Routing is browsing, not editing: available to every visitor. -->
+  <div class="map-controls">
+    <div class="control-buttons">
+      <Button
+        class="routing-toggle"
+        :class="{ active: routing.mode }"
+        icon="pi pi-directions"
+        :aria-label="t('map.routing.button')"
+        :title="t('map.routing.button')"
+        :aria-pressed="routing.mode"
+        :severity="routing.mode ? 'primary' : 'secondary'"
+        @click="toggleRoutingMode"
+      />
+      <!-- Adding nodes requires an editor; anonymous visitors can only browse. -->
+      <Button
+        v-if="auth.canEdit"
+        class="create-toggle"
+        :class="{ active: createMode }"
+        icon="pi pi-plus"
+        :aria-label="t('map.create.add')"
+        :title="t('map.create.add')"
+        :aria-pressed="createMode"
+        :severity="createMode ? 'primary' : 'secondary'"
+        :disabled="creating"
+        @click="toggleCreateMode"
+      />
+    </div>
+    <p v-if="routing.mode" role="status">{{ t('map.routing.hint') }}</p>
+    <p v-if="routing.loading" role="status">{{ t('map.routing.calculating') }}</p>
+    <p v-if="routing.noRoute" role="alert">{{ t('map.routing.noRoute') }}</p>
+    <p v-if="routing.failed" role="alert">{{ t('map.routing.failed') }}</p>
+    <p v-if="routeSummary" role="status">{{ routeSummary }}</p>
     <p v-if="createMode" role="status">{{ t('map.create.hint') }}</p>
     <div v-if="createFailed" role="alert">
       <p>{{ t('map.create.failed') }}</p>
@@ -282,7 +356,12 @@ onBeforeUnmount(() => {
   cursor: crosshair;
 }
 
-.create-controls {
+.map.routing-mode,
+.map.routing-mode :deep(.leaflet-interactive) {
+  cursor: crosshair;
+}
+
+.map-controls {
   position: absolute;
   z-index: 1000;
   top: calc(5.5rem + env(safe-area-inset-top));
@@ -290,7 +369,12 @@ onBeforeUnmount(() => {
   max-width: min(20rem, calc(100vw - 1.5rem));
 }
 
-.create-controls p {
+.control-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.map-controls p {
   margin: 0.5rem 0;
   padding: 0.5rem 0.75rem;
   background: var(--p-content-background);
@@ -299,7 +383,8 @@ onBeforeUnmount(() => {
   font-size: 0.875rem;
 }
 
-.create-toggle.active {
+.create-toggle.active,
+.routing-toggle.active {
   background: var(--p-primary-color, #059669);
   border-color: var(--p-primary-color, #059669);
   color: var(--p-primary-contrast-color, #fff);

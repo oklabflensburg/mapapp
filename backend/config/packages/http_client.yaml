@@ -1,0 +1,4 @@
+# see https://symfony.com/doc/current/http_client.html
+framework:
+    http_client:
+        enabled: true

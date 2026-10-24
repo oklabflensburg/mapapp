@@ -1,0 +1,72 @@
+# GraphHopper configuration for AccessApp. Both profiles use the foot
+# encoder (walker):
+# - foot_shortest: shortest walking route (distance-influenced weighting)
+# - foot_wheelchair: like foot_shortest, but avoids steps, fords, hiking
+#   trails and rough surfaces
+# Paths refer to the compose mounts: the OSM extract is read-only under
+# /data/osm, the prepared graph persists in the graphhopper_graphs volume.
+graphhopper:
+  datareader.file: /data/osm/schleswig-holstein-latest.osm.pbf
+  graph.location: /data/graphhopper
+
+  profiles:
+    - name: foot_shortest
+      custom_model:
+        priority:
+          - if: "!foot_access || hike_rating >= 2"
+            multiply_by: "0"
+          - if: "foot_road_access == PRIVATE"
+            multiply_by: "0.1"
+        speed:
+          - if: "true"
+            limit_to: "foot_average_speed"
+        # Bias the (time-based) weighting towards the shortest distance.
+        distance_influence: 300
+    - name: foot_wheelchair
+      custom_model:
+        priority:
+          - if: "!foot_access || road_class == STEPS || road_environment == FORD || hike_rating >= 1"
+            multiply_by: "0"
+          - if: "surface == COBBLESTONE || surface == GRAVEL || surface == GROUND || surface == DIRT || surface == SAND || surface == GRASS"
+            multiply_by: "0.3"
+          - if: "foot_road_access == PRIVATE"
+            multiply_by: "0.1"
+        speed:
+          - if: "true"
+            limit_to: "foot_average_speed"
+
+  # Landmark (hybrid mode) preparation keeps queries fast without the
+  # memory cost of CH; custom-model profiles cannot use CH.
+  profiles_lm:
+    - profile: foot_shortest
+    - profile: foot_wheelchair
+
+  graph.encoded_values: |
+    foot_access, foot_average_speed, foot_road_access, hike_rating,
+    road_class, road_environment, surface
+
+  # Foot-only routing: motorways and trunks are irrelevant and dropping
+  # them keeps the import faster and the graph smaller.
+  import.osm.ignored_highways: motorway,trunk
+
+  # Memory-map the graph instead of holding it on the heap; the process then
+  # needs only a few hundred MB RAM (import and serving) and relies on the
+  # OS page cache for speed.
+  graph.dataaccess.default_type: MMAP
+
+server:
+  application_connectors:
+    - type: http
+      port: 8989
+      bind_host: 0.0.0.0
+  admin_connectors:
+    - type: http
+      port: 8990
+      bind_host: 0.0.0.0
+  request_log:
+    appenders: []
+logging:
+  appenders:
+    - type: console
+      time_zone: UTC
+      log_format: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

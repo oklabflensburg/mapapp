@@ -22,6 +22,14 @@ export default {
     locate: {
       button: 'Show my location',
     },
+    routing: {
+      button: 'Plan a route',
+      hint: 'Click the map to set a start and an end point. Press Escape to leave route planning.',
+      calculating: 'Calculating route…',
+      noRoute: 'No walkable route was found between these points.',
+      failed: 'The route could not be calculated. Please try again.',
+      summary: '{distance} · {minutes} min walk',
+    },
   },
   nodeEditor: {
     title: 'Edit node',

@@ -111,6 +111,35 @@ node scripts/check-osm-render.mjs
 
 ## Routing stack
 
-The GraphHopper routing service in `backend/compose.yaml` is behind the `routing`
-compose profile and has no build context yet. It is skipped by default; start it
-explicitly with `docker compose --profile routing up` once `backend/routing/` exists.
+Walking routes are served by GraphHopper 11.1 (`graphhopper-web` library jar,
+run in its own container; walker profiles `foot_shortest` and
+`foot_wheelchair`). The backend proxies it as
+`GET /api/route?fromLat=&fromLon=&toLat=&toLon=` and returns the shortest
+walking route as `{ distance (m), time (s), points ([lat, lon] pairs) }`;
+errors are `{ "error": "no_route" }` (422) or
+`{ "error": "routing_unavailable" }` (503).
+
+Start it once:
+
+```bash
+cd backend
+docker compose --profile routing-data up   # downloads the Geofabrik Schleswig-Holstein extract
+docker compose --profile routing up -d     # imports the graph on first start (takes a few minutes)
+```
+
+The OSM extract is cached in `backend/routing/data/`, the prepared graph in
+the `graphhopper_graphs` volume. Set `GRAPHHOPPER_REBUILD_GRAPH=true` to force
+a re-import. The container exposes GraphHopper directly on
+`http://localhost:8989` (health: `/info`). The first start must finish the
+graph import before routes resolve; watch
+`docker compose logs -f routing` until the server announces its profiles.
+
+The graph is memory-mapped (`graph.dataaccess.default_type: MMAP`) and the
+heap defaults to 512 MB (`GRAPHHOPPER_XMX`), so the container runs in well
+under 1 GB of RAM — the import over the full Schleswig-Holstein extract
+included. Most of the container's resident memory is evictable page cache,
+which the OS reclaims under memory pressure.
+
+Frontend: press the route button (top-left), then click the map twice to set
+start and end. The shortest walking route is drawn with a distance/time
+summary; Escape leaves routing mode.

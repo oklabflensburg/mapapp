@@ -48,8 +48,15 @@ services:
       context: ./routing
     image: accessapp-graphhopper:11.1
     restart: unless-stopped
+    ports:
+      - name: routing
+        target: 8989
+        published: ${GRAPHHOPPER_PORT:-8989}
+        protocol: tcp
     environment:
-      GRAPHHOPPER_XMX: ${GRAPHHOPPER_XMX:-2g}
+      # With the memory-mapped graph (graphhopper.yml) 512m heap is enough
+      # for import and serving; total container RAM stays well under 1 GB.
+      GRAPHHOPPER_XMX: ${GRAPHHOPPER_XMX:-512m}
       GRAPHHOPPER_REBUILD_GRAPH: ${GRAPHHOPPER_REBUILD_GRAPH:-false}
     volumes:
       - ./routing/graphhopper.yml:/app/graphhopper.yml:ro

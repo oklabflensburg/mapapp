@@ -22,6 +22,14 @@ export default {
     locate: {
       button: 'Meinen Standort anzeigen',
     },
+    routing: {
+      button: 'Route planen',
+      hint: 'Klicke auf die Karte, um Start und Ziel festzulegen. Escape beendet die Routenplanung.',
+      calculating: 'Route wird berechnet…',
+      noRoute: 'Zwischen diesen Punkten wurde kein begehbarer Weg gefunden.',
+      failed: 'Die Route konnte nicht berechnet werden. Bitte erneut versuchen.',
+      summary: '{distance} · {minutes} Min. zu Fuß',
+    },
   },
   nodeEditor: {
     title: 'Knoten bearbeiten',
