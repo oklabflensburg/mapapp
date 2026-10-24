@@ -37,6 +37,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::section('Map data', 'fa fa-map');
         yield MenuItem::linkTo(NodeCrudController::class, 'Nodes', 'fa fa-location-dot');
         yield MenuItem::linkTo(TagCrudController::class, 'Tags', 'fa fa-tags');
+        yield MenuItem::linkTo(NodeTagCrudController::class, 'Node tags', 'fa fa-user-tag');
         yield MenuItem::linkTo(NodeTypeCrudController::class, 'Node types', 'fa fa-shapes');
         yield MenuItem::linkTo(NodeProviderCrudController::class, 'Node providers', 'fa fa-server');
 

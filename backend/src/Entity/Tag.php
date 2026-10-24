@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -22,6 +24,15 @@ class Tag
 
     #[ORM\Column]
     private bool $approved = false;
+
+    /** @var Collection<int, NodeTag> */
+    #[ORM\OneToMany(mappedBy: 'tag', targetEntity: NodeTag::class)]
+    private Collection $nodeTags;
+
+    public function __construct()
+    {
+        $this->nodeTags = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -56,6 +67,12 @@ class Tag
     public function setApproved(bool $approved): void
     {
         $this->approved = $approved;
+    }
+
+    /** @return Collection<int, NodeTag> */
+    public function getNodeTags(): Collection
+    {
+        return $this->nodeTags;
     }
 
     // EasyAdmin renders association selects through this.

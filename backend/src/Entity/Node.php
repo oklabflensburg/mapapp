@@ -44,10 +44,9 @@ class Node
     #[ORM\Column]
     private float $longitude = 0.0;
 
-    /** @var Collection<int, Tag> */
-    #[ORM\ManyToMany(targetEntity: Tag::class)]
-    #[ORM\JoinTable(name: 'nodes_tags')]
-    private Collection $tags;
+    /** @var Collection<int, NodeTag> */
+    #[ORM\OneToMany(mappedBy: 'node', targetEntity: NodeTag::class)]
+    private Collection $nodeTags;
 
     /** @var Collection<int, NodeRelation> */
     #[ORM\OneToMany(mappedBy: 'child', targetEntity: NodeRelation::class)]
@@ -59,7 +58,7 @@ class Node
 
     public function __construct()
     {
-        $this->tags = new ArrayCollection();
+        $this->nodeTags = new ArrayCollection();
         $this->parentRelations = new ArrayCollection();
         $this->childRelations = new ArrayCollection();
         $now = new \DateTimeImmutable();
@@ -147,16 +146,51 @@ class Node
         $this->longitude = $longitude;
     }
 
-    /** @return Collection<int, Tag> */
-    public function getTags(): Collection
+    /** @return Collection<int, NodeTag> */
+    public function getNodeTags(): Collection
     {
-        return $this->tags;
+        return $this->nodeTags;
     }
 
-    /** @param list<Tag> $tags */
-    public function setTags(array $tags): void
+    /**
+     * Distinct tags added to this node by any user.
+     *
+     * @return list<Tag>
+     */
+    public function getTags(): array
     {
-        $this->tags = new ArrayCollection($tags);
+        $tags = [];
+        foreach ($this->nodeTags as $nodeTag) {
+            $tags[$nodeTag->getTag()->getId()] = $nodeTag->getTag();
+        }
+
+        return array_values($tags);
+    }
+
+    /**
+     * Records that the given user added the tag to this node. Returns null
+     * when that user already added the same tag to this node.
+     */
+    public function addTag(Tag $tag, User $user): ?NodeTag
+    {
+        foreach ($this->nodeTags as $nodeTag) {
+            if ($nodeTag->getTag() === $tag && $nodeTag->getCreatedByUser() === $user) {
+                return null;
+            }
+        }
+
+        $nodeTag = new NodeTag($this, $tag, $user);
+        $this->nodeTags->add($nodeTag);
+
+        return $nodeTag;
+    }
+
+    // EasyAdmin renders association selects through this.
+    public function __toString(): string
+    {
+        $provider = isset($this->nodeProvider) ? $this->nodeProvider->getName() : '';
+
+        return $provider !== '' ? $provider.' '.$this->providerNodeId : $this->providerNodeId;
     }
 
     /** @return Collection<int, NodeRelation> */

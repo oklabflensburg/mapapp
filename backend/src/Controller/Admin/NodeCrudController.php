@@ -35,7 +35,7 @@ final class NodeCrudController extends AbstractCrudController
         yield TextField::new('providerNodeId');
         yield NumberField::new('latitude');
         yield NumberField::new('longitude');
-        yield AssociationField::new('tags');
+        yield AssociationField::new('nodeTags');
         yield AssociationField::new('createdByUser');
         // Managed by the entity on persist; never editable.
         yield DateTimeField::new('createdAt')->onlyOnDetail();

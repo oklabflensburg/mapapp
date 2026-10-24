@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Node;
+use App\Entity\NodeTag;
 use App\Entity\Tag;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -142,6 +143,37 @@ final class NodeCreationTest extends WebTestCase
         $listedChild = array_values(array_filter($nodes, static fn (array $n): bool => $n['id'] === $child['id']))[0];
         self::assertSame('Edited OSM parent', $listedChild['parents'][0]['name']);
         self::assertSame(['name' => 'Edited OSM parent'], $listedChild['parents'][0]['tags']);
+    }
+
+    public function testMultipleUsersCanAddTheSameTagToTheSameNode(): void
+    {
+        $client = static::createClient();
+        $value = 'shared-tag-'.bin2hex(random_bytes(8));
+        $editorOne = $this->createUser('editor-one@example.test', ['editor']);
+        $editorTwo = $this->createUser('editor-two@example.test', ['editor']);
+
+        $client->loginUser($editorOne);
+        $payload = array_replace($this->payload(), ['tags' => ['name' => $value]]);
+        $node = $this->save($client, $payload);
+
+        $client->loginUser($editorTwo);
+        $resaved = $this->save($client, $payload, 200);
+        self::assertSame($node['id'], $resaved['id']);
+        self::assertSame(['name' => $value], $resaved['tags']);
+
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $nodeTags = $entityManager->getRepository(NodeTag::class)->findBy(['node' => $node['id']]);
+        self::assertCount(2, $nodeTags);
+        self::assertEqualsCanonicalizing(
+            [$editorOne->getId(), $editorTwo->getId()],
+            array_map(static fn (NodeTag $nodeTag): int => $nodeTag->getCreatedByUser()->getId(), $nodeTags),
+        );
+
+        // The second editor removing the tag only drops their own attribution.
+        $this->save($client, array_replace($payload, ['tags' => []]), 200);
+        $nodeTags = $entityManager->getRepository(NodeTag::class)->findBy(['node' => $node['id']]);
+        self::assertCount(1, $nodeTags);
+        self::assertSame($editorOne->getId(), $nodeTags[0]->getCreatedByUser()->getId());
     }
 
     public function testNewTagsStartUnapprovedForEditorAndApprovedForAdmin(): void

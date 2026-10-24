@@ -9,6 +9,7 @@ use App\Api\UserNodeResponse;
 use App\Entity\Node;
 use App\Entity\NodeProvider;
 use App\Entity\NodeRelation;
+use App\Entity\NodeTag;
 use App\Entity\NodeType;
 use App\Entity\Tag;
 use App\Entity\User;
@@ -64,7 +65,7 @@ final class UserNodeManager
             $node->setNodeType($this->nodeType(self::NODE_TYPE_USER));
             $node->setLatitude($request->latitude);
             $node->setLongitude($request->longitude);
-            $node->setTags($this->tagsFor($request->tags));
+            $this->assignTags($node, $request->tags);
             $node->touch();
             if ($parent !== null) {
                 $relation = $node->addParent($parent);
@@ -156,11 +157,11 @@ final class UserNodeManager
     {
         // Saves require an authenticated editor; only fall back to the
         // anonymous user when no token is present (e.g. data load).
-        $token = $this->tokenStorage->getToken();
-        if ($token !== null && $token->getUser() instanceof User) {
-            return $token->getUser();
-        }
+        return $this->currentUser() ?? $this->anonymousUser();
+    }
 
+    private function anonymousUser(): User
+    {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => self::DEFAULT_USER_EMAIL]);
 
         if ($user === null) {
@@ -173,50 +174,86 @@ final class UserNodeManager
         return $user;
     }
 
+    private function currentUser(): ?User
+    {
+        $token = $this->tokenStorage->getToken();
+        $user = $token?->getUser();
+
+        return $user instanceof User ? $user : null;
+    }
+
     /**
      * Tags created by editors or without an authenticated user (e.g. the
      * anonymous fallback) start unapproved; only admins pre-approve their own.
      */
     private function currentUserIsAdmin(): bool
     {
-        $token = $this->tokenStorage->getToken();
-        $user = $token?->getUser();
+        $user = $this->currentUser();
 
-        return $user instanceof User && in_array('ROLE_ADMIN', $user->getRoles(), true);
+        return $user !== null && in_array('ROLE_ADMIN', $user->getRoles(), true);
     }
 
     /**
-     * @param array<string, string> $tags
+     * Replaces the current user's tag additions on the node with the request
+     * tags. Tags added by other users are preserved, so the same tag can be
+     * attributed to multiple users on one node.
      *
-     * @return list<Tag>
+     * @param array<string, string> $tags
      */
-    private function tagsFor(array $tags): array
+    private function assignTags(Node $node, array $tags): void
     {
-        $repository = $this->entityManager->getRepository(Tag::class);
-        $result = [];
+        $user = $this->defaultUser();
 
-        foreach ($tags as $key => $value) {
-            $tag = $repository->findOneBy(['key' => $key, 'value' => $value]);
-
-            if ($tag === null) {
-                $tag = new Tag();
-                $tag->setKey($key);
-                $tag->setValue($value);
-                $tag->setApproved($this->currentUserIsAdmin());
-                $this->entityManager->persist($tag);
+        foreach ($node->getNodeTags() as $nodeTag) {
+            if ($nodeTag->getCreatedByUser() !== $user) {
+                continue;
             }
-
-            $result[] = $tag;
+            $tag = $nodeTag->getTag();
+            if (($tags[$tag->getKey()] ?? null) === $tag->getValue()) {
+                unset($tags[$tag->getKey()]);
+            } else {
+                $node->getNodeTags()->removeElement($nodeTag);
+                $this->entityManager->remove($nodeTag);
+            }
         }
 
-        return $result;
+        foreach ($tags as $key => $value) {
+            $nodeTag = $node->addTag($this->tagFor($key, $value), $user);
+            if ($nodeTag !== null) {
+                $this->entityManager->persist($nodeTag);
+            }
+        }
     }
 
+    private function tagFor(string $key, string $value): Tag
+    {
+        $tag = $this->entityManager->getRepository(Tag::class)->findOneBy(['key' => $key, 'value' => $value]);
+
+        if ($tag === null) {
+            $tag = new Tag();
+            $tag->setKey($key);
+            $tag->setValue($value);
+            $tag->setApproved($this->currentUserIsAdmin());
+            $this->entityManager->persist($tag);
+        }
+
+        return $tag;
+    }
+
+    /**
+     * Each user sees approved tags plus their own unapproved ones; tags
+     * another user has not yet had approved stay invisible.
+     */
     private function toResponse(Node $node): UserNodeResponse
     {
         $tags = [];
         $observations = [];
-        foreach ($node->getTags() as $tag) {
+        $user = $this->currentUser();
+        foreach ($node->getNodeTags() as $nodeTag) {
+            if (!$this->tagIsVisible($nodeTag, $user)) {
+                continue;
+            }
+            $tag = $nodeTag->getTag();
             $tags[$tag->getKey()] = $tag->getValue();
             if (!$tag->isApproved()) {
                 $observations[$tag->getKey()] = $tag->getValue();
@@ -244,7 +281,12 @@ final class UserNodeManager
     {
         $name = null;
         $tags = [];
-        foreach ($node->getTags() as $tag) {
+        $user = $this->currentUser();
+        foreach ($node->getNodeTags() as $nodeTag) {
+            if (!$this->tagIsVisible($nodeTag, $user)) {
+                continue;
+            }
+            $tag = $nodeTag->getTag();
             $tags[$tag->getKey()] = $tag->getValue();
             if ($tag->getKey() === 'name' && trim($tag->getValue()) !== '') {
                 $name = $tag->getValue();
@@ -258,5 +300,14 @@ final class UserNodeManager
             $name,
             $tags,
         );
+    }
+
+    private function tagIsVisible(NodeTag $nodeTag, ?User $user): bool
+    {
+        if ($nodeTag->getTag()->isApproved()) {
+            return true;
+        }
+
+        return $user !== null && $nodeTag->getCreatedByUser() === $user;
     }
 }
