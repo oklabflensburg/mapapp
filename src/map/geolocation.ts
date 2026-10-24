@@ -11,8 +11,12 @@ export interface LocationLayers {
   accuracyCircle?: L.Circle
 }
 
-export function locateUser(getMap: () => L.Map | undefined, onStatus: (status: MapStatus) => void): LocationLayers {
-  const layers: LocationLayers = {}
+export function locateUser(getMap: () => L.Map | undefined, onStatus: (status: MapStatus) => void, layers: LocationLayers = {}): LocationLayers {
+  // A repeated call replaces the previous fix instead of stacking markers.
+  layers.marker?.remove()
+  layers.accuracyCircle?.remove()
+  layers.marker = undefined
+  layers.accuracyCircle = undefined
 
   if (!('geolocation' in navigator)) {
     onStatus('unsupported')

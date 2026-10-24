@@ -19,6 +19,9 @@ export default {
       unsupported: 'Geolocation wird von diesem Browser nicht unterstützt.',
       unavailable: 'Standort nicht verfügbar. Standardansicht wird angezeigt.',
     },
+    locate: {
+      button: 'Meinen Standort anzeigen',
+    },
   },
   nodeEditor: {
     title: 'Knoten bearbeiten',

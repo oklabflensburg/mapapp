@@ -19,6 +19,9 @@ export default {
       unsupported: 'Geolocation is not supported by this browser.',
       unavailable: 'Location unavailable. Showing default view.',
     },
+    locate: {
+      button: 'Show my location',
+    },
   },
   nodeEditor: {
     title: 'Edit node',

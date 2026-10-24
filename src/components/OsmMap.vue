@@ -115,6 +115,12 @@ function retryCreation(): void {
   }
 }
 
+// Re-requests the position and moves the view onto it; locateUser replaces
+// the previous marker and accuracy circle.
+function locateSelf(): void {
+  locationLayers = locateUser(() => map, (status) => emit('status', status), locationLayers)
+}
+
 // Exposed so the view can drop the map highlight when the panel is closed.
 defineExpose({ clearSelection })
 
@@ -202,7 +208,7 @@ onMounted(() => {
   void loadOsmFeatures()
   void userNodes.load()
 
-  locationLayers = locateUser(() => map, (status) => emit('status', status))
+  locationLayers = locateUser(() => map, (status) => emit('status', status), locationLayers)
 })
 
 onBeforeUnmount(() => {
@@ -224,6 +230,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="container" class="map" :class="{ 'create-mode': createMode }" />
+  <Button
+    class="locate-button"
+    icon="pi pi-map-marker"
+    severity="secondary"
+    :aria-label="t('map.locate.button')"
+    :title="t('map.locate.button')"
+    @click="locateSelf"
+  />
   <!-- Adding nodes requires an editor; anonymous visitors can only browse. -->
   <div v-if="auth.canEdit" class="create-controls">
     <Button
@@ -280,5 +294,15 @@ onBeforeUnmount(() => {
   color: var(--p-primary-contrast-color, #fff);
   outline: 2px solid var(--p-primary-color, #059669);
   outline-offset: 2px;
+}
+
+/* Bottom-right corner: clear of the top-left zoom and create controls and
+   the top-center status chip. */
+.locate-button {
+  position: absolute;
+  z-index: 1000;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  right: calc(0.75rem + env(safe-area-inset-right));
+  box-shadow: 0 2px 6px #0002;
 }
 </style>
