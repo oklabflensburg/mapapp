@@ -44,4 +44,10 @@ class Tag
     {
         $this->value = $value;
     }
+
+    // EasyAdmin renders association selects through this.
+    public function __toString(): string
+    {
+        return $this->key.'='.$this->value;
+    }
 }

@@ -5,13 +5,30 @@
       <sourceFolder url="file://$MODULE_DIR$/backend/src" isTestSource="false" packagePrefix="App\" />
       <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" packagePrefix="App\Tests\" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/easycorp/easyadmin-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/psr/clock" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/asset" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/clock" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/form" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/intl" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/mime" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/options-resolver" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/password-hasher" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/polyfill-intl-icu" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/polyfill-intl-idn" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/polyfill-uuid" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-core" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-csrf" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/security-http" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/translation" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/twig-bridge" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/twig-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/uid" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/ux-twig-component" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/twig/extra-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/twig/html-extra" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/twig/twig" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

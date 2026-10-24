@@ -5,7 +5,9 @@ namespace App\Controller;
 use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 final class SecurityController extends AbstractController
 {
@@ -29,6 +31,26 @@ final class SecurityController extends AbstractController
         $user = $this->getUser();
 
         return $this->json(['user' => $user instanceof User ? $this->userPayload($user) : null]);
+    }
+
+    // The EasyAdmin UI logs in through this browser form (see the admin
+    // firewall in config/packages/security.yaml), not through the JSON login.
+    // GET renders the form; POST is intercepted by form_login before the
+    // controller runs, so the action only ever handles the GET.
+    #[Route('/admin/login', name: 'app_login_form', methods: ['GET', 'POST'])]
+    public function adminLoginForm(AuthenticationUtils $authenticationUtils): Response
+    {
+        return $this->render('security/login.html.twig', [
+            'last_username' => $authenticationUtils->getLastUsername(),
+            'error' => $authenticationUtils->getLastAuthenticationError(),
+        ]);
+    }
+
+    #[Route('/admin/logout', name: 'app_admin_logout', methods: ['GET', 'POST'])]
+    public function adminLogout(): void
+    {
+        // Intercepted by the logout listener configured on the admin firewall.
+        throw new \LogicException('This route is handled by the logout listener.');
     }
 
     /**

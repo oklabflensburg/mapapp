@@ -115,4 +115,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->userRoles->removeElement($role);
     }
+
+    // EasyAdmin renders association selects through this.
+    public function __toString(): string
+    {
+        return $this->name !== '' ? $this->name : $this->email;
+    }
 }

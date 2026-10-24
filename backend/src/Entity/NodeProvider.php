@@ -31,4 +31,10 @@ class NodeProvider
     {
         $this->name = $name;
     }
+
+    // EasyAdmin renders association selects through this.
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }
