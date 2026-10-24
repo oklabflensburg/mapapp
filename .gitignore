@@ -4,3 +4,4 @@ dist/
 .DS_Store
 scripts/data/
 public/data/
+.users.md
