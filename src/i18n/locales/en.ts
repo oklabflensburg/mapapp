@@ -71,11 +71,19 @@ export default {
         en: 'English',
         de: 'German',
       },
-      routing: {
-        label: 'Route type',
-        hint: 'The profile used when planning walking routes.',
-        shortest: 'Shortest route',
-        wheelchair: 'Wheelchair-friendly',
+    },
+    tagPriorities: {
+      title: 'Tag priorities',
+      hint: 'Tell routing how strongly you prefer or avoid certain tags. Applied when planning routes and remembered on this device.',
+      tags: {
+        stairs: 'Stairs',
+      },
+      levels: {
+        neutral: 'No preference',
+        avoid: 'Avoid',
+        try_to_avoid: 'Try to avoid',
+        prefer: 'Prefer',
+        strongly_prefer: 'Strongly prefer',
       },
     },
   },

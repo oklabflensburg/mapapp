@@ -1,8 +1,7 @@
-# GraphHopper configuration for AccessApp. Both profiles use the foot
-# encoder (walker):
-# - foot_shortest: shortest walking route (distance-influenced weighting)
-# - foot_wheelchair: like foot_shortest, but avoids steps, fords, hiking
-#   trails and rough surfaces
+# GraphHopper configuration for AccessApp. A single profile based on the foot
+# encoder (walker) is served:
+# - foot_wheelchair: wheelchair-friendly walking route that avoids steps,
+#   fords, hiking trails and rough surfaces
 # Paths refer to the compose mounts: the OSM extract is read-only under
 # /data/osm, the prepared graph persists in the graphhopper_graphs volume.
 graphhopper:
@@ -10,18 +9,6 @@ graphhopper:
   graph.location: /data/graphhopper
 
   profiles:
-    - name: foot_shortest
-      custom_model:
-        priority:
-          - if: "!foot_access || hike_rating >= 2"
-            multiply_by: "0"
-          - if: "foot_road_access == PRIVATE"
-            multiply_by: "0.1"
-        speed:
-          - if: "true"
-            limit_to: "foot_average_speed"
-        # Bias the (time-based) weighting towards the shortest distance.
-        distance_influence: 300
     - name: foot_wheelchair
       custom_model:
         priority:
@@ -38,7 +25,6 @@ graphhopper:
   # Landmark (hybrid mode) preparation keeps queries fast without the
   # memory cost of CH; custom-model profiles cannot use CH.
   profiles_lm:
-    - profile: foot_shortest
     - profile: foot_wheelchair
 
   graph.encoded_values: |

@@ -71,11 +71,19 @@ export default {
         en: 'Englisch',
         de: 'Deutsch',
       },
-      routing: {
-        label: 'Route-Typ',
-        hint: 'Das Profil, das für die Planung von Fußrouten verwendet wird.',
-        shortest: 'Kürzeste Route',
-        wheelchair: 'Rollstuhlgerecht',
+    },
+    tagPriorities: {
+      title: 'Tag-Prioritäten',
+      hint: 'Lege fest, wie stark du bestimmte Tags bevorzugst oder meidest. Wird beim Routenplanen angewendet und auf diesem Gerät gespeichert.',
+      tags: {
+        stairs: 'Treppen',
+      },
+      levels: {
+        neutral: 'Keine Präferenz',
+        avoid: 'Meiden',
+        try_to_avoid: 'Möglichst meiden',
+        prefer: 'Bevorzugen',
+        strongly_prefer: 'Stark bevorzugen',
       },
     },
   },

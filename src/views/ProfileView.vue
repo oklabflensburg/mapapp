@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useAuthStore } from '../stores/auth'
-import { useSettingsStore, type AppLocale, type RoutingProfile } from '../stores/settings'
+import { useSettingsStore, type AppLocale, type TagPriority } from '../stores/settings'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -22,14 +22,23 @@ const localeOptions = computed(() => [
   { value: 'de' as AppLocale, label: t('profile.settings.language.de') },
 ])
 
-const routingOptions = computed(() => [
-  { value: 'foot_shortest' as RoutingProfile, label: t('profile.settings.routing.shortest') },
-  { value: 'foot_wheelchair' as RoutingProfile, label: t('profile.settings.routing.wheelchair') },
-])
+const tagPriorityOptions = computed(() =>
+  (['neutral', 'avoid', 'try_to_avoid', 'prefer', 'strongly_prefer'] as TagPriority[]).map(
+    (value) => ({ value, label: t(`profile.tagPriorities.levels.${value}`) }),
+  ),
+)
 
 function back(): void {
   router.push({ name: 'home' })
 }
+
+// The server-stored priorities win over the localStorage fallback once the
+// session is known; covers both direct visits and logins from another page.
+onMounted(() => {
+  if (auth.user) {
+    void settings.loadTagPriorities()
+  }
+})
 </script>
 
 <template>
@@ -81,17 +90,21 @@ function back(): void {
           @update:model-value="settings.setLocale($event as AppLocale)"
         />
       </div>
+    </section>
+
+    <section class="card" :aria-label="t('profile.tagPriorities.title')">
+      <h2 class="card-title">{{ t('profile.tagPriorities.title') }}</h2>
+      <p class="hint">{{ t('profile.tagPriorities.hint') }}</p>
 
       <div class="setting">
-        <label for="setting-routing">{{ t('profile.settings.routing.label') }}</label>
-        <p class="hint">{{ t('profile.settings.routing.hint') }}</p>
+        <label for="setting-tag-priority-stairs">{{ t('profile.tagPriorities.tags.stairs') }}</label>
         <Select
-          id="setting-routing"
-          :model-value="settings.routingProfile"
-          :options="routingOptions"
+          id="setting-tag-priority-stairs"
+          :model-value="settings.tagPriorities.stairs"
+          :options="tagPriorityOptions"
           option-label="label"
           option-value="value"
-          @update:model-value="settings.setRoutingProfile($event as RoutingProfile)"
+          @update:model-value="settings.setTagPriority('stairs', $event as TagPriority)"
         />
       </div>
     </section>

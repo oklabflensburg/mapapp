@@ -12,18 +12,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 final class Routing
 {
-    public const DEFAULT_PROFILE = 'foot_shortest';
-
-    /**
-     * Routing profiles configured in backend/routing/graphhopper.yml; also
-     * the allowed values of the /api/route profile query parameter.
-     *
-     * @return list<string>
-     */
-    public static function profiles(): array
-    {
-        return ['foot_shortest', 'foot_wheelchair'];
-    }
+    // The only routing profile configured in backend/routing/graphhopper.yml:
+    // a wheelchair-friendly walking profile that avoids steps.
+    public const PROFILE = 'foot_wheelchair';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -37,13 +28,10 @@ final class Routing
      *         distance in meters, time in seconds, points as [lat, lon] pairs
      *         along the route
      *
-     * @param string $profile one of self::profiles(); defaults to the
-     *                          shortest walking route
-     *
      * @throws NoRouteFoundException       when GraphHopper cannot connect the points
      * @throws RoutingUnavailableException when GraphHopper cannot be reached
      */
-    public function findShortestFootRoute(float $fromLat, float $fromLon, float $toLat, float $toLon, string $profile = self::DEFAULT_PROFILE): array
+    public function findShortestFootRoute(float $fromLat, float $fromLon, float $toLat, float $toLon): array
     {
         // GraphHopper expects repeated `point` parameters, which Symfony's
         // query array encoding (point[0]=...) cannot express; the coordinates
@@ -55,7 +43,7 @@ final class Routing
             $fromLon,
             $toLat,
             $toLon,
-            $profile,
+            self::PROFILE,
         );
 
         try {

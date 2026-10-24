@@ -66,34 +66,7 @@ final class RoutingControllerTest extends WebTestCase
         self::assertSame(422, $client->getResponse()->getStatusCode());
     }
 
-    public function testRoutePassesWheelchairProfileToGraphHopper(): void
-    {
-        $client = static::createClient();
-        $requestedUrls = [];
-        static::getContainer()->set('http_client', new MockHttpClient(
-            function (string $method, string $url, array $options) use (&$requestedUrls): MockResponse {
-                $requestedUrls[] = $url;
-
-                return new MockResponse((string) json_encode([
-                    'paths' => [
-                        [
-                            'distance' => 1234.56,
-                            'time' => 900000,
-                            'points' => ['coordinates' => [[9.43, 54.79], [9.44, 54.80]]],
-                        ],
-                    ],
-                ]));
-            },
-        ));
-
-        $client->request('GET', '/api/route?fromLat=54.791&fromLon=9.437&toLat=54.801&toLon=9.447&profile=foot_wheelchair');
-
-        self::assertResponseIsSuccessful();
-        self::assertCount(1, $requestedUrls);
-        self::assertStringContainsString('profile=foot_wheelchair', $requestedUrls[0]);
-    }
-
-    public function testRouteDefaultsToShortestProfile(): void
+    public function testRouteAlwaysUsesTheWheelchairProfile(): void
     {
         $client = static::createClient();
         $requestedUrls = [];
@@ -117,15 +90,6 @@ final class RoutingControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertCount(1, $requestedUrls);
-        self::assertStringContainsString('profile=foot_shortest', $requestedUrls[0]);
-    }
-
-    public function testRouteRejectsUnknownProfile(): void
-    {
-        $client = static::createClient();
-
-        $client->request('GET', '/api/route?fromLat=54.791&fromLon=9.437&toLat=54.801&toLon=9.447&profile=car');
-
-        self::assertSame(422, $client->getResponse()->getStatusCode());
+        self::assertStringContainsString('profile=foot_wheelchair', $requestedUrls[0]);
     }
 }
