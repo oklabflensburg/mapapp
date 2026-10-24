@@ -2,9 +2,10 @@
 
 namespace App\Entity;
 
+use App\Repository\NodeTypeRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: NodeTypeRepository::class)]
 #[ORM\Table(name: 'node_types')]
 #[ORM\UniqueConstraint(name: 'uq_node_types_name', columns: ['name'])]
 class NodeType

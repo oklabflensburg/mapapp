@@ -1,0 +1,18 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% extends 'admin/node_edit.html.twig' %}
+
+{# Pending observations edit view: a review screen. It shows the unapproved
+   tags with their approve actions and the frontend preview, but no node
+   edit form; the link below leads to the node edit view instead. #}
+{% block node_edit_area %}
+    <p class="pending-observation-node-link">
+        <a class="btn btn-secondary" href="{{ path('app_admin_node_edit', {entityId: node.id}) }}">Edit node</a>
+    </p>
+
+    <style>
+        .pending-observation-node-link {
+            margin-bottom: 1.5rem;
+        }
+    </style>
+{% endblock %}

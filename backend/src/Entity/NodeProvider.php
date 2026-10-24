@@ -2,9 +2,10 @@
 
 namespace App\Entity;
 
+use App\Repository\NodeProviderRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: NodeProviderRepository::class)]
 #[ORM\Table(name: 'node_providers')]
 #[ORM\UniqueConstraint(name: 'uq_node_providers_name', columns: ['name'])]
 class NodeProvider

@@ -11,55 +11,84 @@
     {% set preview_src = frontend_url ~ '/?lat=' ~ node.latitude ~ '&lon=' ~ node.longitude ~ '&zoom=' ~ 18 %}
     <div class="node-edit-split">
         <div class="node-edit-split-form">
-            {# Unapproved tags on this node, grouped by tag: each group lists
-               the users who added it and offers an approve action. Shown
-               before the form so pending approvals are always visible. #}
+            {# Unapproved tags on this node, grouped by key: each key is an
+               expandable group listing its pending values, one row per
+               distinct tag with the amount of observations (users who
+               added it) and an approve action.
+               Shown before the form so pending approvals are always visible. #}
             {% set unapproved_node_tags = [] %}
             {% for node_tag in node.nodeTags %}
                 {% if not node_tag.tag.approved %}
                     {% set unapproved_node_tags = unapproved_node_tags|merge([node_tag]) %}
                 {% endif %}
             {% endfor %}
-            {% set groups = {} %}
+            {% set key_groups = {} %}
             {% for node_tag in unapproved_node_tags %}
                 {# String keys: Twig's merge renumbers integer keys, which would break the grouping. #}
-                {% set group_key = 'tag-' ~ node_tag.tag.id %}
-                {% set groups = groups|merge({(group_key): (groups[group_key]|default([]))|merge([node_tag])}) %}
+                {% set group_key = 'key-' ~ node_tag.tag.key %}
+                {% set key_groups = key_groups|merge({(group_key): (key_groups[group_key]|default([]))|merge([node_tag])}) %}
             {% endfor %}
-            <section class="node-edit-unapproved-tags">
-                <h2>Unapproved tags</h2>
-                {% if groups is empty %}
+            {% block unapproved_tags %}
+                <section class="node-edit-unapproved-tags">
+                <div class="node-edit-unapproved-tags-header">
+                    <h2>Unapproved tags</h2>
+                    {# Jumps to the next node in the review queue. #}
+                    <a class="btn btn-secondary" href="{{ path('app_admin_node_next_pending', {id: node.id}) }}">Next pending</a>
+                </div>
+                {% if key_groups is empty %}
                     <p class="no-unapproved-tags">No unapproved tags on this node.</p>
                 {% else %}
-                    <table class="unapproved-tags-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Key</th>
-                                <th scope="col">Value</th>
-                                <th scope="col">Users</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for grouped_node_tags in groups %}
-                                {% set tag = grouped_node_tags[0].tag %}
-                                <tr>
-                                    <td>{{ tag.key }}</td>
-                                    <td>{{ tag.value }}</td>
-                                    <td>{{ grouped_node_tags|map(node_tag => node_tag.createdByUser)|join(', ') }}</td>
-                                    <td>
-                                        <form method="post" action="{{ path('app_admin_tag_approve', {id: tag.id}) }}">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ tag.id) }}">
-                                            <button class="btn btn-primary" type="submit">Approve</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    {% for grouped_key_tags in key_groups %}
+                        {# Within a key group, entries are grouped by tag so a
+                           value shared by several users shows one approve form. #}
+                        {% set tag_groups = {} %}
+                        {% for node_tag in grouped_key_tags %}
+                            {% set tag_group_key = 'tag-' ~ node_tag.tag.id %}
+                            {% set tag_groups = tag_groups|merge({(tag_group_key): (tag_groups[tag_group_key]|default([]))|merge([node_tag])}) %}
+                        {% endfor %}
+                        {# Rows are ordered by highest amount of observations first. #}
+                        {% set tag_groups = tag_groups|sort((a, b) => b|length - a|length) %}
+                        {# The first group is uncollapsed so the pending values
+                           are visible without interaction. #}
+                        <details class="unapproved-tag-key-group"{% if loop.first %} open{% endif %}>
+                            <summary>
+                                <span class="unapproved-tag-key">{{ grouped_key_tags[0].tag.key }}</span>
+                                <span class="unapproved-tag-count">{{ tag_groups|length }} pending {{ tag_groups|length == 1 ? 'value' : 'values' }}</span>
+                            </summary>
+                            <table class="unapproved-tags-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Value</th>
+                                        <th scope="col">Observations</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for grouped_node_tags in tag_groups %}
+                                        {% set tag = grouped_node_tags[0].tag %}
+                                        <tr>
+                                            <td>{{ tag.value }}</td>
+                                            <td>{{ grouped_node_tags|length }}</td>
+                                            <td>
+                                                <form method="post" action="{{ path('app_admin_tag_approve', {id: tag.id}) }}">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ tag.id) }}">
+                                                    <button class="btn btn-primary" type="submit">Approve</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </details>
+                    {% endfor %}
                 {% endif %}
             </section>
-            {{ block('edit_form') }}
+            {% endblock %}
+            {# The node edit form; replaced by the pending observations review
+               view (see admin/pending_observation_edit.html.twig). #}
+            {% block node_edit_area %}
+                {{ block('edit_form') }}
+            {% endblock %}
         </div>
         <aside class="node-edit-split-preview">
             <iframe src="{{ preview_src }}" title="App frontend preview of this node" loading="lazy"></iframe>
@@ -107,8 +136,64 @@
             margin-bottom: 0.5rem;
         }
 
+        .node-edit-unapproved-tags-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .node-edit-unapproved-tags-header h2 {
+            margin: 0;
+        }
+
         .node-edit-unapproved-tags .no-unapproved-tags {
             margin: 0;
+            color: var(--text-muted);
+        }
+
+        .unapproved-tag-key-group {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .unapproved-tag-key-group summary {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            list-style: none;
+            background: var(--body-bg);
+        }
+
+        .unapproved-tag-key-group summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .unapproved-tag-key-group summary::after {
+            content: '';
+            margin-left: auto;
+            width: 0.4rem;
+            height: 0.4rem;
+            border-right: 2px solid var(--text-muted);
+            border-bottom: 2px solid var(--text-muted);
+            transform: rotate(45deg);
+            transition: transform 0.15s ease-in-out;
+        }
+
+        .unapproved-tag-key-group[open] summary::after {
+            transform: rotate(225deg);
+        }
+
+        .unapproved-tag-key-group .unapproved-tag-key {
+            font-weight: 600;
+        }
+
+        .unapproved-tag-key-group .unapproved-tag-count {
             color: var(--text-muted);
         }
 

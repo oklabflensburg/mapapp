@@ -2,11 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\NodeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: NodeRepository::class)]
 #[ORM\Table(name: 'nodes')]
 #[ORM\UniqueConstraint(name: 'uq_nodes_provider_node', columns: ['node_provider_id', 'provider_node_id'])]
 class Node

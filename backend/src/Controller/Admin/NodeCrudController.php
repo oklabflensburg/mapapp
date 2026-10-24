@@ -3,15 +3,27 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Node;
+use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class NodeCrudController extends AbstractCrudController
 {
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+    ) {
+    }
+
     public static function getEntityFqcn(): string
     {
         return Node::class;
@@ -40,5 +52,74 @@ final class NodeCrudController extends AbstractCrudController
         // Managed by the entity on persist; never editable.
         yield DateTimeField::new('createdAt')->onlyOnDetail();
         yield DateTimeField::new('updatedAt')->onlyOnDetail();
+    }
+
+    #[Route('/admin/node/{id}/next-pending', name: 'app_admin_node_next_pending', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function nextPending(Request $request, int $id): Response
+    {
+        // The next node with unapproved tags; after the last one, wrap
+        // around to the first so the queue can be worked through in a loop.
+        $nextId = $this->findPendingNodeId(afterId: $id) ?? $this->findPendingNodeId();
+
+        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
+
+        if ($nextId === null) {
+            $this->addFlash('warning', 'No pending observations.');
+
+            return $this->redirect($adminUrlGenerator
+                ->setController(PendingObservationCrudController::class)
+                ->setAction(Action::INDEX)
+                ->generateUrl());
+        }
+
+        // Stay in the section the button was clicked from; only trust
+        // referers of this app instance.
+        $controller = $this->refererIsNodeEdit($request) ? self::class : PendingObservationCrudController::class;
+
+        return $this->redirect($adminUrlGenerator
+            ->setController($controller)
+            ->setAction(Action::EDIT)
+            ->setEntityId($nextId)
+            ->generateUrl());
+    }
+
+    private function findPendingNodeId(?int $afterId = null): ?int
+    {
+        $queryBuilder = $this->entityManager->createQueryBuilder()
+            ->select('node.id')
+            ->distinct()
+            ->from(Node::class, 'node')
+            ->innerJoin('node.nodeTags', 'nodeTag')
+            ->innerJoin('nodeTag.tag', 'tag')
+            ->where('tag.approved = false')
+            ->orderBy('node.id', 'ASC')
+            ->setMaxResults(1);
+
+        if ($afterId !== null) {
+            $queryBuilder
+                ->andWhere('node.id > :afterId')
+                ->setParameter('afterId', $afterId);
+        }
+
+        /** @var array{id: int}|null $result */
+        $result = $queryBuilder->getQuery()->getOneOrNullResult();
+
+        return $result['id'] ?? null;
+    }
+
+    private function refererIsNodeEdit(Request $request): bool
+    {
+        $referer = $request->headers->get('referer');
+        if (!\is_string($referer) || !str_starts_with($referer, $request->getSchemeAndHttpHost())) {
+            return false;
+        }
+
+        $path = parse_url($referer, PHP_URL_PATH);
+        if (!\is_string($path)) {
+            return false;
+        }
+
+        return (bool) preg_match('#^/admin/node/\d+/edit$#', $path);
     }
 }

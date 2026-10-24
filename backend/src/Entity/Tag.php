@@ -2,11 +2,12 @@
 
 namespace App\Entity;
 
+use App\Repository\TagRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: TagRepository::class)]
 #[ORM\Table(name: 'tags')]
 #[ORM\UniqueConstraint(name: 'uq_tags_key_value', columns: ['key', 'value'])]
 class Tag

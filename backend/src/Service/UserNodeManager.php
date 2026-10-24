@@ -7,12 +7,14 @@ use App\Api\SaveUserNodeRequest;
 use App\Api\SaveUserNodeResult;
 use App\Api\UserNodeResponse;
 use App\Entity\Node;
-use App\Entity\NodeProvider;
 use App\Entity\NodeRelation;
 use App\Entity\NodeTag;
-use App\Entity\NodeType;
-use App\Entity\Tag;
 use App\Entity\User;
+use App\Repository\NodeProviderRepository;
+use App\Repository\NodeRepository;
+use App\Repository\NodeTypeRepository;
+use App\Repository\TagRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -29,18 +31,23 @@ final class UserNodeManager
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly TokenStorageInterface $tokenStorage,
+        private readonly NodeRepository $nodeRepository,
+        private readonly NodeTypeRepository $nodeTypeRepository,
+        private readonly NodeProviderRepository $nodeProviderRepository,
+        private readonly TagRepository $tagRepository,
+        private readonly UserRepository $userRepository,
     ) {
     }
 
     public function save(SaveUserNodeRequest $request): SaveUserNodeResult
     {
         return $this->entityManager->wrapInTransaction(function () use ($request): SaveUserNodeResult {
-            $node = $this->findNode($request->provider, $request->providerNodeId);
+            $node = $this->nodeRepository->findOneByProvider($request->provider, $request->providerNodeId);
             $parent = null;
             if ($request->parent !== null) {
                 $reference = $request->parent;
                 if ($reference->id !== null) {
-                    $parent = $this->entityManager->find(Node::class, $reference->id);
+                    $parent = $this->nodeRepository->find($reference->id);
                     if ($parent === null) {
                         throw new UnprocessableEntityHttpException('Parent node does not exist.');
                     }
@@ -48,7 +55,7 @@ final class UserNodeManager
                     if ($request->provider === self::NODE_PROVIDER_OSM && $reference->providerNodeId === $request->providerNodeId) {
                         throw new UnprocessableEntityHttpException('A node cannot be its own parent.');
                     }
-                    $parent = $this->findNode(self::NODE_PROVIDER_OSM, $reference->providerNodeId);
+                    $parent = $this->nodeRepository->findOneByProvider(self::NODE_PROVIDER_OSM, $reference->providerNodeId);
                     if ($parent === null) {
                         $parent = $this->newNode(self::NODE_PROVIDER_OSM, $reference->providerNodeId, 'osm');
                         $parent->setLatitude($reference->latitude);
@@ -62,7 +69,7 @@ final class UserNodeManager
 
             $created = $node === null;
             $node ??= $this->newNode($request->provider, $request->providerNodeId, self::NODE_TYPE_USER);
-            $node->setNodeType($this->nodeType(self::NODE_TYPE_USER));
+            $node->setNodeType($this->nodeTypeRepository->findOrCreate(self::NODE_TYPE_USER));
             $node->setLatitude($request->latitude);
             $node->setLongitude($request->longitude);
             $this->assignTags($node, $request->tags);
@@ -84,15 +91,7 @@ final class UserNodeManager
      */
     public function listUserNodes(): array
     {
-        $repository = $this->entityManager->getRepository(Node::class);
-
-        $nodes = $repository->createQueryBuilder('n')
-            ->join('n.nodeType', 't')
-            ->where('t.name = :type')
-            ->setParameter('type', self::NODE_TYPE_USER)
-            ->orderBy('n.updatedAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $nodes = $this->nodeRepository->findAllByNodeType(self::NODE_TYPE_USER);
 
         return array_map($this->toResponse(...), $nodes);
     }
@@ -100,8 +99,8 @@ final class UserNodeManager
     private function newNode(string $provider, string $providerNodeId, string $type): Node
     {
         $node = new Node();
-        $node->setNodeType($this->nodeType($type));
-        $node->setNodeProvider($this->nodeProvider($provider));
+        $node->setNodeType($this->nodeTypeRepository->findOrCreate($type));
+        $node->setNodeProvider($this->nodeProviderRepository->findOrCreate($provider));
         $node->setProviderNodeId($providerNodeId);
         $node->setCreatedByUser($this->defaultUser());
         $this->entityManager->persist($node);
@@ -109,69 +108,11 @@ final class UserNodeManager
         return $node;
     }
 
-    private function findNode(string $provider, string $providerNodeId): ?Node
-    {
-        $repository = $this->entityManager->getRepository(Node::class);
-
-        /** @var Node|null $node */
-        $node = $repository->createQueryBuilder('n')
-            ->join('n.nodeProvider', 'p')
-            ->where('p.name = :provider')
-            ->andWhere('n.providerNodeId = :providerNodeId')
-            ->setParameter('provider', $provider)
-            ->setParameter('providerNodeId', $providerNodeId)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        return $node;
-    }
-
-    private function nodeType(string $name): NodeType
-    {
-        $type = $this->entityManager->getRepository(NodeType::class)->findOneBy(['name' => $name]);
-
-        if ($type === null) {
-            $type = new NodeType();
-            $type->setName($name);
-            $this->entityManager->persist($type);
-        }
-
-        return $type;
-    }
-
-    private function nodeProvider(string $name): NodeProvider
-    {
-        $provider = $this->entityManager->getRepository(NodeProvider::class)->findOneBy(['name' => $name]);
-
-        if ($provider === null) {
-            $provider = new NodeProvider();
-            $provider->setName($name);
-            $this->entityManager->persist($provider);
-        }
-
-        return $provider;
-    }
-
     private function defaultUser(): User
     {
         // Saves require an authenticated editor; only fall back to the
         // anonymous user when no token is present (e.g. data load).
-        return $this->currentUser() ?? $this->anonymousUser();
-    }
-
-    private function anonymousUser(): User
-    {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => self::DEFAULT_USER_EMAIL]);
-
-        if ($user === null) {
-            $user = new User();
-            $user->setName('Anonymous');
-            $user->setEmail(self::DEFAULT_USER_EMAIL);
-            $this->entityManager->persist($user);
-        }
-
-        return $user;
+        return $this->currentUser() ?? $this->userRepository->findOrCreate('Anonymous', self::DEFAULT_USER_EMAIL);
     }
 
     private function currentUser(): ?User
@@ -218,26 +159,11 @@ final class UserNodeManager
         }
 
         foreach ($tags as $key => $value) {
-            $nodeTag = $node->addTag($this->tagFor($key, $value), $user);
+            $nodeTag = $node->addTag($this->tagRepository->findOrCreate($key, $value, $this->currentUserIsAdmin()), $user);
             if ($nodeTag !== null) {
                 $this->entityManager->persist($nodeTag);
             }
         }
-    }
-
-    private function tagFor(string $key, string $value): Tag
-    {
-        $tag = $this->entityManager->getRepository(Tag::class)->findOneBy(['key' => $key, 'value' => $value]);
-
-        if ($tag === null) {
-            $tag = new Tag();
-            $tag->setKey($key);
-            $tag->setValue($value);
-            $tag->setApproved($this->currentUserIsAdmin());
-            $this->entityManager->persist($tag);
-        }
-
-        return $tag;
     }
 
     /**

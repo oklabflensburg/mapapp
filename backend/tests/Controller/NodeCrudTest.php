@@ -12,7 +12,7 @@ final class NodeCrudTest extends WebTestCase
 {
     use CreatesUsers;
 
-    public function testEditPageListsUnapprovedTagsGroupedByTagWithApproveAction(): void
+    public function testEditPageGroupsUnapprovedTagsByKeyWithExpandableGroups(): void
     {
         $client = static::createClient();
         $admin = $this->createUser('admin-node-unapproved@example.test', ['admin']);
@@ -45,11 +45,19 @@ final class NodeCrudTest extends WebTestCase
         $node->setLongitude(9.437);
         $entityManager->persist($node);
 
-        $unapproved = new Tag();
-        $unapproved->setKey('access');
-        $unapproved->setValue('unapproved-'.bin2hex(random_bytes(8)));
-        $unapproved->setApproved(false);
-        $entityManager->persist($unapproved);
+        // Two distinct unapproved values under the same key, plus one
+        // approved value that must not show up in the groups.
+        $shared = new Tag();
+        $shared->setKey('access');
+        $shared->setValue('shared-'.bin2hex(random_bytes(8)));
+        $shared->setApproved(false);
+        $entityManager->persist($shared);
+
+        $other = new Tag();
+        $other->setKey('access');
+        $other->setValue('other-'.bin2hex(random_bytes(8)));
+        $other->setApproved(false);
+        $entityManager->persist($other);
 
         $approved = new Tag();
         $approved->setKey('access');
@@ -57,10 +65,17 @@ final class NodeCrudTest extends WebTestCase
         $approved->setApproved(true);
         $entityManager->persist($approved);
 
-        // Both editors added the same unapproved tag: one group, two users.
-        $entityManager->persist($node->addTag($unapproved, $editorOne));
-        $entityManager->persist($node->addTag($unapproved, $editorTwo));
+        // The approved value was attached before the editors proposed theirs.
         $entityManager->persist($node->addTag($approved, $editorOne));
+        $entityManager->flush();
+
+        // Insertion order differs from display order: the single-observation
+        // value is added first, so the expected rows below prove the sort.
+        $entityManager->persist($node->addTag($other, $editorOne));
+
+        // Both editors added the shared tag: one value, two users.
+        $entityManager->persist($node->addTag($shared, $editorOne));
+        $entityManager->persist($node->addTag($shared, $editorTwo));
         $entityManager->flush();
 
         try {
@@ -69,30 +84,48 @@ final class NodeCrudTest extends WebTestCase
             self::assertResponseIsSuccessful();
             $section = $crawler->filter('.node-edit-unapproved-tags');
             self::assertCount(1, $section);
-            $sectionText = $section->text();
-            self::assertStringContainsString($unapproved->getKey(), $sectionText);
-            self::assertStringContainsString($unapproved->getValue(), $sectionText);
-            self::assertStringContainsString($editorOne->getName(), $sectionText);
-            self::assertStringContainsString($editorTwo->getName(), $sectionText);
-            self::assertStringNotContainsString($approved->getValue(), $sectionText);
-            // Grouped by tag: one table row with Key, Value and Users columns.
-            $rows = $section->filter('tbody tr');
-            self::assertCount(1, $rows);
-            self::assertSame([$unapproved->getKey(), $unapproved->getValue()], array_slice($rows->children()->each(fn ($cell) => $cell->text()), 0, 2));
-            self::assertSame(
-                $editorOne->getName().', '.$editorTwo->getName(),
-                $rows->children()->eq(2)->text(),
-            );
-            self::assertSame('/admin/tag/'.$unapproved->getId().'/approve', $rows->filter('form')->attr('action'));
-            $form = $section->filter('form')->form();
+            self::assertStringNotContainsString($approved->getValue(), $section->text());
 
-            $client->submit($form);
+            // Grouped by key: one expandable group for 'access' with the
+            // count of pending values in its summary.
+            $groups = $section->filter('details.unapproved-tag-key-group');
+            self::assertCount(1, $groups);
+            $summary = $groups->first()->filter('summary');
+            self::assertSame($shared->getKey(), $summary->filter('.unapproved-tag-key')->text());
+            self::assertStringContainsString('2 pending values', $summary->filter('.unapproved-tag-count')->text());
+
+            // One row per distinct tag, with the amount of observations
+            // (how many users added that value) and no user names.
+            $rows = $section->filter('tbody tr');
+            self::assertCount(2, $rows);
+            self::assertSame(
+                [$shared->getValue(), $other->getValue()],
+                $rows->each(fn ($row) => $row->children()->eq(0)->text()),
+            );
+            self::assertSame('2', $rows->eq(0)->children()->eq(1)->text());
+            self::assertSame('1', $rows->eq(1)->children()->eq(1)->text());
+            self::assertStringNotContainsString($editorOne->getName(), $section->html());
+            self::assertStringNotContainsString($editorTwo->getName(), $section->html());
+            self::assertSame('/admin/tag/'.$shared->getId().'/approve', $rows->eq(0)->filter('form')->attr('action'));
+            self::assertSame('/admin/tag/'.$other->getId().'/approve', $rows->eq(1)->filter('form')->attr('action'));
+
+            $client->submit($rows->eq(0)->filter('form')->form());
             self::assertResponseRedirects();
 
             $entityManager = static::getContainer()->get('doctrine')->getManager();
-            self::assertTrue($entityManager->find(Tag::class, $unapproved->getId())->isApproved());
+            self::assertTrue($entityManager->find(Tag::class, $shared->getId())->isApproved());
 
-            // The approved tag moves the section to its empty state.
+            // Approving one value supersedes the other pending value for the
+            // same key: its attribution is removed from the node.
+            $entityManager->clear();
+            $remaining = [];
+            foreach ($entityManager->find(Node::class, $node->getId())->getNodeTags() as $nodeTag) {
+                $remaining[] = $nodeTag->getTag()->getValue();
+            }
+            sort($remaining);
+            self::assertSame([$approved->getValue(), $shared->getValue(), $shared->getValue()], $remaining);
+
+            // With no pending values left, the section shows its empty state.
             $crawler = $client->request('GET', '/admin/node/'.$node->getId().'/edit');
             self::assertResponseIsSuccessful();
             $section = $crawler->filter('.node-edit-unapproved-tags');
@@ -106,7 +139,8 @@ final class NodeCrudTest extends WebTestCase
         } finally {
             $manager = static::getContainer()->get('doctrine')->getManager();
             $manager->remove($manager->find(Node::class, $node->getId()));
-            $manager->remove($manager->find(Tag::class, $unapproved->getId()));
+            $manager->remove($manager->find(Tag::class, $shared->getId()));
+            $manager->remove($manager->find(Tag::class, $other->getId()));
             $manager->remove($manager->find(Tag::class, $approved->getId()));
             $manager->flush();
         }
