@@ -20,6 +20,8 @@ export interface UserNode {
   latitude: number
   longitude: number
   tags: Record<string, string>
+  // Tag key/value pairs not yet approved by an admin.
+  observations: Record<string, string>
   createdAt: string
   updatedAt: string
 }

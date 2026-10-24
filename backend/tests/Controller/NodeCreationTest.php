@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Node;
+use App\Entity\Tag;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -141,6 +142,24 @@ final class NodeCreationTest extends WebTestCase
         $listedChild = array_values(array_filter($nodes, static fn (array $n): bool => $n['id'] === $child['id']))[0];
         self::assertSame('Edited OSM parent', $listedChild['parents'][0]['name']);
         self::assertSame(['name' => 'Edited OSM parent'], $listedChild['parents'][0]['tags']);
+    }
+
+    public function testNewTagsStartUnapprovedForEditorAndApprovedForAdmin(): void
+    {
+        $editorValue = 'editor-tag-'.bin2hex(random_bytes(8));
+        $client = static::createClient();
+        $this->loginEditor($client);
+        $editorNode = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => $editorValue]]));
+        self::assertSame(['name' => $editorValue], $editorNode['observations']);
+
+        $adminValue = 'admin-tag-'.bin2hex(random_bytes(8));
+        $client->loginUser($this->createUser('admin-tags@example.test', ['admin']));
+        $adminNode = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => $adminValue]]));
+        self::assertSame([], $adminNode['observations']);
+
+        $repository = static::getContainer()->get('doctrine')->getRepository(Tag::class);
+        self::assertFalse($repository->findOneBy(['value' => $editorValue])->isApproved());
+        self::assertTrue($repository->findOneBy(['value' => $adminValue])->isApproved());
     }
 
     public function testRejectsInvalidParentSelfRelationAndCoordinates(): void

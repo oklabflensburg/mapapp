@@ -20,6 +20,9 @@ class Tag
     #[ORM\Column(length: 255)]
     private string $value = '';
 
+    #[ORM\Column]
+    private bool $approved = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -43,6 +46,16 @@ class Tag
     public function setValue(string $value): void
     {
         $this->value = $value;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approved;
+    }
+
+    public function setApproved(bool $approved): void
+    {
+        $this->approved = $approved;
     }
 
     // EasyAdmin renders association selects through this.

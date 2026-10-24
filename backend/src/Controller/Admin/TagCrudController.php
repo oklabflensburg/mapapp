@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Tag;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 final class TagCrudController extends AbstractCrudController
@@ -26,5 +27,6 @@ final class TagCrudController extends AbstractCrudController
     {
         yield TextField::new('key');
         yield TextField::new('value');
+        yield BooleanField::new('approved');
     }
 }

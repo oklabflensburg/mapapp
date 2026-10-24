@@ -174,6 +174,18 @@ final class UserNodeManager
     }
 
     /**
+     * Tags created by editors or without an authenticated user (e.g. the
+     * anonymous fallback) start unapproved; only admins pre-approve their own.
+     */
+    private function currentUserIsAdmin(): bool
+    {
+        $token = $this->tokenStorage->getToken();
+        $user = $token?->getUser();
+
+        return $user instanceof User && in_array('ROLE_ADMIN', $user->getRoles(), true);
+    }
+
+    /**
      * @param array<string, string> $tags
      *
      * @return list<Tag>
@@ -190,6 +202,7 @@ final class UserNodeManager
                 $tag = new Tag();
                 $tag->setKey($key);
                 $tag->setValue($value);
+                $tag->setApproved($this->currentUserIsAdmin());
                 $this->entityManager->persist($tag);
             }
 
@@ -202,8 +215,12 @@ final class UserNodeManager
     private function toResponse(Node $node): UserNodeResponse
     {
         $tags = [];
+        $observations = [];
         foreach ($node->getTags() as $tag) {
             $tags[$tag->getKey()] = $tag->getValue();
+            if (!$tag->isApproved()) {
+                $observations[$tag->getKey()] = $tag->getValue();
+            }
         }
 
         return new UserNodeResponse(
@@ -212,6 +229,7 @@ final class UserNodeManager
             $node->getLatitude(),
             $node->getLongitude(),
             $tags,
+            $observations,
             $node->getCreatedAt(),
             $node->getUpdatedAt(),
             $node->getNodeProvider()->getName(),

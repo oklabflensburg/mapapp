@@ -6,6 +6,7 @@ final readonly class UserNodeResponse
 {
     /**
      * @param array<string, string> $tags
+     * @param array<string, string> $observations
      */
     public function __construct(
         public int $id,
@@ -13,6 +14,7 @@ final readonly class UserNodeResponse
         public float $latitude,
         public float $longitude,
         public array $tags,
+        public array $observations,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
         public string $provider,

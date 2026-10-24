@@ -27,6 +27,7 @@ const userNodes = useUserNodesStore()
 const auth = useAuthStore()
 
 const rows = ref<TagRow[]>([])
+const observationRows = ref<TagRow[]>([])
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
@@ -35,23 +36,41 @@ const relationGroups = computed(() => [
   { label: 'nodeEditor.children', nodes: savedNode.value?.children ?? [] },
 ])
 
+// Tags whose latest value is unapproved show up in the observations section.
+function splitRows(node: NonNullable<typeof savedNode.value>): void {
+  rows.value = []
+  observationRows.value = []
+  for (const [key, value] of Object.entries(node.tags)) {
+    if (node.observations[key] === value) {
+      observationRows.value.push({ key, value })
+    } else {
+      rows.value.push({ key, value })
+    }
+  }
+}
+
 watch(
   () => [props.visible, props.node] as const,
   ([visible, node]) => {
     if (!visible || !node) {
       return
     }
-    const existing = userNodes.byIdentity.get(nodeKey(node))?.tags ?? {}
-    rows.value = Object.entries(existing).map(([key, value]) => ({ key, value }))
+    const existing = userNodes.byIdentity.get(nodeKey(node))
+    if (existing) {
+      splitRows(existing)
+    } else {
+      rows.value = []
+      observationRows.value = []
+    }
   },
 )
 
-function addRow(): void {
-  rows.value.push({ key: '', value: '' })
+function addObservationRow(): void {
+  observationRows.value.push({ key: '', value: '' })
 }
 
-function removeRow(index: number): void {
-  rows.value.splice(index, 1)
+function removeObservationRow(index: number): void {
+  observationRows.value.splice(index, 1)
 }
 
 function close(): void {
@@ -63,21 +82,25 @@ async function save(): Promise<void> {
     return
   }
   const tags: Record<string, string> = {}
-  for (const row of rows.value) {
+  for (const row of [...rows.value, ...observationRows.value]) {
     const key = row.key.trim()
     if (key !== '') {
       tags[key] = row.value
     }
   }
   // Saving keeps the panel open: it stays as long as the element is
-  // selected, and only closing it deselects.
-  await userNodes.save({
+  // selected, and only closing it deselects. New and edited tags are
+  // unapproved, so re-split the sections from the saved response.
+  const saved = await userNodes.save({
     provider: props.node.provider,
     providerNodeId: props.node.providerNodeId,
     latitude: props.node.latitude,
     longitude: props.node.longitude,
     tags,
   })
+  if (saved) {
+    splitRows(saved)
+  }
 }
 </script>
 
@@ -111,20 +134,39 @@ async function save(): Promise<void> {
 
     <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
       <h4 class="section-title">{{ t('nodeEditor.osmTags') }}</h4>
-      <table class="tag-table">
-        <tr v-for="[key, value] in osmTagEntries" :key="key">
-          <th>{{ key }}</th>
-          <td>{{ value }}</td>
-        </tr>
-      </table>
+      <div class="tag-table-scroll">
+        <table class="tag-table">
+          <tr v-for="[key, value] in osmTagEntries" :key="key">
+            <th>{{ key }}</th>
+            <td>{{ value }}</td>
+          </tr>
+        </table>
+      </div>
     </section>
 
-    <section>
-      <h4 class="section-title">{{ t('nodeEditor.customTags') }}</h4>
-      <p v-if="rows.length === 0 && auth.canEdit" class="empty-hint">{{ t('nodeEditor.empty') }}</p>
+    <section class="custom-tags-section">
+      <p v-if="rows.length === 0 && observationRows.length === 0 && auth.canEdit" class="empty-hint">
+        {{ t('nodeEditor.empty') }}
+      </p>
       <p v-if="!auth.canEdit" class="empty-hint">{{ t('nodeEditor.loginRequired') }}</p>
+      <!-- Approved tags are managed by admins, so they are read-only here. -->
+      <div v-if="rows.length > 0" class="tag-table-scroll">
+        <table class="tag-table">
+          <tr v-for="row in rows" :key="row.key">
+            <th>{{ row.key }}</th>
+            <td>{{ row.value }}</td>
+          </tr>
+        </table>
+      </div>
+      <p v-if="userNodes.saveFailed" class="save-error" role="alert">
+        {{ t('nodeEditor.saveFailed') }}
+      </p>
+    </section>
+
+    <section v-if="auth.canEdit || observationRows.length > 0" class="observations-section">
+      <h4 class="section-title">{{ t('nodeEditor.observations') }}</h4>
       <template v-if="auth.canEdit">
-        <div v-for="(row, index) in rows" :key="index" class="tag-row">
+        <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
           <InputText v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
           <InputText v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
           <Button
@@ -132,28 +174,27 @@ async function save(): Promise<void> {
             icon="pi pi-times"
             text
             severity="danger"
-            @click="removeRow(index)"
+            @click="removeObservationRow(index)"
           />
         </div>
         <Button
-          :label="t('nodeEditor.addTag')"
+          :label="t('nodeEditor.addObservation')"
           icon="pi pi-plus"
           text
           severity="secondary"
-          @click="addRow"
+          @click="addObservationRow"
         />
       </template>
       <template v-else>
-        <table v-if="rows.length > 0" class="tag-table">
-          <tr v-for="row in rows" :key="row.key">
-            <th>{{ row.key }}</th>
-            <td>{{ row.value }}</td>
-          </tr>
-        </table>
+        <div class="tag-table-scroll">
+          <table class="tag-table">
+            <tr v-for="row in observationRows" :key="row.key">
+              <th>{{ row.key }}</th>
+              <td>{{ row.value }}</td>
+            </tr>
+          </table>
+        </div>
       </template>
-      <p v-if="userNodes.saveFailed" class="save-error" role="alert">
-        {{ t('nodeEditor.saveFailed') }}
-      </p>
     </section>
 
     <template #footer>
@@ -178,8 +219,15 @@ async function save(): Promise<void> {
 }
 
 .osm-tags-section,
-.relations-section {
+.relations-section,
+.observations-section,
+.custom-tags-section {
   margin-bottom: 0.75rem;
+}
+
+/* A small gap sets the read-only custom tag table apart from the OSM tags above. */
+.custom-tags-section {
+  margin-top: 0.5rem;
 }
 
 .relation-heading {
@@ -208,11 +256,16 @@ async function save(): Promise<void> {
   color: var(--p-text-muted-color);
 }
 
-.tag-table {
-  border-collapse: collapse;
+/* Fixed layout keeps the key/value columns aligned across all tag tables. */
+.tag-table-scroll {
   max-height: 12rem;
   overflow-y: auto;
-  display: block;
+}
+
+.tag-table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .tag-table th,
@@ -222,10 +275,11 @@ async function save(): Promise<void> {
   font-size: 0.8rem;
   vertical-align: top;
   border-bottom: 1px solid var(--p-content-border-color);
+  overflow-wrap: anywhere;
 }
 
 .tag-table th {
-  white-space: nowrap;
+  width: 40%;
   font-weight: 600;
   color: var(--p-text-muted-color);
 }
