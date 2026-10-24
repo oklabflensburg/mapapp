@@ -17,9 +17,11 @@ app.use(i18n)
 
 // Restore the login state before the map UI decides what to render. With a
 // restored session, the server-stored tag priorities replace the
-// localStorage fallback.
+// localStorage fallback. The tags offered as route preferences are
+// admin-managed, so they always come from the backend.
 const auth = useAuthStore()
 const settings = useSettingsStore()
+void settings.loadRoutePreferenceTags()
 void auth.load().then(() => {
   if (auth.user) {
     void settings.loadTagPriorities()

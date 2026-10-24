@@ -5,28 +5,25 @@ namespace App\Service;
 use App\Api\SaveTagPrioritiesRequest;
 use App\Entity\User;
 use App\Entity\UserTagPriority;
+use App\Repository\RoutePreferenceTagRepository;
 use App\Repository\UserTagPriorityRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Stores per-user routing priorities for tags on behalf of the profile page.
+ * The tags users can prioritize are the ones an admin exposes through the
+ * "User settings" admin section (RoutePreferenceTag).
  */
 final class TagPriorityManager
 {
     public const DEFAULT_LEVEL = 'neutral';
 
     /**
-     * Tags a user can prioritize; must stay in sync with the frontend's
-     * PRIORITIZABLE_TAGS list in src/stores/settings.ts. "stairs" also maps
-     * to OSM steps (road_class == STEPS); the others are custom tags that
-     * only apply to app nodes tagged with them.
-     *
-     * @return list<string>
+     * The tag that additionally maps to OSM steps (road_class == STEPS) in
+     * Routing::customModelFor(); kept as a constant because it needs special
+     * routing treatment wherever it appears.
      */
-    public static function tags(): array
-    {
-        return ['stairs', 'toilets'];
-    }
+    public const STAIRS_TAG = 'stairs';
 
     /**
      * @return list<string>
@@ -57,20 +54,35 @@ final class TagPriorityManager
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserTagPriorityRepository $userTagPriorityRepository,
+        private readonly RoutePreferenceTagRepository $routePreferenceTagRepository,
     ) {
     }
 
     /**
+     * The tag keys an admin exposed as route preference settings.
+     *
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return $this->routePreferenceTagRepository->findAllTagKeys();
+    }
+
+    /**
      * Returns the user's priorities as a full tag => level map, with the
-     * neutral default for tags without a stored preference.
+     * neutral default for tags without a stored preference. Stored
+     * preferences for tags that are no longer exposed are ignored (but
+     * kept, so they revive if the tag is exposed again).
      *
      * @return array<string, string>
      */
     public function getPriorities(User $user): array
     {
-        $priorities = array_fill_keys(self::tags(), self::DEFAULT_LEVEL);
+        $priorities = array_fill_keys($this->tags(), self::DEFAULT_LEVEL);
         foreach ($this->userTagPriorityRepository->findAllForUser($user) as $userTagPriority) {
-            $priorities[$userTagPriority->getTag()] = $userTagPriority->getPriority();
+            if (\array_key_exists($userTagPriority->getTag(), $priorities)) {
+                $priorities[$userTagPriority->getTag()] = $userTagPriority->getPriority();
+            }
         }
 
         return $priorities;
@@ -78,14 +90,18 @@ final class TagPriorityManager
 
     /**
      * Upserts (or, for the neutral default, removes) the stored priorities
-     * and returns the resulting full map, like getPriorities().
+     * and returns the resulting full map, like getPriorities(). Only the
+     * exposed tags are considered; priorities for other tags in the
+     * request are ignored.
      *
      * @return array<string, string>
      */
     public function save(User $user, SaveTagPrioritiesRequest $request): array
     {
-        $this->entityManager->wrapInTransaction(function () use ($user, $request): void {
-            foreach (self::tags() as $tag) {
+        $tags = $this->tags();
+
+        $this->entityManager->wrapInTransaction(function () use ($user, $request, $tags): void {
+            foreach ($tags as $tag) {
                 $level = $request->priorities[$tag] ?? self::DEFAULT_LEVEL;
                 $userTagPriority = $this->userTagPriorityRepository->findOneForUser($user, $tag);
 

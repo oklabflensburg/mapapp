@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\RoutePreferenceTag;
 use App\Entity\User;
 use App\Entity\UserTagPriority;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -92,5 +93,99 @@ final class TagPriorityControllerTest extends WebTestCase
         $client->jsonRequest('PUT', '/api/tag-priorities', ['priorities' => ['stairs' => 'unknown_level']]);
 
         self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testRoutePreferenceTagsEndpointIsPublicAndSorted(): void
+    {
+        $client = static::createClient();
+
+        $tag = $this->exposeTag('benches');
+
+        try {
+            $client->request('GET', '/api/route-preference-tags');
+
+            self::assertResponseIsSuccessful();
+            $tags = json_decode((string) $client->getResponse()->getContent(), true)['tags'];
+            self::assertContains($tag, $tags);
+            self::assertContains('stairs', $tags);
+            self::assertContains('toilets', $tags);
+            self::assertSame($tags, array_values($tags));
+            self::assertSame($tags, array_map('strval', $tags));
+        } finally {
+            $this->removeExposedTag($tag);
+        }
+    }
+
+    public function testNewlyExposedTagCanBePrioritizedAndDisappearsWhenRemoved(): void
+    {
+        $client = static::createClient();
+        $this->loginPlainUser($client, 'dynamic-priorities@example.test');
+
+        $tag = $this->exposeTag('benches-'.bin2hex(random_bytes(4)));
+
+        try {
+            $client->request('GET', '/api/tag-priorities');
+            self::assertResponseIsSuccessful();
+            $priorities = json_decode((string) $client->getResponse()->getContent(), true)['priorities'];
+            self::assertSame('neutral', $priorities[$tag]);
+
+            $client->jsonRequest('PUT', '/api/tag-priorities', ['priorities' => [$tag => 'prefer']]);
+            self::assertResponseIsSuccessful();
+
+            $client->request('GET', '/api/tag-priorities');
+            $priorities = json_decode((string) $client->getResponse()->getContent(), true)['priorities'];
+            self::assertSame('prefer', $priorities[$tag]);
+        } finally {
+            $this->removeExposedTag($tag);
+        }
+
+        // Once the tag is no longer exposed, it leaves the priorities map
+        // (the stored preference survives and revives if it returns).
+        $client->request('GET', '/api/tag-priorities');
+        self::assertResponseIsSuccessful();
+        $priorities = json_decode((string) $client->getResponse()->getContent(), true)['priorities'];
+        self::assertArrayNotHasKey($tag, $priorities);
+
+        $this->exposeTag($tag);
+        try {
+            $client->request('GET', '/api/tag-priorities');
+            $priorities = json_decode((string) $client->getResponse()->getContent(), true)['priorities'];
+            self::assertSame('prefer', $priorities[$tag]);
+        } finally {
+            $this->removeExposedTag($tag);
+        }
+    }
+
+    public function testPrioritiesForTagsThatAreNotExposedAreIgnored(): void
+    {
+        $client = static::createClient();
+        $this->loginPlainUser($client, 'unknown-tag-priorities@example.test');
+
+        $client->jsonRequest('PUT', '/api/tag-priorities', ['priorities' => ['not_a_setting' => 'avoid']]);
+
+        self::assertResponseIsSuccessful();
+        $priorities = json_decode((string) $client->getResponse()->getContent(), true)['priorities'];
+        self::assertArrayNotHasKey('not_a_setting', $priorities);
+    }
+
+    private function exposeTag(string $tag): string
+    {
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $routePreferenceTag = new RoutePreferenceTag();
+        $routePreferenceTag->setTag($tag);
+        $entityManager->persist($routePreferenceTag);
+        $entityManager->flush();
+
+        return $tag;
+    }
+
+    private function removeExposedTag(string $tag): void
+    {
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $routePreferenceTag = $entityManager->getRepository(RoutePreferenceTag::class)->findOneBy(['tag' => $tag]);
+        if ($routePreferenceTag !== null) {
+            $entityManager->remove($routePreferenceTag);
+            $entityManager->flush();
+        }
     }
 }

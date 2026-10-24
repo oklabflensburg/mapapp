@@ -162,6 +162,14 @@ defineExpose({ clearSelection })
 const userNodes = useUserNodesStore()
 const osmData = useOsmDataStore()
 
+// The observations map carries exactly the current user's unapproved tags,
+// so markers stay only for nodes with pending observations: once every tag
+// is approved the dot disappears. Nodes without any tags yet (just created,
+// awaiting their first observation) keep their dot so they stay selectable.
+const visibleUserNodes = computed(() =>
+  userNodes.nodes.filter((node) =>
+    Object.keys(node.observations).length > 0 || Object.keys(node.tags).length === 0))
+
 // "1.2 km · 14 min walk" style summary of the found route.
 const routeSummary = computed(() => {
   const route = routing.route
@@ -185,7 +193,7 @@ let renderTimer: ReturnType<typeof setTimeout> | undefined
 // shared canvas renderer.
 function renderLayers(): void {
   osmFeatureLayer?.render()
-  userNodeLayer?.render(userNodes.nodes)
+  userNodeLayer?.render(visibleUserNodes.value)
   routingLayer?.render(routing.start, routing.end, routing.route)
 }
 
@@ -197,8 +205,8 @@ function scheduleRenderLayers(): void {
 }
 
 watch(
-  () => userNodes.nodes,
-  () => userNodeLayer?.render(userNodes.nodes),
+  () => visibleUserNodes.value,
+  () => userNodeLayer?.render(visibleUserNodes.value),
 )
 
 watch(

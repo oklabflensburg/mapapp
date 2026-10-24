@@ -49,6 +49,8 @@ final class AdminDashboardTest extends WebTestCase
         // The sidebar links to the other CRUD sections.
         self::assertSelectorExists('a[href*="/admin/node"]');
         self::assertSelectorExists('a[href*="/admin/user-role"]');
+        // The "User settings" section exposes tags as route preferences.
+        self::assertSelectorExists('a[href*="/admin/route-preference-tag"]');
     }
 
     public function testAdminCanListUsers(): void

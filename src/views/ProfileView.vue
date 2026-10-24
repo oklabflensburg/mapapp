@@ -6,14 +6,12 @@ import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useAuthStore } from '../stores/auth'
 import {
-  PRIORITIZABLE_TAGS,
   useSettingsStore,
   type AppLocale,
-  type PrioritizableTag,
   type TagPriority,
 } from '../stores/settings'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()
@@ -34,6 +32,12 @@ const tagPriorityOptions = computed(() =>
   ),
 )
 
+// The tag list is admin-managed, so only some tags have a translated label;
+// the rest show the raw tag key.
+function tagLabel(tag: string): string {
+  return te(`profile.tagPriorities.tags.${tag}`) ? t(`profile.tagPriorities.tags.${tag}`) : tag
+}
+
 function back(): void {
   router.push({ name: 'home' })
 }
@@ -41,6 +45,7 @@ function back(): void {
 // The server-stored priorities win over the localStorage fallback once the
 // session is known; covers both direct visits and logins from another page.
 onMounted(() => {
+  void settings.loadRoutePreferenceTags()
   if (auth.user) {
     void settings.loadTagPriorities()
   }
@@ -102,15 +107,15 @@ onMounted(() => {
       <h2 class="card-title">{{ t('profile.tagPriorities.title') }}</h2>
       <p class="hint">{{ t('profile.tagPriorities.hint') }}</p>
 
-      <div v-for="tag in PRIORITIZABLE_TAGS" :key="tag" class="setting">
-        <label :for="`setting-tag-priority-${tag}`">{{ t(`profile.tagPriorities.tags.${tag}`) }}</label>
+      <div v-for="tag in settings.prioritizableTags" :key="tag" class="setting">
+        <label :for="`setting-tag-priority-${tag}`">{{ tagLabel(tag) }}</label>
         <Select
           :id="`setting-tag-priority-${tag}`"
-          :model-value="settings.tagPriorities[tag]"
+          :model-value="settings.tagPriorities[tag] ?? 'neutral'"
           :options="tagPriorityOptions"
           option-label="label"
           option-value="value"
-          @update:model-value="settings.setTagPriority(tag as PrioritizableTag, $event as TagPriority)"
+          @update:model-value="settings.setTagPriority(tag, $event as TagPriority)"
         />
       </div>
     </section>

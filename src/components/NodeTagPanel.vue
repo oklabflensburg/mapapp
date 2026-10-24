@@ -36,13 +36,18 @@ const relationGroups = computed(() => [
   { label: 'nodeEditor.children', nodes: savedNode.value?.children ?? [] },
 ])
 
-// Tags whose latest value is unapproved show up in the observations section.
+// The observations map holds exactly the current user's unapproved tags
+// (the backend hides other users' pending tags), so membership in it — not
+// a value comparison against the merged tags map, which collapses a key
+// shared by an approved tag and an unapproved observation — decides the
+// section. The observation value comes from the observations map because
+// the merged tags map may carry the approved value for the same key.
 function splitRows(node: NonNullable<typeof savedNode.value>): void {
   rows.value = []
   observationRows.value = []
   for (const [key, value] of Object.entries(node.tags)) {
-    if (node.observations[key] === value) {
-      observationRows.value.push({ key, value })
+    if (key in node.observations) {
+      observationRows.value.push({ key, value: node.observations[key] })
     } else {
       rows.value.push({ key, value })
     }

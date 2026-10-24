@@ -34,6 +34,9 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users');
         yield MenuItem::linkTo(UserRoleCrudController::class, 'User roles', 'fa fa-user-tag');
 
+        yield MenuItem::section('User settings', 'fa fa-user-gear');
+        yield MenuItem::linkTo(RoutePreferenceTagCrudController::class, 'Route preference tags', 'fa fa-sliders');
+
         yield MenuItem::section('Map data', 'fa fa-map');
         yield MenuItem::linkTo(NodeCrudController::class, 'Nodes', 'fa fa-location-dot');
         yield MenuItem::linkTo(PendingObservationCrudController::class, 'Pending observations', 'fa fa-clock');

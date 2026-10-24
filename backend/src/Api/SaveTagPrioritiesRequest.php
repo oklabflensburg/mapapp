@@ -7,7 +7,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Tag priorities from the profile page, as a tag => level map covering the
- * prioritable tags (for now only "stairs").
+ * tags an admin exposed as route preference settings.
  */
 final class SaveTagPrioritiesRequest
 {

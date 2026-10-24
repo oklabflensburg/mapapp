@@ -19,10 +19,10 @@ const TAG_PRIORITY_LEVELS: readonly TagPriority[] = [
   'strongly_prefer',
 ]
 
-// Tags a user can prioritize on the profile page. Keep in sync with
-// TagPriorityManager::tags() in the backend.
-export const PRIORITIZABLE_TAGS = ['stairs', 'toilets'] as const
-export type PrioritizableTag = (typeof PRIORITIZABLE_TAGS)[number]
+// Tags shown until the backend list arrives (or when it cannot be fetched).
+// The authoritative list is the one an admin manages in the backend's
+// "User settings" admin section (RoutePreferenceTag).
+const FALLBACK_PRIORITIZABLE_TAGS = ['stairs', 'toilets']
 
 function readStored<T extends string>(key: string, fallback: T, allowed: readonly T[]): T {
   try {
@@ -42,23 +42,15 @@ function writeStored(key: string, value: string): void {
   }
 }
 
-function defaultTagPriorities(): Record<PrioritizableTag, TagPriority> {
-  return Object.fromEntries(PRIORITIZABLE_TAGS.map((tag) => [tag, 'neutral'])) as Record<
-    PrioritizableTag,
-    TagPriority
-  >
-}
-
-// Accepts only known tags with known levels; everything else falls back to
-// the neutral default. Used for both the localStorage fallback and the
-// backend response.
-function normalizeTagPriorities(input: unknown): Record<PrioritizableTag, TagPriority> {
-  const priorities = defaultTagPriorities()
+// Accepts only known levels, on any tag key; everything else is dropped.
+// The tag keys themselves come from the backend, so they are not restricted
+// here. Used for both the localStorage fallback and the backend response.
+function normalizeTagPriorities(input: unknown): Record<string, TagPriority> {
+  const priorities: Record<string, TagPriority> = {}
   if (typeof input !== 'object' || input === null) {
     return priorities
   }
-  for (const tag of PRIORITIZABLE_TAGS) {
-    const value = (input as Record<string, unknown>)[tag]
+  for (const [tag, value] of Object.entries(input)) {
     if (typeof value === 'string' && TAG_PRIORITY_LEVELS.includes(value as TagPriority)) {
       priorities[tag] = value as TagPriority
     }
@@ -66,20 +58,22 @@ function normalizeTagPriorities(input: unknown): Record<PrioritizableTag, TagPri
   return priorities
 }
 
-function readStoredTagPriorities(): Record<PrioritizableTag, TagPriority> {
+function readStoredTagPriorities(): Record<string, TagPriority> {
   try {
     return normalizeTagPriorities(JSON.parse(localStorage.getItem(TAG_PRIORITIES_KEY) ?? '{}'))
   } catch {
-    return defaultTagPriorities()
+    return {}
   }
 }
 
 // Client-side settings from the profile page. They are persisted in
 // localStorage; tag priorities are additionally stored per user on the
-// backend when logged in.
+// backend when logged in. The tags offered as route preferences are managed
+// by admins in the backend and loaded from there.
 export const useSettingsStore = defineStore('settings', () => {
   const locale = ref<AppLocale>(readStored(LOCALE_KEY, 'en', ['en', 'de']))
-  const tagPriorities = ref<Record<PrioritizableTag, TagPriority>>(readStoredTagPriorities())
+  const prioritizableTags = ref<string[]>(FALLBACK_PRIORITIZABLE_TAGS)
+  const tagPriorities = ref<Record<string, TagPriority>>(readStoredTagPriorities())
 
   // Apply the persisted locale on startup, before the first render.
   i18n.global.locale.value = locale.value
@@ -90,9 +84,26 @@ export const useSettingsStore = defineStore('settings', () => {
     writeStored(LOCALE_KEY, value)
   }
 
-  function applyTagPriorities(priorities: Record<PrioritizableTag, TagPriority>): void {
+  function applyTagPriorities(priorities: Record<string, TagPriority>): void {
     tagPriorities.value = priorities
     writeStored(TAG_PRIORITIES_KEY, JSON.stringify(priorities))
+  }
+
+  // Replaces the tags offered as route preferences with the ones an admin
+  // exposed in the backend; a failed request keeps the fallback list.
+  async function loadRoutePreferenceTags(): Promise<void> {
+    try {
+      const response = await fetch('/api/route-preference-tags')
+      if (!response.ok) {
+        return
+      }
+      const data = (await response.json()) as { tags?: unknown }
+      if (Array.isArray(data.tags) && data.tags.every((tag) => typeof tag === 'string')) {
+        prioritizableTags.value = data.tags as string[]
+      }
+    } catch (error) {
+      console.warn('Failed to load route preference tags', error)
+    }
   }
 
   // Replaces the local tag priorities with the ones stored for the logged-in
@@ -110,7 +121,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  function setTagPriority(tag: PrioritizableTag, value: TagPriority): void {
+  function setTagPriority(tag: string, value: TagPriority): void {
     applyTagPriorities({ ...tagPriorities.value, [tag]: value })
 
     // Persist the priorities for the logged-in user; anonymous visitors
@@ -126,9 +137,11 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {
     locale,
+    prioritizableTags,
     tagPriorities,
     setLocale,
     setTagPriority,
+    loadRoutePreferenceTags,
     loadTagPriorities,
   }
 })

@@ -136,6 +136,9 @@ final class Routing
      *   prefer levels penalize everything outside them, which is the
      *   documented way to prefer locations when boosting is impossible.
      *
+     * The priorities map covers exactly the tags the admin exposed as
+     * route preference settings (see TagPriorityManager::getPriorities()).
+     *
      * @param array<string, string>             $tagPriorities
      * @param array<string, list<array{latitude: float, longitude: float}>> $taggedNodes
      *
@@ -146,10 +149,8 @@ final class Routing
         $statements = [];
         $features = [];
 
-        foreach (TagPriorityManager::tags() as $tag) {
-            $level = $tagPriorities[$tag] ?? TagPriorityManager::DEFAULT_LEVEL;
-
-            if ($tag === 'stairs') {
+        foreach ($tagPriorities as $tag => $level) {
+            if ($tag === TagPriorityManager::STAIRS_TAG) {
                 if ($level === 'avoid') {
                     $statements[] = ['if' => 'road_class == STEPS', 'multiply_by' => self::FACTOR_AVOID];
                 } elseif ($level === 'try_to_avoid') {
