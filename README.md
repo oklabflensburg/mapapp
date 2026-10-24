@@ -1,6 +1,6 @@
 # AccessApp
 
-Starting point: Vue 3 + Vite frontend with a PHP 8.5 / Symfony 8.1 backend (FrankenPHP via Docker).
+Starting point: Vue 3 + Vite frontend with a PHP 8.5.12 / Symfony 8.1 backend (FrankenPHP via Docker).
 
 ## Structure
 
