@@ -26,6 +26,9 @@ class Tag
     #[ORM\Column]
     private bool $approved = false;
 
+    #[ORM\Column]
+    private \DateTimeImmutable $updatedAt;
+
     /** @var Collection<int, NodeTag> */
     #[ORM\OneToMany(mappedBy: 'tag', targetEntity: NodeTag::class)]
     private Collection $nodeTags;
@@ -33,6 +36,7 @@ class Tag
     public function __construct()
     {
         $this->nodeTags = new ArrayCollection();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -68,6 +72,16 @@ class Tag
     public function setApproved(bool $approved): void
     {
         $this->approved = $approved;
+    }
+
+    public function getUpdatedAt(): \DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): void
+    {
+        $this->updatedAt = $updatedAt;
     }
 
     /** @return Collection<int, NodeTag> */

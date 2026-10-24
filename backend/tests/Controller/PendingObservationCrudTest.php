@@ -91,6 +91,13 @@ final class PendingObservationCrudTest extends WebTestCase
         $nextPendingNode->setLongitude(9.439);
         $entityManager->persist($nextPendingNode);
 
+        // The list orders nodes by their latest unapproved tag's
+        // updated_at, so $nextPendingNode (newer tag) is listed before
+        // $nodeWithPendingTag (older tags) despite its higher node id.
+        $unapprovedTag->setUpdatedAt(new \DateTimeImmutable('-3 hours'));
+        $otherKeyTag->setUpdatedAt(new \DateTimeImmutable('-2 hours'));
+        $nextUnapprovedTag->setUpdatedAt(new \DateTimeImmutable('-1 hour'));
+
         $entityManager->persist(new NodeTag($nodeWithPendingTag, $unapprovedTag, $editor));
         $entityManager->persist(new NodeTag($nodeWithoutPendingTag, $approvedTag, $editor));
         $entityManager->persist(new NodeTag($nodeWithPendingTag, $otherKeyTag, $editor));
@@ -112,6 +119,11 @@ final class PendingObservationCrudTest extends WebTestCase
             // Nodes without unapproved tags are filtered out.
             $tableText = $client->getCrawler()->filter('table')->text();
             self::assertStringNotContainsString($nodeWithoutPendingTag->getProviderNodeId(), $tableText);
+            // Nodes whose pending tags changed most recently come first.
+            self::assertLessThan(
+                strpos($tableText, $nodeWithPendingTag->getProviderNodeId()),
+                strpos($tableText, $nextPendingNode->getProviderNodeId()),
+            );
             // The list is reduced to the review-relevant columns.
             $headerText = $client->getCrawler()->filter('thead')->text();
             self::assertStringNotContainsString('Node Type', $headerText);

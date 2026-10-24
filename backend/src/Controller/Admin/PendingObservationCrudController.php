@@ -58,7 +58,17 @@ final class PendingObservationCrudController extends AbstractCrudController
             ->innerJoin('entity.nodeTags', 'pendingNodeTag')
             ->innerJoin('pendingNodeTag.tag', 'pendingTag')
             ->andWhere('pendingTag.approved = false')
-            ->distinct();
+            ->distinct()
+            // Nodes whose pending tags changed most recently come first. The
+            // scalar subquery is HIDDEN because the DISTINCT select only
+            // carries entity columns, which Postgres requires for ORDER BY.
+            ->addSelect(
+                '(SELECT MAX(unapprovedTag.updatedAt) FROM '.NodeTag::class.' unapprovedNodeTag'
+                .' JOIN unapprovedNodeTag.tag unapprovedTag'
+                .' WHERE IDENTITY(unapprovedNodeTag.node) = entity.id'
+                .' AND unapprovedTag.approved = false) AS HIDDEN latestUnapprovedTagUpdatedAt'
+            )
+            ->addOrderBy('latestUnapprovedTagUpdatedAt', 'DESC');
     }
 
     public function configureFields(string $pageName): iterable
