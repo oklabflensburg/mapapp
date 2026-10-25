@@ -7,6 +7,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * A shared key/value pair referenced by node and node relation tags. It
+ * carries no approval state: approval is per tag and per node/relation (see
+ * NodeTag and NodeGroupTag).
+ */
 #[ORM\Entity(repositoryClass: TagRepository::class)]
 #[ORM\Table(name: 'tags')]
 #[ORM\UniqueConstraint(name: 'uq_tags_key_value', columns: ['key', 'value'])]
@@ -22,9 +27,6 @@ class Tag
 
     #[ORM\Column(length: 255)]
     private string $value = '';
-
-    #[ORM\Column]
-    private bool $approved = false;
 
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
@@ -62,16 +64,6 @@ class Tag
     public function setValue(string $value): void
     {
         $this->value = $value;
-    }
-
-    public function isApproved(): bool
-    {
-        return $this->approved;
-    }
-
-    public function setApproved(bool $approved): void
-    {
-        $this->approved = $approved;
     }
 
     public function getUpdatedAt(): \DateTimeImmutable

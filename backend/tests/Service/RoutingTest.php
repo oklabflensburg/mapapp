@@ -92,8 +92,41 @@ final class RoutingTest extends KernelTestCase
         self::assertCount(9, $ring);
         self::assertSame($ring[0], $ring[8]);
         // The first corner sits east of the node.
-        self::assertEqualsWithDelta(10.1385 + 20 / (111320 * cos(deg2rad(54.3235))), $ring[0][0], 1e-9);
+        self::assertEqualsWithDelta(10.1385 + 2 / (111320 * cos(deg2rad(54.3235))), $ring[0][0], 1e-9);
         self::assertEqualsWithDelta(54.3235, $ring[0][1], 1e-9);
+    }
+
+    public function testAvoidingATagAlsoAvoidsStreetPartAreas(): void
+    {
+        $routing = new Routing(
+            static::getContainer()->get('http_client'),
+            'http://127.0.0.1:1',
+        );
+
+        // A street part (node group) carrying the tag contributes the
+        // corridor around its member line, next to the tagged node areas.
+        $corridor = [
+            'type' => 'Polygon',
+            'coordinates' => [[[9.437, 54.791], [9.438, 54.791], [9.438, 54.792], [9.437, 54.792], [9.437, 54.791]]],
+        ];
+        $model = $routing->customModelFor(
+            ['surface' => 'avoid'],
+            ['surface' => [['latitude' => 54.3235, 'longitude' => 10.1385]]],
+            [],
+            ['surface' => [['id' => 7, 'area' => $corridor]]],
+        );
+
+        // One statement covers the node circle and the street part corridor,
+        // so the level multiplies once for both.
+        self::assertSame(
+            ['priority' => [['if' => 'in_tag_surface_1 || in_tag_surface_2', 'multiply_by' => '0']]],
+            ['priority' => $model['priority']],
+        );
+        self::assertCount(2, $model['areas']['features']);
+        self::assertSame('tag_surface_1', $model['areas']['features'][0]['id']);
+        self::assertSame('tag_surface_2', $model['areas']['features'][1]['id']);
+        // The street part's corridor geometry is passed through unchanged.
+        self::assertSame($corridor, $model['areas']['features'][1]['geometry']);
     }
 
     public function testTaggedNodesWithoutAvoidanceProduceNoModel(): void

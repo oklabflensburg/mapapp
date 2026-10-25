@@ -11,8 +11,17 @@ export default {
   map: {
     create: {
       add: 'Knoten hinzufügen',
-      hint: 'Klicke auf die Karte, um einen Knoten hinzuzufügen. Escape bricht ab.',
-      failed: 'Der Knoten konnte nicht hinzugefügt werden. Erneut versuchen oder den Erstellmodus abbrechen.',
+      hint: 'Klicke auf die Karte, um Knoten zu platzieren. Speichern erstellt daraus eine Knotenbeziehung; Escape bricht ab.',
+      placed: '{count} Knoten platziert',
+      pendingDialog: 'Platzierte Knoten',
+      name: 'Name',
+      namePlaceholder: 'Name',
+      parentNode: 'Übergeordneter Knoten',
+      noParent: 'Keiner',
+      nodeLabel: 'Knoten {number}',
+      save: 'Speichern',
+      abort: 'Abbrechen',
+      failed: 'Die Knoten konnten nicht gespeichert werden. Erneut versuchen, um die verbleibenden zu senden, oder den Bearbeitungsmodus abbrechen.',
       retry: 'Erneut versuchen',
     },
     status: {
@@ -31,6 +40,14 @@ export default {
       failed: 'Die Route konnte nicht berechnet werden. Bitte erneut versuchen.',
       summary: '{distance} · {minutes} Min. zu Fuß',
     },
+    relation: {
+      button: 'Knotenbeziehung erstellen',
+      hint: 'Klicke auf Knoten oder Kartenelemente, um sie zur Beziehung hinzuzufügen. Ein erneuter Klick entfernt sie wieder. Escape bricht ab.',
+      members: '{count} Knoten ausgewählt',
+      create: 'Beziehung erstellen',
+      cancel: 'Abbrechen',
+      failed: 'Die Knotenbeziehung konnte nicht erstellt werden. Bitte erneut versuchen.',
+    },
   },
   nodeEditor: {
     title: 'Knoten bearbeiten',
@@ -38,6 +55,9 @@ export default {
     parents: 'Übergeordnete Knoten',
     children: 'Untergeordnete Knoten',
     noRelations: 'Keine Beziehungen',
+    nodeRelations: 'Knotenbeziehungen',
+    noNodeRelations: 'Teil keiner Knotenbeziehung',
+    editRelation: 'Beziehung bearbeiten',
     parentCustomTags: 'Eigene Tags',
     noParentTags: 'Keine Tags',
     parentOsmLoading: 'OSM-Tags des übergeordneten Knotens werden geladen…',
@@ -54,6 +74,12 @@ export default {
     cancel: 'Abbrechen',
     saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.',
     loginRequired: 'Melde dich als Editor an, um Knoten hinzuzufügen oder zu bearbeiten.',
+  },
+  relationEditor: {
+    title: 'Knotenbeziehung bearbeiten',
+    members: 'Knoten',
+    memberCount: '{count} Knoten',
+    empty: 'Noch keine Tags. Füge den ersten hinzu.',
   },
   profile: {
     title: 'Profil',

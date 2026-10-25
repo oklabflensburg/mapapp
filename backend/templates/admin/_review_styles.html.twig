@@ -1,0 +1,136 @@
+{# Shared layout for the node and node relation review screens: the
+   form/preview split and the unapproved tags section. #}
+<style>
+    .node-edit-split {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+
+    .node-edit-split-form {
+        flex: 1 1 50%;
+        min-width: 0;
+    }
+
+    .node-edit-split-preview {
+        flex: 1 1 50%;
+        min-width: 0;
+        position: sticky;
+        top: 1rem;
+    }
+
+    .node-edit-split-preview iframe {
+        width: 100%;
+        height: calc(100vh - 12rem);
+        min-height: 24rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background: var(--body-bg);
+    }
+
+    .node-edit-unapproved-tags {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+    }
+
+    .node-edit-unapproved-tags h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .node-edit-unapproved-tags-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .node-edit-unapproved-tags-header h2 {
+        margin: 0;
+    }
+
+    .node-edit-unapproved-tags .no-unapproved-tags {
+        margin: 0;
+        color: var(--text-muted);
+    }
+
+    .unapproved-tag-key-group {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+    }
+
+    .unapproved-tag-key-group summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        list-style: none;
+        background: var(--body-bg);
+    }
+
+    .unapproved-tag-key-group summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .unapproved-tag-key-group summary::after {
+        content: '';
+        margin-left: auto;
+        width: 0.4rem;
+        height: 0.4rem;
+        border-right: 2px solid var(--text-muted);
+        border-bottom: 2px solid var(--text-muted);
+        transform: rotate(45deg);
+        transition: transform 0.15s ease-in-out;
+    }
+
+    .unapproved-tag-key-group[open] summary::after {
+        transform: rotate(225deg);
+    }
+
+    .unapproved-tag-key-group .unapproved-tag-key {
+        font-weight: 600;
+    }
+
+    .unapproved-tag-key-group .unapproved-tag-count {
+        color: var(--text-muted);
+    }
+
+    .unapproved-tags-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .unapproved-tags-table th,
+    .unapproved-tags-table td {
+        text-align: left;
+        padding: 0.375rem 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+
+    .unapproved-tags-table th {
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .unapproved-tags-table td:last-child,
+    .unapproved-tags-table th:last-child {
+        text-align: right;
+    }
+
+    @media (max-width: 991px) {
+        .node-edit-split {
+            flex-direction: column;
+        }
+
+        .node-edit-split-preview iframe {
+            height: 24rem;
+        }
+    }
+</style>

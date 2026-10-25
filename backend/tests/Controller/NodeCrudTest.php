@@ -4,6 +4,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Node;
 use App\Entity\NodeProvider;
+use App\Entity\NodeTag;
 use App\Entity\NodeType;
 use App\Entity\Tag;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -50,31 +51,33 @@ final class NodeCrudTest extends WebTestCase
         $shared = new Tag();
         $shared->setKey('access');
         $shared->setValue('shared-'.bin2hex(random_bytes(8)));
-        $shared->setApproved(false);
         $entityManager->persist($shared);
 
         $other = new Tag();
         $other->setKey('access');
         $other->setValue('other-'.bin2hex(random_bytes(8)));
-        $other->setApproved(false);
         $entityManager->persist($other);
 
         $approved = new Tag();
         $approved->setKey('access');
         $approved->setValue('approved-'.bin2hex(random_bytes(8)));
-        $approved->setApproved(true);
         $entityManager->persist($approved);
 
-        // The approved value was attached before the editors proposed theirs.
-        $entityManager->persist($node->addTag($approved, $editorOne));
+        // The approved value was attached before the editors proposed
+        // theirs; approval lives on the row, not on the shared tag.
+        $approvedNodeTag = $node->addTag($approved, $editorOne);
+        $approvedNodeTag->setApproved(true);
+        $entityManager->persist($approvedNodeTag);
         $entityManager->flush();
 
         // Insertion order differs from display order: the single-observation
         // value is added first, so the expected rows below prove the sort.
-        $entityManager->persist($node->addTag($other, $editorOne));
+        $otherNodeTag = $node->addTag($other, $editorOne);
+        $entityManager->persist($otherNodeTag);
 
         // Both editors added the shared tag: one value, two users.
-        $entityManager->persist($node->addTag($shared, $editorOne));
+        $sharedNodeTag = $node->addTag($shared, $editorOne);
+        $entityManager->persist($sharedNodeTag);
         $entityManager->persist($node->addTag($shared, $editorTwo));
         $entityManager->flush();
 
@@ -106,14 +109,14 @@ final class NodeCrudTest extends WebTestCase
             self::assertSame('1', $rows->eq(1)->children()->eq(1)->text());
             self::assertStringNotContainsString($editorOne->getName(), $section->html());
             self::assertStringNotContainsString($editorTwo->getName(), $section->html());
-            self::assertSame('/admin/tag/'.$shared->getId().'/approve', $rows->eq(0)->filter('form')->attr('action'));
-            self::assertSame('/admin/tag/'.$other->getId().'/approve', $rows->eq(1)->filter('form')->attr('action'));
+            self::assertSame('/admin/node-tag/'.$sharedNodeTag->getId().'/approve', $rows->eq(0)->filter('form')->attr('action'));
+            self::assertSame('/admin/node-tag/'.$otherNodeTag->getId().'/approve', $rows->eq(1)->filter('form')->attr('action'));
 
             $client->submit($rows->eq(0)->filter('form')->form());
             self::assertResponseRedirects();
 
             $entityManager = static::getContainer()->get('doctrine')->getManager();
-            self::assertTrue($entityManager->find(Tag::class, $shared->getId())->isApproved());
+            self::assertTrue($entityManager->find(NodeTag::class, $sharedNodeTag->getId())->isApproved());
 
             // Approving one value supersedes the other pending value for the
             // same key: its attribution is removed from the node.
@@ -134,7 +137,7 @@ final class NodeCrudTest extends WebTestCase
             self::assertCount(0, $section->filter('form'));
 
             // Approving requires a valid CSRF token.
-            $client->request('POST', '/admin/tag/'.$approved->getId().'/approve', ['_token' => 'invalid']);
+            $client->request('POST', '/admin/node-tag/'.$sharedNodeTag->getId().'/approve', ['_token' => 'invalid']);
             self::assertResponseStatusCodeSame(403);
         } finally {
             $manager = static::getContainer()->get('doctrine')->getManager();

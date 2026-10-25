@@ -39,7 +39,6 @@ final class NodeTagCrudTest extends WebTestCase
         $tag = new Tag();
         $tag->setKey('access');
         $tag->setValue('node-tag-crud-'.bin2hex(random_bytes(8)));
-        $tag->setApproved(false);
         $entityManager->persist($tag);
 
         $node = new Node();

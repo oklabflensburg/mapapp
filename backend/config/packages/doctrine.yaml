@@ -1,10 +1,9 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
-        # PostGIS owns these schemas and their sequences, and the legacy
-        # observations and map_features tables have PostGIS columns that no
-        # entity maps; migrations must not manage any of them.
-        schema_filter: '~^(?!(?:tiger|tiger_data|topology)\.|observations$|map_features$)~'
+        # PostGIS owns these schemas and their sequences; migrations must not
+        # manage them.
+        schema_filter: '~^(?!(?:tiger|tiger_data|topology)\.)~'
 
         # IMPORTANT: You MUST configure your server version,
         # either here or in the DATABASE_URL env var (see .env file)

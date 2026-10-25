@@ -3,16 +3,21 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Node;
+use App\Entity\NodeGroup;
+use App\Entity\NodeGroupTag;
 use App\Entity\NodeProvider;
 use App\Entity\NodeTag;
 use App\Entity\NodeType;
 use App\Entity\Tag;
+use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
- * Approving a tag supersedes unapproved tags with the same key on the nodes
- * carrying it.
+ * Approving a tag on a node or relation supersedes unapproved tags with the
+ * same key on that same node or relation, and approves the value only
+ * there: the same value on other nodes or relations keeps its own pending
+ * state.
  */
 final class TagApprovalCleanupTest extends WebTestCase
 {
@@ -20,6 +25,9 @@ final class TagApprovalCleanupTest extends WebTestCase
 
     /** @var list<int> */
     private array $nodeIds = [];
+
+    /** @var list<int> */
+    private array $groupIds = [];
 
     /** @var list<int> */
     private array $tagIds = [];
@@ -34,6 +42,12 @@ final class TagApprovalCleanupTest extends WebTestCase
             $tag = $manager->find(Tag::class, $id);
             if ($tag !== null) {
                 $manager->remove($tag);
+            }
+        }
+        foreach ($this->groupIds as $id) {
+            $group = $manager->find(NodeGroup::class, $id);
+            if ($group !== null) {
+                $manager->remove($group);
             }
         }
         foreach ($this->nodeIds as $id) {
@@ -78,22 +92,104 @@ final class TagApprovalCleanupTest extends WebTestCase
         return $node;
     }
 
-    private function addTag(Node $node, string $key, string $value, bool $approved): Tag
+    /**
+     * The tag entity is shared per key/value pair, so the same value on two
+     * nodes reuses one tag with two rows.
+     */
+    private function findOrCreateTag(string $key, string $value): Tag
+    {
+        $manager = static::getContainer()->get('doctrine')->getManager();
+        $tag = $manager->getRepository(Tag::class)->findOneBy(['key' => $key, 'value' => $value]);
+        if ($tag === null) {
+            $tag = new Tag();
+            $tag->setKey($key);
+            $tag->setValue($value);
+            $manager->persist($tag);
+        }
+
+        return $tag;
+    }
+
+    private function addTag(Node $node, string $key, string $value, bool $approved): NodeTag
     {
         $manager = static::getContainer()->get('doctrine')->getManager();
 
-        $tag = new Tag();
-        $tag->setKey($key);
-        $tag->setValue($value);
-        $tag->setApproved($approved);
-        $manager->persist($tag);
+        $tag = $this->findOrCreateTag($key, $value);
 
         $nodeTag = new NodeTag($node, $tag, $node->getCreatedByUser());
+        $nodeTag->setApproved($approved);
+        // The row is attached to the node's collection directly: the admin
+        // request reuses the same managed node, whose in-memory collection
+        // would otherwise not know about the new row.
+        $node->getNodeTags()->add($nodeTag);
         $manager->persist($nodeTag);
         $manager->flush();
         $this->tagIds[] = $tag->getId();
 
-        return $tag;
+        return $nodeTag;
+    }
+
+    private function createRelationTag(NodeGroup $group, string $key, string $value, bool $approved, User $user): NodeGroupTag
+    {
+        $manager = static::getContainer()->get('doctrine')->getManager();
+
+        $tag = $this->findOrCreateTag($key, $value);
+
+        $groupTag = new NodeGroupTag($group, $tag, $user);
+        $groupTag->setApproved($approved);
+        // Attached directly for the same reason as in addTag().
+        $group->getGroupTags()->add($groupTag);
+        $manager->persist($groupTag);
+        $manager->flush();
+        $this->tagIds[] = $tag->getId();
+
+        return $groupTag;
+    }
+
+    /**
+     * Approves the node tag through the review form on the node edit page,
+     * as an admin would (see admin/_unapproved_tags.html.twig).
+     */
+    private function approveNodeTag(KernelBrowser $client, NodeTag $nodeTag): void
+    {
+        $crawler = $client->request('GET', '/admin/node/'.$nodeTag->getNode()->getId().'/edit');
+        self::assertResponseIsSuccessful();
+
+        $form = $crawler
+            ->filter(sprintf('form[action="/admin/node-tag/%d/approve"]', $nodeTag->getId()))
+            ->form();
+        $client->submit($form);
+        self::assertResponseRedirects();
+    }
+
+    /**
+     * Approves the relation tag through the review form on the relation
+     * review page.
+     */
+    private function approveGroupTag(KernelBrowser $client, NodeGroupTag $groupTag): void
+    {
+        $crawler = $client->request('GET', '/admin/pending-relation-observation/'.$groupTag->getGroup()->getId().'/edit');
+        self::assertResponseIsSuccessful();
+
+        $form = $crawler
+            ->filter(sprintf('form[action="/admin/node-group-tag/%d/approve"]', $groupTag->getId()))
+            ->form();
+        $client->submit($form);
+        self::assertResponseRedirects();
+    }
+
+    /**
+     * @return list<string> Tag key=value pairs added to the relation.
+     */
+    private function groupTagSummaries(NodeGroup $group): array
+    {
+        $summaries = [];
+        foreach ($group->getGroupTags() as $groupTag) {
+            $summaries[] = $groupTag->getTag()->getKey().'='.$groupTag->getTag()->getValue();
+        }
+        sort($summaries);
+
+        return $summaries;
     }
 
     /**
@@ -110,34 +206,71 @@ final class TagApprovalCleanupTest extends WebTestCase
         return $summaries;
     }
 
-    public function testApprovingTagRemovesUnapprovedTagsWithSameKeyOnItsNodes(): void
+    public function testApprovingTagOnNodeSupersedesCompetingValuesOnlyThere(): void
     {
         $identity = bin2hex(random_bytes(8));
         $client = static::createClient();
 
         $node = $this->createNode('tag-approval-'.$identity);
-        $approved = $this->addTag($node, 'cuisine', 'french-'.$identity, false);
-        $this->addTag($node, 'access', 'yes-'.$identity, false);
+        $french = $this->addTag($node, 'cuisine', 'french-'.$identity, false);
+        $this->addTag($node, 'cuisine', 'italian-'.$identity, false);
+        $access = $this->addTag($node, 'access', 'yes-'.$identity, false);
+        // The same value on another node stays untouched by the approval.
         $otherNode = $this->createNode('tag-approval-other-'.$identity);
-        $this->addTag($otherNode, 'cuisine', 'german-'.$identity, false);
+        $frenchElsewhere = $this->addTag($otherNode, 'cuisine', 'french-'.$identity, false);
 
         $client->loginUser($this->createUser('admin-tag-approval@example.test', ['admin']), 'admin');
-        $crawler = $client->request('GET', '/admin/tag/'.$approved->getId().'/edit');
-        self::assertResponseIsSuccessful();
-
-        $form = $crawler->selectButton('Save changes')->form();
-        $form['Tag[approved]']->tick();
-        $client->submit($form);
-        self::assertResponseRedirects();
+        $this->approveNodeTag($client, $french);
 
         $manager = static::getContainer()->get('doctrine')->getManager();
         $manager->clear();
 
-        self::assertTrue($manager->find(Tag::class, $approved->getId())->isApproved());
-        // The unapproved cuisine value is superseded; other keys stay.
+        // The competing unapproved cuisine value is superseded; other keys stay.
         self::assertSame(['access=yes-'.$identity, 'cuisine=french-'.$identity], $this->nodeTagSummaries($manager->find(Node::class, $node->getId())));
-        // Nodes without the approved tag keep their unapproved values.
-        self::assertSame(['cuisine=german-'.$identity], $this->nodeTagSummaries($manager->find(Node::class, $otherNode->getId())));
+        // The approved row and the untouched key keep their approval state.
+        $approvedFrench = $manager->find(NodeTag::class, $french->getId());
+        self::assertTrue($approvedFrench->isApproved());
+        self::assertFalse($manager->find(NodeTag::class, $access->getId())->isApproved());
+        // The same value on the other node is still pending.
+        $elsewhere = $manager->find(NodeTag::class, $frenchElsewhere->getId());
+        self::assertFalse($elsewhere->isApproved());
+        self::assertSame(['cuisine=french-'.$identity], $this->nodeTagSummaries($manager->find(Node::class, $otherNode->getId())));
+    }
+
+    public function testApprovingTagOnRelationSupersedesCompetingValuesOnlyThere(): void
+    {
+        $identity = bin2hex(random_bytes(8));
+        $client = static::createClient();
+        $editor = $this->createUser('tag-approval-relation-editor@example.test', ['editor']);
+
+        $group = new NodeGroup();
+        $group->setCreatedByUser($editor);
+        $manager = static::getContainer()->get('doctrine')->getManager();
+        $manager->persist($group);
+
+        $cobblestone = $this->createRelationTag($group, 'surface', 'cobblestone-'.$identity, false, $editor);
+        $this->createRelationTag($group, 'surface', 'asphalt-'.$identity, false, $editor);
+        $this->createRelationTag($group, 'lit', 'yes-'.$identity, false, $editor);
+        // The same value on another relation stays pending.
+        $otherGroup = new NodeGroup();
+        $otherGroup->setCreatedByUser($editor);
+        $manager->persist($otherGroup);
+        $cobblestoneElsewhere = $this->createRelationTag($otherGroup, 'surface', 'cobblestone-'.$identity, false, $editor);
+        $manager->flush();
+        $this->groupIds[] = $group->getId();
+        $this->groupIds[] = $otherGroup->getId();
+
+        $client->loginUser($this->createUser('admin-tag-approval-relation@example.test', ['admin']), 'admin');
+        $this->approveGroupTag($client, $cobblestone);
+
+        $manager->clear();
+
+        // The competing unapproved surface value is superseded; other keys,
+        // other relations and their pending state stay.
+        self::assertSame(['lit=yes-'.$identity, 'surface=cobblestone-'.$identity], $this->groupTagSummaries($manager->find(NodeGroup::class, $group->getId())));
+        self::assertSame(['surface=cobblestone-'.$identity], $this->groupTagSummaries($manager->find(NodeGroup::class, $otherGroup->getId())));
+        self::assertTrue($manager->find(NodeGroupTag::class, $cobblestone->getId())->isApproved());
+        self::assertFalse($manager->find(NodeGroupTag::class, $cobblestoneElsewhere->getId())->isApproved());
     }
 
     public function testAdminTaggingNodeRemovesUnapprovedTagsWithSameKey(): void
@@ -179,7 +312,7 @@ final class TagApprovalCleanupTest extends WebTestCase
         self::assertSame(['access=yes-'.$identity, 'cuisine=italian-'.$identity], $this->nodeTagSummaries($node));
         foreach ($node->getNodeTags() as $nodeTag) {
             if ($nodeTag->getTag()->getKey() === 'cuisine') {
-                self::assertTrue($nodeTag->getTag()->isApproved());
+                self::assertTrue($nodeTag->isApproved());
             }
         }
     }

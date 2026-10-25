@@ -6,6 +6,7 @@ import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import ParentNodeTags from './ParentNodeTags.vue'
 import { nodeKey, useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
+import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 
 interface TagRow {
@@ -20,10 +21,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'update:visible', visible: boolean): void
+  (event: 'edit-relation', group: NodeGroup): void
 }>()
 
 const { t } = useI18n()
 const userNodes = useUserNodesStore()
+const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
 
 const rows = ref<TagRow[]>([])
@@ -35,6 +38,16 @@ const relationGroups = computed(() => [
   { label: 'nodeEditor.parents', nodes: savedNode.value?.parents ?? [] },
   { label: 'nodeEditor.children', nodes: savedNode.value?.children ?? [] },
 ])
+
+// Relations (e.g. tagged parts of a road) that contain the selected node; the
+// node or OSM feature is looked up by its provider identity.
+const nodeRelations = computed(() =>
+  props.node ? nodeGroups.byMember.get(nodeKey(props.node)) ?? [] : [])
+
+function relationLabel(group: NodeGroup): string {
+  const count = t('relationEditor.memberCount', { count: group.members.length })
+  return group.name ? `${group.name} · ${count}` : count
+}
 
 // The observations map holds exactly the current user's unapproved tags
 // (the backend hides other users' pending tags), so membership in it — not
@@ -135,6 +148,34 @@ async function save(): Promise<void> {
           </ul>
         </div>
       </template>
+    </section>
+
+    <section class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
+      <h4 class="section-title">{{ t('nodeEditor.nodeRelations') }}</h4>
+      <p v-if="nodeRelations.length === 0" class="empty-hint">
+        {{ t('nodeEditor.noNodeRelations') }}
+      </p>
+      <div v-for="group in nodeRelations" :key="group.id" class="node-relation">
+        <div class="node-relation-heading">
+          <span>{{ relationLabel(group) }}</span>
+          <Button
+            v-if="auth.canEdit"
+            :label="t('nodeEditor.editRelation')"
+            icon="pi pi-pencil"
+            text
+            severity="secondary"
+            @click="emit('edit-relation', group)"
+          />
+        </div>
+        <div v-if="Object.keys(group.tags).length > 0" class="tag-table-scroll">
+          <table class="tag-table">
+            <tr v-for="[key, value] in Object.entries(group.tags)" :key="key">
+              <th>{{ key }}</th>
+              <td>{{ value }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
     </section>
 
     <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
@@ -258,6 +299,20 @@ async function save(): Promise<void> {
 }
 
 .relation-item small {
+  color: var(--p-text-muted-color);
+}
+
+.node-relations-section .node-relation {
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+  font-size: 0.875rem;
+}
+
+.node-relation-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.375rem;
   color: var(--p-text-muted-color);
 }
 

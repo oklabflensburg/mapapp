@@ -21,10 +21,10 @@ final class TagRepository extends ServiceEntityRepository
 
     /**
      * Returns the tag with this key and value, creating and persisting it on
-     * first use. $approved only applies to newly created tags; existing ones
-     * keep their approval state.
+     * first use. Tags carry no approval state; approving a value happens on
+     * the node or relation it was added to (see NodeTag and NodeGroupTag).
      */
-    public function findOrCreate(string $key, string $value, bool $approved = false): Tag
+    public function findOrCreate(string $key, string $value): Tag
     {
         $tag = $this->findOneBy(['key' => $key, 'value' => $value]);
 
@@ -32,7 +32,6 @@ final class TagRepository extends ServiceEntityRepository
             $tag = new Tag();
             $tag->setKey($key);
             $tag->setValue($value);
-            $tag->setApproved($approved);
             $this->getEntityManager()->persist($tag);
         }
 

@@ -159,8 +159,13 @@ final class UserNodeManager
         }
 
         foreach ($tags as $key => $value) {
-            $nodeTag = $node->addTag($this->tagRepository->findOrCreate($key, $value, $this->currentUserIsAdmin()), $user);
+            $nodeTag = $node->addTag($this->tagRepository->findOrCreate($key, $value), $user);
             if ($nodeTag !== null) {
+                // Admins approve their own additions, but only on this node:
+                // the same value added elsewhere stays unapproved there.
+                if ($this->currentUserIsAdmin()) {
+                    $nodeTag->setApproved(true);
+                }
                 $this->entityManager->persist($nodeTag);
             }
         }
@@ -168,7 +173,8 @@ final class UserNodeManager
 
     /**
      * Each user sees approved tags plus their own unapproved ones; tags
-     * another user has not yet had approved stay invisible.
+     * another user has not yet had approved stay invisible. Approval is per
+     * node, so a value approved elsewhere never shows up here.
      */
     private function toResponse(Node $node): UserNodeResponse
     {
@@ -181,7 +187,7 @@ final class UserNodeManager
             }
             $tag = $nodeTag->getTag();
             $tags[$tag->getKey()] = $tag->getValue();
-            if (!$tag->isApproved()) {
+            if (!$nodeTag->isApproved()) {
                 $observations[$tag->getKey()] = $tag->getValue();
             }
         }
@@ -225,12 +231,14 @@ final class UserNodeManager
             $node->getProviderNodeId(),
             $name,
             $tags,
+            $node->getLatitude(),
+            $node->getLongitude(),
         );
     }
 
     private function tagIsVisible(NodeTag $nodeTag, ?User $user): bool
     {
-        if ($nodeTag->getTag()->isApproved()) {
+        if ($nodeTag->isApproved()) {
             return true;
         }
 

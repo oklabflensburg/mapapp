@@ -6,7 +6,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Attributes a tag on a node to the user who added it. The same tag can be
- * added to the same node by multiple users, once per user.
+ * added to the same node by multiple users, once per user. Approval is per
+ * tag and per node: it lives here, not on the shared tag, so approving a
+ * value on one node never approves it on another.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'node_tags')]
@@ -17,6 +19,9 @@ class NodeTag
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\Column]
+    private bool $approved = false;
 
     public function __construct(
         #[ORM\ManyToOne(targetEntity: Node::class, inversedBy: 'nodeTags')]
@@ -36,6 +41,16 @@ class NodeTag
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approved;
+    }
+
+    public function setApproved(bool $approved): void
+    {
+        $this->approved = $approved;
     }
 
     public function getNode(): Node

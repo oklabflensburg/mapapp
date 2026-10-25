@@ -67,10 +67,7 @@ final class NodeCrudController extends AbstractCrudController
         if ($nextId === null) {
             $this->addFlash('warning', 'No pending observations.');
 
-            return $this->redirect($adminUrlGenerator
-                ->setController(PendingObservationCrudController::class)
-                ->setAction(Action::INDEX)
-                ->generateUrl());
+            return $this->redirectToRoute('app_admin_pending_observations');
         }
 
         // Stay in the section the button was clicked from; only trust
@@ -91,8 +88,7 @@ final class NodeCrudController extends AbstractCrudController
             ->distinct()
             ->from(Node::class, 'node')
             ->innerJoin('node.nodeTags', 'nodeTag')
-            ->innerJoin('nodeTag.tag', 'tag')
-            ->where('tag.approved = false')
+            ->where('nodeTag.approved = false')
             ->orderBy('node.id', 'ASC')
             ->setMaxResults(1);
 

@@ -3,7 +3,6 @@
 namespace App\Tests\Controller;
 
 use App\Entity\Node;
-use App\Entity\Tag;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -153,7 +152,9 @@ final class NodeControllerTest extends WebTestCase
 
         $this->setTagApproval('note', 'entrance from the north', true);
         $node = $findNodeUnderTest();
-        self::assertSame(['note' => 'entrance from the north', 'comment' => 'steep stairs'], $node['tags']);
+        // The tag map's key order follows the database rows and is not part
+        // of the API contract.
+        self::assertEqualsCanonicalizing(['note' => 'entrance from the north', 'comment' => 'steep stairs'], $node['tags']);
         self::assertSame(['comment' => 'steep stairs'], $node['observations']);
     }
 
@@ -187,16 +188,20 @@ final class NodeControllerTest extends WebTestCase
 
     private function setTagApproval(string $key, string $value, bool $approved): void
     {
+        // Approval is per tag and per node: it is set on the row linking the
+        // tag to the node under test, not on the shared tag.
         $entityManager = static::getContainer()->get('doctrine')->getManager();
-        $tag = $entityManager->getRepository(Tag::class)->findOneBy(['key' => $key, 'value' => $value]);
+        $node = $entityManager->getRepository(Node::class)->findOneBy(['providerNodeId' => self::PROVIDER_NODE_ID]);
 
-        if ($tag === null) {
-            $tag = new Tag();
-            $tag->setKey($key);
-            $tag->setValue($value);
-            $entityManager->persist($tag);
+        if ($node === null) {
+            return;
         }
-        $tag->setApproved($approved);
+
+        foreach ($node->getNodeTags() as $nodeTag) {
+            if ($nodeTag->getTag()->getKey() === $key && $nodeTag->getTag()->getValue() === $value) {
+                $nodeTag->setApproved($approved);
+            }
+        }
         $entityManager->flush();
     }
 }

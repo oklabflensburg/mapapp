@@ -51,10 +51,17 @@ Production build: `npm run build` (type-checks with `vue-tsc`, then Vite build i
 
 ## Adding nodes
 
-Press the map's **Add node** (+) button, then click the map. The node is saved
-immediately and its tag editor opens. Clicking an existing node or OSM feature
-creates a child of that feature. Create mode ends after one successful addition;
-press Escape or toggle the button to cancel.
+Press the map's **Add node** (+) button to enter edit mode, then click the map
+to place nodes; each click adds another one and nothing is sent yet. A dialog
+below the controls shows the placed count, a name input, the **parent node**
+(the first placed node, the anchor of the pending relation) and Save/Abort.
+Clicking an existing node or OSM feature places a child of that feature.
+Saving commits the batch: a single node becomes a plain node — the entered
+name becomes its `name` tag and its tag editor opens — while two or more nodes
+become members of a new node relation named with the entered name, whose tag
+editor then opens. Abort (or Escape) discards the placed nodes and leaves
+edit mode. Failed saves keep the placed nodes; Retry re-sends exactly the
+unsaved ones.
 
 Apply database migrations after updating the backend:
 
@@ -89,6 +96,57 @@ It uses intercepted API/OSM fixtures and does not change the development databas
 The selection check covers overlapping children and highlighted OSM parents.
 When saved markers overlap, the most recently created node receives the click;
 editing an older node does not change that priority.
+
+## Node relations
+
+Logged-in editors can group multiple nodes into a **node relation** — for
+example the tagged part of a road. Relations are usually built in edit mode:
+place two or more nodes with the + button, optionally name the relation in
+the dialog, and Save creates the relation from them (see "Adding nodes").
+
+Existing nodes and OSM features can be related too: press the **Create a node
+relation** (link) button, then click nodes or map features to add them
+(clicking a member again removes it). Once two or more nodes are selected,
+**Create relation** saves the relation and opens its tag editor. Press Escape
+to leave relation mode.
+
+Relations are street parts: the area they cover is the corridor of a fixed
+width (20 m around the member line, computed by PostGIS in
+`backend/src/Service/StreetPartArea.php`) around the line through the
+members in order. The map draws it in amber: a dashed preview connects the
+members collected in relation mode, and every saved relation shows its
+corridor outline. The lines are visual aids only — clicks pass through to
+the nodes and features beneath them.
+
+Routing uses these corridors as GraphHopper custom areas: when a logged-in
+user has a route preference for a tag carried by a relation (see the
+profile page), the corridor enters the request's custom model — avoid
+levels block edges inside it, prefer levels penalize edges outside it
+(`Routing::customModelFor()`), just like the circles around individually
+tagged nodes.
+
+The relation's tag editor works like the node editor: new tags are unapproved
+observations; approved ones become read-only. Selecting a member node lists
+its relations in the node panel under "Node relations", with an edit button
+that opens the relation's tag editor. Admins review unapproved relation tags
+in the admin UI under "Pending relation observations", mirroring the pending
+observations queue for nodes.
+
+`GET /api/node-groups` lists relations with their name, ordered member
+summaries, tags and observations (visible tags follow the same approval rules
+as node tags). `POST /api/node-groups` (editors only) creates a relation from
+`members` — `{"id": 123}` for a saved node or an OSM reference with
+`providerNodeId`, `latitude` and `longitude`; unknown OSM references are
+materialized — and requires at least two members; an optional `name` names
+it. Re-posting with an `id` updates it: members are additive (already-present
+nodes are skipped), a non-null `name` replaces the current one, and the
+request `tags` replace the current user's own tags, as with nodes.
+
+Run the deterministic relation browser check with the dev server running:
+
+```bash
+node scripts/check-node-relation.mjs
+```
 
 ## OSM map data (Flensburg)
 

@@ -10,7 +10,7 @@ const childName = 'Created child'
 function node(id, name, createdAt) {
   return {
     id, provider: 'local', providerNodeId: `local-${id}`,
-    latitude: 54.791, longitude: 9.437, tags: { name },
+    latitude: 54.791, longitude: 9.437, tags: { name }, observations: { name },
     parentIds: [], childIds: [], parents: [], children: [],
     createdAt, updatedAt: createdAt,
   }
@@ -29,6 +29,12 @@ async function setup(nodes, features = []) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
   const requests = []
   await page.route('**/data/flensburg.geojson', route => route.fulfill({ json: { type: 'FeatureCollection', features } }))
+  // Editing requires an editor session; node groups stay empty so the check
+  // never depends on development database content.
+  await page.route('**/api/me', route => route.fulfill({
+    json: { user: { name: 'Check Editor', email: 'check-editor@example.com', roles: ['ROLE_EDITOR'] } },
+  }))
+  await page.route('**/api/node-groups', route => route.fulfill({ json: [] }))
   await page.route('**/api/nodes', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: nodes })
     const input = route.request().postDataJSON()
@@ -72,8 +78,11 @@ try {
     await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
     await expectChild(page)
     await closeEditor(page)
+    // Edit mode places pending nodes; Save commits the batch. The click lands
+    // on the child marker, so the placed node becomes its child.
     await page.getByRole('button', { name: 'Add node', exact: true }).click()
     await page.mouse.click(640, 400)
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect.poll(() => requests.length).toBe(1)
     assert.deepEqual(requests[0].parent, { id: child.id })
     await page.close()

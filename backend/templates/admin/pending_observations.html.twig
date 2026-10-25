@@ -1,0 +1,40 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{% extends '@EasyAdmin/layout.html.twig' %}
+
+{# The combined review queue: nodes and areas with unapproved tags in one
+   list, most recently changed first. #}
+{% block title %}Pending observations{% endblock %}
+
+{% block main %}
+    <h1 class="title">Pending observations</h1>
+    {% if pending is empty %}
+        <p class="no-pending-observations">No pending observations.</p>
+    {% else %}
+        <table class="datagrid table-bordered">
+            <thead>
+                <tr>
+                    <th scope="col">Type</th>
+                    <th scope="col">Observed</th>
+                    <th scope="col">Unapproved tags</th>
+                    <th scope="col">Observed by</th>
+                    <th scope="col">Last change</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in pending %}
+                    <tr>
+                        <td>{{ row.type }}</td>
+                        <td>{{ row.label }}</td>
+                        <td>{{ row.tags }}</td>
+                        <td>{{ row.creator }}</td>
+                        <td>{{ row.changedAt|date('Y-m-d H:i') }}</td>
+                        <td>
+                            <a class="btn btn-primary" href="{{ row.reviewUrl }}">Review</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

@@ -9,37 +9,38 @@ final class TagCrudTest extends WebTestCase
 {
     use CreatesUsers;
 
-    private function createTag(): Tag
+    public function testTagEditPageHasNoGlobalApprovalToggle(): void
     {
+        $client = static::createClient();
+        $client->loginUser($this->createUser('admin-tag-crud@example.test', ['admin']), 'admin');
+
         $entityManager = static::getContainer()->get('doctrine')->getManager();
         $tag = new Tag();
         $tag->setKey('access');
         $tag->setValue('tag-crud-'.bin2hex(random_bytes(8)));
-        $tag->setApproved(false);
         $entityManager->persist($tag);
         $entityManager->flush();
 
-        return $tag;
-    }
+        try {
+            $crawler = $client->request('GET', '/admin/tag/'.$tag->getId().'/edit');
 
-    public function testAdminCanToggleApproval(): void
-    {
-        $client = static::createClient();
-        $client->loginUser($this->createUser('admin-tag-crud@example.test', ['admin']), 'admin');
-        $tag = $this->createTag();
+            self::assertResponseIsSuccessful();
+            // Approval is per tag and per node/relation now (see NodeTag and
+            // NodeGroupTag), so the shared tag has no approval toggle.
+            self::assertCount(0, $crawler->filter('form input[name*="[approved]"]'));
 
-        $crawler = $client->request('GET', '/admin/tag/'.$tag->getId().'/edit');
+            // The key and value stay editable.
+            $renamed = 'tag-crud-renamed-'.bin2hex(random_bytes(8));
+            $form = $crawler->selectButton('Save changes')->form();
+            $form['Tag[value]'] = $renamed;
+            $client->submit($form);
+            self::assertResponseRedirects();
 
-        self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->filter('form input[type="checkbox"][name*="[approved]"]'));
-
-        $form = $crawler->selectButton('Save changes')->form();
-        $form['Tag[approved]']->tick();
-        $client->submit($form);
-        self::assertResponseRedirects();
-
-        $entityManager = static::getContainer()->get('doctrine')->getManager();
-        $tag = $entityManager->find(Tag::class, $tag->getId());
-        self::assertTrue($tag->isApproved());
+            self::assertSame($renamed, $entityManager->find(Tag::class, $tag->getId())->getValue());
+        } finally {
+            $manager = static::getContainer()->get('doctrine')->getManager();
+            $manager->remove($manager->find(Tag::class, $tag->getId()));
+            $manager->flush();
+        }
     }
 }

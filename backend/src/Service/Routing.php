@@ -17,9 +17,10 @@ final class Routing
     // the user's tag priorities on top (see customModelFor()).
     public const PROFILE = 'foot';
 
-    // Radius of the custom area drawn around a tagged node: large enough to
-    // cover the way at the node, small enough to leave parallel ways alone.
-    private const AREA_RADIUS_METERS = 20;
+    // Radius of the custom area drawn around a tagged node. GraphHopper only
+    // matches ways whose edge geometry intersects the area, so a tagged node
+    // must sit on (or within this distance of) the way it marks.
+    private const AREA_RADIUS_METERS = 2;
 
     // Priority factors per level. Avoid levels penalize the tagged ways;
     // prefer levels penalize everything ELSE (the only direction
@@ -45,6 +46,10 @@ final class Routing
      * @param array<string, string> $osmRoadClasses
      *        tag => GraphHopper road class, as returned by
      *        TagPriorityManager::osmRoadClassesByTag()
+     * @param array<string, list<array{id: int, area: array}>> $groupAreas
+     *        street part areas of node groups carrying a prioritized tag,
+     *        grouped by tag, as returned by
+     *        NodeGroupRepository::findAreaGeometriesByTagKeys()
      *
      * @return array{distance: float, time: int, points: list<list<float>>}
      *         distance in meters, time in seconds, points as [lat, lon] pairs
@@ -53,9 +58,9 @@ final class Routing
      * @throws NoRouteFoundException       when GraphHopper cannot connect the points
      * @throws RoutingUnavailableException when GraphHopper cannot be reached
      */
-    public function findShortestFootRoute(float $fromLat, float $fromLon, float $toLat, float $toLon, array $tagPriorities = [], array $taggedNodes = [], array $osmRoadClasses = []): array
+    public function findShortestFootRoute(float $fromLat, float $fromLon, float $toLat, float $toLon, array $tagPriorities = [], array $taggedNodes = [], array $osmRoadClasses = [], array $groupAreas = []): array
     {
-        $customModel = $this->customModelFor($tagPriorities, $taggedNodes, $osmRoadClasses);
+        $customModel = $this->customModelFor($tagPriorities, $taggedNodes, $osmRoadClasses, $groupAreas);
 
         if ($customModel === null) {
             // Without tag preferences the profile's custom model applies as
@@ -136,9 +141,12 @@ final class Routing
      *   priority (GraphHopper rejects values above 1 with prepared
      *   landmarks), so OSM ways cannot be preferred.
      * - Custom areas: app nodes tagged with the tag each become a small
-     *   polygon around their coordinates. Avoid levels penalize the areas;
-     *   prefer levels penalize everything outside them, which is the
-     *   documented way to prefer locations when boosting is impossible.
+     *   polygon around their coordinates, and street parts (node groups
+     *   carrying the tag) contribute the corridor around their member line
+     *   (NodeGroupRepository::findAreaGeometriesByTagKeys()). Avoid levels
+     *   penalize the areas; prefer levels penalize everything outside them,
+     *   which is the documented way to prefer locations when boosting is
+     *   impossible.
      *
      * The priorities map covers exactly the tags the admin exposed as
      * route preference settings (see TagPriorityManager::getPriorities()).
@@ -149,10 +157,13 @@ final class Routing
      *        tag => GraphHopper road class, as returned by
      *        TagPriorityManager::osmRoadClassesByTag(); tags without an
      *        entry only apply to the tagged nodes
+     * @param array<string, list<array{id: int, area: array}>> $groupAreas
+     *        tag => street part areas, as returned by
+     *        NodeGroupRepository::findAreaGeometriesByTagKeys()
      *
      * @return array{priority: list<array<string, string>>, areas?: array{type: string, features: list<array<string, mixed>>}}|null
      */
-    public function customModelFor(array $tagPriorities, array $taggedNodes = [], array $osmRoadClasses = []): ?array
+    public function customModelFor(array $tagPriorities, array $taggedNodes = [], array $osmRoadClasses = [], array $groupAreas = []): ?array
     {
         $statements = [];
         $features = [];
@@ -164,24 +175,31 @@ final class Routing
                 $statements[] = ['if' => 'road_class == '.$roadClass, 'multiply_by' => $factor];
             }
 
-            $nodes = $taggedNodes[$tag] ?? [];
-            if ($nodes === []) {
-                continue;
+            // One area per tagged node (a small polygon around it) and one
+            // per street part carrying the tag (its corridor); all areas of
+            // a tag share a single statement so the levels multiply once.
+            $areaGeometries = [];
+            foreach ($taggedNodes[$tag] ?? [] as $node) {
+                $areaGeometries[] = ['type' => 'Polygon', 'coordinates' => [$this->areaPolygon($node['longitude'], $node['latitude'])]];
+            }
+            foreach ($groupAreas[$tag] ?? [] as $groupArea) {
+                $areaGeometries[] = $groupArea['area'];
             }
 
             $areaIds = [];
-            foreach (array_values($nodes) as $index => $node) {
+            foreach (array_values($areaGeometries) as $index => $geometry) {
                 $areaId = $this->areaId($tag, $index);
                 $areaIds[] = $areaId;
                 $features[] = [
                     'type' => 'Feature',
                     'id' => $areaId,
                     'properties' => new \stdClass(),
-                    'geometry' => [
-                        'type' => 'Polygon',
-                        'coordinates' => [$this->areaPolygon($node['longitude'], $node['latitude'])],
-                    ],
+                    'geometry' => $geometry,
                 ];
+            }
+
+            if ($areaIds === []) {
+                continue;
             }
 
             if ($level === 'avoid' || $level === 'try_to_avoid') {

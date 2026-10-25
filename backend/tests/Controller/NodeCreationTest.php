@@ -4,7 +4,6 @@ namespace App\Tests\Controller;
 
 use App\Entity\Node;
 use App\Entity\NodeTag;
-use App\Entity\Tag;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -88,6 +87,8 @@ final class NodeCreationTest extends WebTestCase
             'providerNodeId' => $parent['providerNodeId'],
             'name' => 'Named parent',
             'tags' => $parentTags,
+            'latitude' => 54.791,
+            'longitude' => 9.437,
         ]], $child['parents']);
         self::assertSame($child['id'], $this->save($client, $payload, 200)['id']);
         $payload['parent'] = ['id' => $otherParent['id']];
@@ -127,6 +128,8 @@ final class NodeCreationTest extends WebTestCase
             'providerNodeId' => $reference['providerNodeId'],
             'name' => null,
             'tags' => [],
+            'latitude' => 54.79,
+            'longitude' => 9.43,
         ]], $child['parents']);
         $client->request('GET', '/api/nodes');
         $nodes = json_decode($client->getResponse()->getContent(), true);
@@ -189,9 +192,12 @@ final class NodeCreationTest extends WebTestCase
         $adminNode = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => $adminValue]]));
         self::assertSame([], $adminNode['observations']);
 
-        $repository = static::getContainer()->get('doctrine')->getRepository(Tag::class);
-        self::assertFalse($repository->findOneBy(['value' => $editorValue])->isApproved());
-        self::assertTrue($repository->findOneBy(['value' => $adminValue])->isApproved());
+        // Approval is per tag and per node: it lives on the node tag rows,
+        // not on the shared tag.
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $repository = $entityManager->getRepository(NodeTag::class);
+        self::assertFalse($repository->findBy(['node' => $editorNode['id']])[0]->isApproved());
+        self::assertTrue($repository->findBy(['node' => $adminNode['id']])[0]->isApproved());
     }
 
     public function testRejectsInvalidParentSelfRelationAndCoordinates(): void

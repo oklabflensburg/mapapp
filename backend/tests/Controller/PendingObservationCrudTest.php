@@ -39,26 +39,22 @@ final class PendingObservationCrudTest extends WebTestCase
         $unapprovedTag = new Tag();
         $unapprovedTag->setKey('access');
         $unapprovedTag->setValue('pending-crud-'.bin2hex(random_bytes(8)));
-        $unapprovedTag->setApproved(false);
         $entityManager->persist($unapprovedTag);
 
         $approvedTag = new Tag();
         $approvedTag->setKey('access');
         $approvedTag->setValue('pending-crud-approved-'.bin2hex(random_bytes(8)));
-        $approvedTag->setApproved(true);
         $entityManager->persist($approvedTag);
 
         $nextUnapprovedTag = new Tag();
         $nextUnapprovedTag->setKey('access');
         $nextUnapprovedTag->setValue('pending-crud-next-'.bin2hex(random_bytes(8)));
-        $nextUnapprovedTag->setApproved(false);
         $entityManager->persist($nextUnapprovedTag);
 
         // Gives the first node a second key group on the edit page.
         $otherKeyTag = new Tag();
         $otherKeyTag->setKey('note');
         $otherKeyTag->setValue('pending-crud-other-'.bin2hex(random_bytes(8)));
-        $otherKeyTag->setApproved(false);
         $entityManager->persist($otherKeyTag);
 
         $nodeWithPendingTag = new Node();
@@ -99,7 +95,10 @@ final class PendingObservationCrudTest extends WebTestCase
         $nextUnapprovedTag->setUpdatedAt(new \DateTimeImmutable('-1 hour'));
 
         $entityManager->persist(new NodeTag($nodeWithPendingTag, $unapprovedTag, $editor));
-        $entityManager->persist(new NodeTag($nodeWithoutPendingTag, $approvedTag, $editor));
+        // Approval is per tag and per node: it lives on the node tag row.
+        $approvedNodeTag = new NodeTag($nodeWithoutPendingTag, $approvedTag, $editor);
+        $approvedNodeTag->setApproved(true);
+        $entityManager->persist($approvedNodeTag);
         $entityManager->persist(new NodeTag($nodeWithPendingTag, $otherKeyTag, $editor));
         $entityManager->persist(new NodeTag($nextPendingNode, $nextUnapprovedTag, $editor));
         $entityManager->flush();

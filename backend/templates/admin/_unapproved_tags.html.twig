@@ -1,0 +1,77 @@
+{# Unapproved tags review section, shared by the node and node relation
+   review screens. `tags` carries NodeTag or NodeGroupTag entries; `next_url`
+   optionally links to the next pending entity of the same kind. #}
+{% set unapproved_tags = [] %}
+{% for entry_tag in tags %}
+    {% if not entry_tag.approved %}
+        {% set unapproved_tags = unapproved_tags|merge([entry_tag]) %}
+    {% endif %}
+{% endfor %}
+{% set key_groups = {} %}
+{% for entry_tag in unapproved_tags %}
+    {# String keys: Twig's merge renumbers integer keys, which would break the grouping. #}
+    {% set group_key = 'key-' ~ entry_tag.tag.key %}
+    {% set key_groups = key_groups|merge({(group_key): (key_groups[group_key]|default([]))|merge([entry_tag])}) %}
+{% endfor %}
+<section class="node-edit-unapproved-tags">
+    <div class="node-edit-unapproved-tags-header">
+        <h2>Unapproved tags</h2>
+        {% if next_url is defined and next_url is not empty %}
+            {# Jumps to the next pending entity in the review queue. #}
+            <a class="btn btn-secondary" href="{{ next_url }}">Next pending</a>
+        {% endif %}
+    </div>
+    {% if key_groups is empty %}
+        <p class="no-unapproved-tags">{{ empty_message|default('No unapproved tags.') }}</p>
+    {% else %}
+        {% for grouped_key_tags in key_groups %}
+            {# Within a key group, entries are grouped by tag so a
+               value shared by several users shows one approve form. #}
+            {% set tag_groups = {} %}
+            {% for entry_tag in grouped_key_tags %}
+                {% set tag_group_key = 'tag-' ~ entry_tag.tag.id %}
+                {% set tag_groups = tag_groups|merge({(tag_group_key): (tag_groups[tag_group_key]|default([]))|merge([entry_tag])}) %}
+            {% endfor %}
+            {# Rows are ordered by highest amount of observations first. #}
+            {% set tag_groups = tag_groups|sort((a, b) => b|length - a|length) %}
+            {# The first group is uncollapsed so the pending values
+               are visible without interaction. #}
+            <details class="unapproved-tag-key-group"{% if loop.first %} open{% endif %}>
+                <summary>
+                    <span class="unapproved-tag-key">{{ grouped_key_tags[0].tag.key }}</span>
+                    <span class="unapproved-tag-count">{{ tag_groups|length }} pending {{ tag_groups|length == 1 ? 'value' : 'values' }}</span>
+                </summary>
+                <table class="unapproved-tags-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Value</th>
+                            <th scope="col">Observations</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grouped_entry_tags in tag_groups %}
+                            {% set tag = grouped_entry_tags[0].tag %}
+                            {# Approval is per tag and per node/relation, so
+                               the approve action targets the entry itself,
+                               not the shared tag. #}
+                            {% set approve_url = grouped_entry_tags[0].node is defined
+                                ? path('app_admin_node_tag_approve', {id: grouped_entry_tags[0].id})
+                                : path('app_admin_node_group_tag_approve', {id: grouped_entry_tags[0].id}) %}
+                            <tr>
+                                <td>{{ tag.value }}</td>
+                                <td>{{ grouped_entry_tags|length }}</td>
+                                <td>
+                                    <form method="post" action="{{ approve_url }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ grouped_entry_tags[0].id) }}">
+                                        <button class="btn btn-primary" type="submit">Approve</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+        {% endfor %}
+    {% endif %}
+</section>

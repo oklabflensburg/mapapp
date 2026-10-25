@@ -6,6 +6,8 @@ import OsmMap from '../components/OsmMap.vue'
 import UserBar from '../components/UserBar.vue'
 import type { MapStatus } from '../map/geolocation'
 import NodeTagPanel from '../components/NodeTagPanel.vue'
+import RelationTagPanel from '../components/RelationTagPanel.vue'
+import type { NodeGroup } from '../stores/nodeGroups'
 import { nodeKey, type NodeEditTarget } from '../stores/userNodes'
 const { t } = useI18n()
 const route = useRoute()
@@ -41,12 +43,17 @@ const mapStatusMessage = computed(() => {
 
 const mapRef = ref<InstanceType<typeof OsmMap> | null>(null)
 const editTarget = ref<NodeEditTarget | null>(null)
+// The relation being edited; opening it replaces the node selection.
+const relationTarget = ref<NodeGroup | null>(null)
 
 function selectNode(node: NodeEditTarget): void {
   // Re-clicking the selected element keeps it (and the panel's unsaved
-  // edits); only a click elsewhere changes or clears the selection.
+  // edits); only a click elsewhere changes or clears the selection. Node
+  // and relation panels are mutually exclusive: selecting a node closes the
+  // relation panel.
   if (!editTarget.value || nodeKey(editTarget.value) !== nodeKey(node)) {
     editTarget.value = node
+    relationTarget.value = null
   }
 }
 
@@ -61,6 +68,27 @@ function onPanelVisible(visible: boolean): void {
     deselectNode()
   }
 }
+
+// Editing a relation closes the node panel and highlights its whole area on
+// the map. Re-selecting the open relation keeps the panel's unsaved edits.
+function onEditRelation(group: NodeGroup): void {
+  if (!relationTarget.value || relationTarget.value.id !== group.id) {
+    relationTarget.value = group
+  }
+  editTarget.value = null
+  mapRef.value?.selectRelation(group)
+}
+
+function deselectRelation(): void {
+  relationTarget.value = null
+  mapRef.value?.clearSelection()
+}
+
+function onRelationPanelVisible(visible: boolean): void {
+  if (!visible) {
+    deselectRelation()
+  }
+}
 </script>
 
 <template>
@@ -73,8 +101,21 @@ function onPanelVisible(visible: boolean): void {
       @status="mapStatus = $event"
       @edit-node="selectNode"
       @deselect-node="deselectNode"
+      @edit-relation="onEditRelation"
+      @deselect-relation="deselectRelation"
     />
-    <NodeTagPanel :visible="editTarget !== null" :node="editTarget" @update:visible="onPanelVisible" />
+    <NodeTagPanel
+      :visible="editTarget !== null"
+      :node="editTarget"
+      @update:visible="onPanelVisible"
+      @edit-relation="onEditRelation"
+    />
+    <RelationTagPanel
+      :visible="relationTarget !== null"
+      :group="relationTarget"
+      @update:visible="onRelationPanelVisible"
+      @saved="relationTarget = $event"
+    />
   </main>
 </template>
 

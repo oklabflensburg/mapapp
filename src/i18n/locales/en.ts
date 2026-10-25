@@ -11,8 +11,17 @@ export default {
   map: {
     create: {
       add: 'Add node',
-      hint: 'Click the map to add a node. Press Escape to cancel.',
-      failed: 'Could not add the node. Retry the same position or cancel create mode.',
+      hint: 'Click the map to place nodes. Save turns them into a node relation; Escape aborts.',
+      placed: '{count} nodes placed',
+      pendingDialog: 'Placed nodes',
+      name: 'Name',
+      namePlaceholder: 'Name',
+      parentNode: 'Parent node',
+      noParent: 'None',
+      nodeLabel: 'Node {number}',
+      save: 'Save',
+      abort: 'Abort',
+      failed: 'Could not save the nodes. Retry to send the remaining ones or abort edit mode.',
       retry: 'Retry',
     },
     status: {
@@ -31,6 +40,14 @@ export default {
       failed: 'The route could not be calculated. Please try again.',
       summary: '{distance} · {minutes} min walk',
     },
+    relation: {
+      button: 'Create a node relation',
+      hint: 'Click nodes or map features to add them to the relation. Click a member again to remove it. Press Escape to cancel.',
+      members: '{count} nodes selected',
+      create: 'Create relation',
+      cancel: 'Cancel',
+      failed: 'Could not create the node relation. Please try again.',
+    },
   },
   nodeEditor: {
     title: 'Edit node',
@@ -38,6 +55,9 @@ export default {
     parents: 'Parents',
     children: 'Children',
     noRelations: 'No relations',
+    nodeRelations: 'Node relations',
+    noNodeRelations: 'Not part of a node relation',
+    editRelation: 'Edit relation',
     parentCustomTags: 'Custom tags',
     noParentTags: 'No tags',
     parentOsmLoading: 'Loading parent OSM tags…',
@@ -54,6 +74,12 @@ export default {
     cancel: 'Cancel',
     saveFailed: 'Saving failed. Please try again.',
     loginRequired: 'Log in as an editor to add or edit nodes.',
+  },
+  relationEditor: {
+    title: 'Edit node relation',
+    members: 'Nodes',
+    memberCount: '{count} nodes',
+    empty: 'No tags yet. Add your first one.',
   },
   profile: {
     title: 'Profile',

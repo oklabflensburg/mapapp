@@ -56,8 +56,7 @@ final class PendingObservationCrudController extends AbstractCrudController
     {
         return parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters)
             ->innerJoin('entity.nodeTags', 'pendingNodeTag')
-            ->innerJoin('pendingNodeTag.tag', 'pendingTag')
-            ->andWhere('pendingTag.approved = false')
+            ->andWhere('pendingNodeTag.approved = false')
             ->distinct()
             // Nodes whose pending tags changed most recently come first. The
             // scalar subquery is HIDDEN because the DISTINCT select only
@@ -66,7 +65,7 @@ final class PendingObservationCrudController extends AbstractCrudController
                 '(SELECT MAX(unapprovedTag.updatedAt) FROM '.NodeTag::class.' unapprovedNodeTag'
                 .' JOIN unapprovedNodeTag.tag unapprovedTag'
                 .' WHERE IDENTITY(unapprovedNodeTag.node) = entity.id'
-                .' AND unapprovedTag.approved = false) AS HIDDEN latestUnapprovedTagUpdatedAt'
+                .' AND unapprovedNodeTag.approved = false) AS HIDDEN latestUnapprovedTagUpdatedAt'
             )
             ->addOrderBy('latestUnapprovedTagUpdatedAt', 'DESC');
     }
@@ -89,7 +88,7 @@ final class PendingObservationCrudController extends AbstractCrudController
 
                 $unapproved = array_filter(
                     $nodeTags,
-                    static fn (NodeTag $nodeTag): bool => !$nodeTag->getTag()->isApproved(),
+                    static fn (NodeTag $nodeTag): bool => !$nodeTag->isApproved(),
                 );
 
                 return implode(', ', array_map(

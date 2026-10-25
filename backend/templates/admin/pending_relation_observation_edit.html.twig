@@ -1,0 +1,72 @@
+{# @var ea \EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext #}
+{# @var entity \EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto #}
+{% extends '@EasyAdmin/crud/edit.html.twig' %}
+
+{# Pending relation observation review screen: the unapproved tags of a node
+   relation with their approve actions, the relation members and the frontend
+   preview centered on its first member. #}
+{% block main %}
+    {% set group = entity.instance %}
+    {% set frontend_url = app_frontend_url|default('http://localhost:5173')|trim('/') %}
+    {% set first_member = group.members|first %}
+    {% set preview_src = frontend_url ~ '/?lat=' ~ (first_member ? first_member.node.latitude : 54.791) ~ '&lon=' ~ (first_member ? first_member.node.longitude : 9.437) ~ '&zoom=18' %}
+    <div class="node-edit-split">
+        <div class="node-edit-split-form">
+            <section class="relation-review-summary">
+                <h1>{{ group.name ?: 'Node relation #' ~ group.id }}</h1>
+                <p class="relation-review-meta">
+                    {{ group.members|length }} {{ group.members|length == 1 ? 'member' : 'members' }} ·
+                    created by {{ group.createdByUser }}
+                </p>
+                <ul class="relation-review-members">
+                    {% for member in group.members %}
+                        <li>
+                            <a href="{{ path('app_admin_node_edit', {entityId: member.node.id}) }}">{{ member.node.providerNodeId }}</a>
+                            <small>{{ member.node.nodeProvider.name }}</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% include 'admin/_unapproved_tags.html.twig' with { tags: group.groupTags, next_url: path('app_admin_node_group_next_pending', {id: group.id}), empty_message: 'No unapproved tags on this relation.' } %}
+        </div>
+        <aside class="node-edit-split-preview">
+            <iframe src="{{ preview_src }}" title="App frontend preview of this node relation" loading="lazy"></iframe>
+        </aside>
+    </div>
+
+    {% include 'admin/_review_styles.html.twig' %}
+
+    <style>
+        .relation-review-summary {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+
+        .relation-review-summary h1 {
+            font-size: 1.25rem;
+            margin: 0 0 0.5rem;
+        }
+
+        .relation-review-meta {
+            margin: 0 0 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .relation-review-members {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .relation-review-members li {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .relation-review-members small {
+            color: var(--text-muted);
+        }
+    </style>
+{% endblock %}
