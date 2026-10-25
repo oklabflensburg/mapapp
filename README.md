@@ -21,7 +21,7 @@ docker compose up -d --wait
 ```
 
 - API: http://localhost:8080/api/hello
-- Database: PostGIS on localhost:5433 (user `app`, password `!ChangeMe!`, db `api`)
+- Database: PostGIS on localhost:5433 (database `map`; credentials from `backend/.env`)
 
 The first start runs `composer install` inside the container (Flex generates the
 bundle configuration in `config/packages/`).
@@ -31,6 +31,11 @@ Tests:
 ```bash
 docker compose exec php vendor/bin/phpunit
 ```
+
+Tests use the configured database credentials and append `_test` to the database
+name (`map_test` by default). Changing `POSTGRES_PASSWORD` in `.env` does not
+update the password stored in an existing PostgreSQL volume; the database role's
+password must also be updated.
 
 ## Frontend
 

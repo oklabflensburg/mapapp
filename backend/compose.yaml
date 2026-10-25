@@ -4,6 +4,10 @@ name: api
 services:
   php:
     restart: unless-stopped
+    build:
+      context: .
+      target: frankenphp_prod
+    image: ${IMAGES_PREFIX:-}app-php
     depends_on:
       database:
         condition: service_healthy
@@ -26,16 +30,13 @@ services:
       - caddy_config:/config
       - photo_data:/app/var/photos
     ports:
-      - name: http
-        target: 80
+      - target: 80
         published: ${HTTP_PORT:-8080}
         protocol: tcp
-      - name: https
-        target: 443
+      - target: 443
         published: ${HTTPS_PORT:-443}
         protocol: tcp
-      - name: http3
-        target: 443
+      - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
 
@@ -49,8 +50,7 @@ services:
     image: accessapp-graphhopper:11.1
     restart: unless-stopped
     ports:
-      - name: routing
-        target: 8989
+      - target: 8989
         published: ${GRAPHHOPPER_PORT:-8989}
         protocol: tcp
     environment:
