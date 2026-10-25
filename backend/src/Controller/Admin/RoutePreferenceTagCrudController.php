@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\RoutePreferenceTag;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 /**
@@ -29,5 +30,12 @@ final class RoutePreferenceTagCrudController extends AbstractCrudController
     {
         // The tag key as used on nodes, e.g. "stairs" or "toilets".
         yield TextField::new('tag');
+        // The GraphHopper road class OSM ways of the tag carry, so that
+        // avoid levels also detour around OSM ways, not just app nodes;
+        // null keeps the tag limited to app nodes.
+        yield ChoiceField::new('osmRoadClass')
+            ->setChoices(array_combine(RoutePreferenceTag::OSM_ROAD_CLASSES, RoutePreferenceTag::OSM_ROAD_CLASSES))
+            ->renderAsNativeWidget()
+            ->setFormTypeOption('required', false);
     }
 }

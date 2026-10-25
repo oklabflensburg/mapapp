@@ -29,9 +29,11 @@ final class RoutingTest extends KernelTestCase
             'http://127.0.0.1:1',
         );
 
+        // The admin mapped the stairs tag to the STEPS road class (the
+        // mapping is a route_preference_tags setting, not hardcoded).
         self::assertSame(
             ['priority' => [['if' => 'road_class == STEPS', 'multiply_by' => '0']]],
-            $routing->customModelFor(['stairs' => 'avoid']),
+            $routing->customModelFor(['stairs' => 'avoid'], [], ['stairs' => 'STEPS']),
         );
     }
 
@@ -44,7 +46,22 @@ final class RoutingTest extends KernelTestCase
 
         self::assertSame(
             ['priority' => [['if' => 'road_class == STEPS', 'multiply_by' => '0.3']]],
-            $routing->customModelFor(['stairs' => 'try_to_avoid']),
+            $routing->customModelFor(['stairs' => 'try_to_avoid'], [], ['stairs' => 'STEPS']),
+        );
+    }
+
+    public function testAvoidingAnyTagWithARoadClassPenalizesThatRoadClass(): void
+    {
+        $routing = new Routing(
+            static::getContainer()->get('http_client'),
+            'http://127.0.0.1:1',
+        );
+
+        // The road class mapping is not limited to stairs: whatever the
+        // admin mapped applies to the configured class.
+        self::assertSame(
+            ['priority' => [['if' => 'road_class == PATH', 'multiply_by' => '0']]],
+            $routing->customModelFor(['unpaved' => 'avoid'], [], ['unpaved' => 'PATH']),
         );
     }
 
@@ -58,6 +75,7 @@ final class RoutingTest extends KernelTestCase
         $model = $routing->customModelFor(
             ['stairs' => 'avoid'],
             ['stairs' => [['latitude' => 54.3235, 'longitude' => 10.1385]]],
+            ['stairs' => 'STEPS'],
         );
 
         self::assertNotNull($model);
@@ -147,8 +165,8 @@ final class RoutingTest extends KernelTestCase
 
         // Prefer levels cannot raise edge priority above the profile's
         // custom model (GraphHopper rejects values above 1 per request), so
-        // they keep the profile default.
-        self::assertNull($routing->customModelFor(['stairs' => $level]));
+        // they keep the profile default, even for a mapped road class.
+        self::assertNull($routing->customModelFor(['stairs' => $level], [], ['stairs' => 'STEPS']));
         self::assertNull($routing->customModelFor([]));
     }
 

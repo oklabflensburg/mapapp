@@ -19,13 +19,6 @@ final class TagPriorityManager
     public const DEFAULT_LEVEL = 'neutral';
 
     /**
-     * The tag that additionally maps to OSM steps (road_class == STEPS) in
-     * Routing::customModelFor(); kept as a constant because it needs special
-     * routing treatment wherever it appears.
-     */
-    public const STAIRS_TAG = 'stairs';
-
-    /**
      * @return list<string>
      */
     public static function levels(): array
@@ -66,6 +59,18 @@ final class TagPriorityManager
     public function tags(): array
     {
         return $this->routePreferenceTagRepository->findAllTagKeys();
+    }
+
+    /**
+     * The OSM road class per exposed tag, for the tags the admin mapped to
+     * one; tags without a mapping have no entry. Routing adds a road_class
+     * rule for every mapped tag the user does not keep neutral.
+     *
+     * @return array<string, string>
+     */
+    public function osmRoadClassesByTag(): array
+    {
+        return $this->routePreferenceTagRepository->findOsmRoadClassesByTag();
     }
 
     /**

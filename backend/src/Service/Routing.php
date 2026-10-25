@@ -42,6 +42,9 @@ final class Routing
      * @param array<string, list<array{latitude: float, longitude: float}>> $taggedNodes
      *        app nodes tagged with a prioritized tag, grouped by tag, as
      *        returned by NodeRepository::findTaggedNodeCoordinates()
+     * @param array<string, string> $osmRoadClasses
+     *        tag => GraphHopper road class, as returned by
+     *        TagPriorityManager::osmRoadClassesByTag()
      *
      * @return array{distance: float, time: int, points: list<list<float>>}
      *         distance in meters, time in seconds, points as [lat, lon] pairs
@@ -50,9 +53,9 @@ final class Routing
      * @throws NoRouteFoundException       when GraphHopper cannot connect the points
      * @throws RoutingUnavailableException when GraphHopper cannot be reached
      */
-    public function findShortestFootRoute(float $fromLat, float $fromLon, float $toLat, float $toLon, array $tagPriorities = [], array $taggedNodes = []): array
+    public function findShortestFootRoute(float $fromLat, float $fromLon, float $toLat, float $toLon, array $tagPriorities = [], array $taggedNodes = [], array $osmRoadClasses = []): array
     {
-        $customModel = $this->customModelFor($tagPriorities, $taggedNodes);
+        $customModel = $this->customModelFor($tagPriorities, $taggedNodes, $osmRoadClasses);
 
         if ($customModel === null) {
             // Without tag preferences the profile's custom model applies as
@@ -126,11 +129,12 @@ final class Routing
      * Translates the user's tag priorities into a GraphHopper custom model
      * that is appended to the profile's custom model. Two mechanisms are used:
      *
-     * - OSM encoded values: the "stairs" tag maps to a road_class STEPS rule
-     *   for ways imported from OSM. Only the avoid levels can use it:
-     *   per-request statements can only lower edge priority (GraphHopper
-     *   rejects values above 1 with prepared landmarks), so OSM stairs
-     *   cannot be preferred.
+     * - OSM encoded values: tags the admin mapped to a road class (see
+     *   TagPriorityManager::osmRoadClassesByTag()) apply to OSM ways of
+     *   that class, e.g. "stairs" to road_class == STEPS. Only the avoid
+     *   levels can use them: per-request statements can only lower edge
+     *   priority (GraphHopper rejects values above 1 with prepared
+     *   landmarks), so OSM ways cannot be preferred.
      * - Custom areas: app nodes tagged with the tag each become a small
      *   polygon around their coordinates. Avoid levels penalize the areas;
      *   prefer levels penalize everything outside them, which is the
@@ -139,23 +143,25 @@ final class Routing
      * The priorities map covers exactly the tags the admin exposed as
      * route preference settings (see TagPriorityManager::getPriorities()).
      *
-     * @param array<string, string>             $tagPriorities
+     * @param array<string, string>                          $tagPriorities
      * @param array<string, list<array{latitude: float, longitude: float}>> $taggedNodes
+     * @param array<string, string>                          $osmRoadClasses
+     *        tag => GraphHopper road class, as returned by
+     *        TagPriorityManager::osmRoadClassesByTag(); tags without an
+     *        entry only apply to the tagged nodes
      *
      * @return array{priority: list<array<string, string>>, areas?: array{type: string, features: list<array<string, mixed>>}}|null
      */
-    public function customModelFor(array $tagPriorities, array $taggedNodes = []): ?array
+    public function customModelFor(array $tagPriorities, array $taggedNodes = [], array $osmRoadClasses = []): ?array
     {
         $statements = [];
         $features = [];
 
         foreach ($tagPriorities as $tag => $level) {
-            if ($tag === TagPriorityManager::STAIRS_TAG) {
-                if ($level === 'avoid') {
-                    $statements[] = ['if' => 'road_class == STEPS', 'multiply_by' => self::FACTOR_AVOID];
-                } elseif ($level === 'try_to_avoid') {
-                    $statements[] = ['if' => 'road_class == STEPS', 'multiply_by' => self::FACTOR_TRY_TO_AVOID];
-                }
+            $roadClass = $osmRoadClasses[$tag] ?? null;
+            if ($roadClass !== null && ($level === 'avoid' || $level === 'try_to_avoid')) {
+                $factor = $level === 'avoid' ? self::FACTOR_AVOID : self::FACTOR_TRY_TO_AVOID;
+                $statements[] = ['if' => 'road_class == '.$roadClass, 'multiply_by' => $factor];
             }
 
             $nodes = $taggedNodes[$tag] ?? [];

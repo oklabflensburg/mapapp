@@ -31,9 +31,10 @@ final class RoutingController extends AbstractController
     public function route(#[MapQueryString(validationFailedStatusCode: Response::HTTP_UNPROCESSABLE_ENTITY)] RouteQuery $query): JsonResponse
     {
         // The user's tag priorities from the profile page shape the route:
-        // avoid levels detour around tagged nodes (and OSM steps for
-        // stairs), prefer levels bias routes toward tagged nodes. Anonymous
-        // visitors get the neutral default of the routing profile.
+        // avoid levels detour around tagged nodes (and around OSM ways of
+        // the road class the admin mapped the tag to), prefer levels bias
+        // routes toward tagged nodes. Anonymous visitors get the neutral
+        // default of the routing profile.
         $user = $this->getUser();
         $tagPriorities = $user instanceof User
             ? $this->tagPriorityManager->getPriorities($user)
@@ -50,6 +51,7 @@ final class RoutingController extends AbstractController
                 $query->toLon,
                 $tagPriorities,
                 $taggedNodes,
+                $this->tagPriorityManager->osmRoadClassesByTag(),
             );
         } catch (NoRouteFoundException) {
             return $this->json(['error' => 'no_route'], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);

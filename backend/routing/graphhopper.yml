@@ -2,9 +2,9 @@
 # encoder (walker) is served:
 # - foot: walking route that avoids fords, hiking trails and rough surfaces.
 #   Stairs are NOT excluded here: a user's per-request tag priorities decide
-#   (the backend sends a custom model that penalizes road_class == STEPS for
-#   "avoid"/"try to avoid" stairs). Per-request rules can only restrict, so
-#   the base profile must keep stairs passable.
+#   (the backend sends a custom model that penalizes the road class the admin
+#   mapped the tag to, e.g. STEPS for "stairs", for avoid levels). Per-request
+#   rules can only restrict, so the base profile must keep stairs passable.
 # Paths refer to the compose mounts: the OSM extract is read-only under
 # /data/osm, the prepared graph persists in the graphhopper_graphs volume.
 graphhopper:
@@ -15,7 +15,7 @@ graphhopper:
     - name: foot
       custom_model:
         priority:
-          - if: "!foot_access || road_environment == FORD || hike_rating >= 1"
+          - if: "!foot_access || road_environment == FORD"
             multiply_by: "0"
           - if: "surface == COBBLESTONE || surface == GRAVEL || surface == GROUND || surface == DIRT || surface == SAND || surface == GRASS"
             multiply_by: "0.3"
