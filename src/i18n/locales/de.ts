@@ -11,7 +11,6 @@ export default {
   map: {
     create: {
       add: 'Knoten hinzufügen',
-      hint: 'Klicke auf die Karte, um Knoten zu platzieren. Speichern erstellt daraus eine Knotenbeziehung; Escape bricht ab.',
       placed: '{count} Knoten platziert',
       pendingDialog: 'Platzierte Knoten',
       name: 'Name',
@@ -34,19 +33,10 @@ export default {
     },
     routing: {
       button: 'Route planen',
-      hint: 'Klicke auf die Karte, um Start und Ziel festzulegen. Escape beendet die Routenplanung.',
       calculating: 'Route wird berechnet…',
       noRoute: 'Zwischen diesen Punkten wurde kein begehbarer Weg gefunden.',
       failed: 'Die Route konnte nicht berechnet werden. Bitte erneut versuchen.',
       summary: '{distance} · {minutes} Min. zu Fuß',
-    },
-    relation: {
-      button: 'Knotenbeziehung erstellen',
-      hint: 'Klicke auf Knoten oder Kartenelemente, um sie zur Beziehung hinzuzufügen. Ein erneuter Klick entfernt sie wieder. Escape bricht ab.',
-      members: '{count} Knoten ausgewählt',
-      create: 'Beziehung erstellen',
-      cancel: 'Abbrechen',
-      failed: 'Die Knotenbeziehung konnte nicht erstellt werden. Bitte erneut versuchen.',
     },
   },
   nodeEditor: {

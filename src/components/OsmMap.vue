@@ -7,7 +7,7 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
 import { nodeKey, type NodeEditTarget, type SaveUserNodeInput, type UserNode } from '../stores/userNodes'
-import { useNodeGroupsStore, type GroupMemberReference, type NodeGroup } from '../stores/nodeGroups'
+import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import '../map/leafletIcons'
 import {
@@ -70,13 +70,6 @@ const pendingName = ref('')
 // parent node the relation is attached to.
 const pendingAnchorLabel = computed(() => pendingNodes.value[0]?.label ?? '')
 
-// Relation mode collects the nodes the editor clicks; finishing creates a
-// node relation from them (and opens its tag editor).
-const relationMode = ref(false)
-const relationCreating = ref(false)
-const relationFailed = ref(false)
-const relationMembers = ref<NodeEditTarget[]>([])
-
 let map: L.Map | undefined
 let locationLayers: LocationLayers = {}
 
@@ -122,17 +115,6 @@ function onEditNode(target: NodeEditTarget, click: L.LatLng): boolean {
     routing.setPoint({ latitude: click.lat, longitude: click.lng })
     return false
   }
-  if (relationMode.value || relationCreating.value) {
-    // Clicking a member again removes it, so mis-clicks are undoable.
-    const key = nodeKey(target)
-    const index = relationMembers.value.findIndex((member) => nodeKey(member) === key)
-    if (index === -1) {
-      relationMembers.value = [...relationMembers.value, target]
-    } else {
-      relationMembers.value = relationMembers.value.filter((_, i) => i !== index)
-    }
-    return false
-  }
   if (createMode.value || creating.value) {
     // Clicks only place pending nodes; saving happens in the dialog.
     if (!creating.value) placePendingNode(click, target)
@@ -153,7 +135,6 @@ function toggleCreateMode(): void {
   clearPendingNodes()
   createMode.value = !createMode.value
   if (createMode.value) {
-    exitRelationMode()
     routing.exit()
     clearSelection()
     emit('deselect-node')
@@ -167,57 +148,14 @@ function toggleRoutingMode(): void {
   }
   createMode.value = false
   clearPendingNodes()
-  exitRelationMode()
   clearSelection()
   emit('deselect-node')
   routing.enter()
 }
 
-// Entering relation mode leaves the other map modes and drops the selection.
-function toggleRelationMode(): void {
-  if (relationCreating.value) return
-  if (relationMode.value) {
-    exitRelationMode()
-    return
-  }
-  createMode.value = false
-  clearPendingNodes()
-  routing.exit()
-  clearSelection()
-  emit('deselect-node')
-  relationMembers.value = []
-  relationFailed.value = false
-  relationMode.value = true
-}
-
-function exitRelationMode(): void {
-  relationMode.value = false
-  relationMembers.value = []
-  relationFailed.value = false
-}
-
-async function finishRelation(): Promise<void> {
-  if (relationCreating.value || relationMembers.value.length < 2) return
-  relationCreating.value = true
-  relationFailed.value = false
-  const members: GroupMemberReference[] = relationMembers.value.map((member) =>
-    member.id !== undefined
-      ? { id: member.id }
-      : { providerNodeId: member.providerNodeId, latitude: member.latitude, longitude: member.longitude })
-  const saved = await nodeGroups.save({ members, tags: {} })
-  relationCreating.value = false
-  if (!saved) {
-    relationFailed.value = true
-    return
-  }
-  exitRelationMode()
-  emit('edit-relation', saved)
-}
-
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape') {
     if (createMode.value && !creating.value) toggleCreateMode()
-    else if (relationMode.value && !relationCreating.value) toggleRelationMode()
     else if (routing.mode) routing.exit()
   }
 }
@@ -363,26 +301,20 @@ let pendingNodeLayer: PendingNodeLayer | undefined
 let routingLayer: RoutingLayer | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
 
-// Areas are clickable only while browsing: in the create, relation and
-// routing modes their clicks must reach the nodes and features beneath.
+// Areas are clickable only while browsing: in the create and routing modes
+// their clicks must reach the nodes and features beneath.
 const areasInteractive = computed(
   () =>
     !routing.mode &&
     !createMode.value &&
-    !creating.value &&
-    !relationMode.value &&
-    !relationCreating.value,
+    !creating.value,
 )
 
-// Live preview of the relation being formed: the relation members in
-// relation mode, or the pending (and already saved) batch nodes in edit
-// mode, where two or more nodes become a node relation on save.
-// NodeGroupLayer draws the corridor around them as soon as a second node
-// exists.
+// Live preview of the relation being formed: the pending (and already saved)
+// batch nodes in edit mode, where two or more nodes become a node relation
+// on save. NodeGroupLayer draws the corridor around them as soon as a second
+// node exists.
 const relationPreviewPoints = computed(() => {
-  if (relationMode.value || relationCreating.value) {
-    return relationMembers.value.map((member) => ({ latitude: member.latitude, longitude: member.longitude }))
-  }
   if (createMode.value || creating.value) {
     return [...savedBatchNodes.value, ...pendingNodes.value].map(
       (node) => ({ latitude: node.latitude, longitude: node.longitude }),
@@ -496,11 +428,6 @@ onMounted(() => {
       if (!creating.value) placePendingNode(event.latlng)
       return
     }
-    // Empty space holds no node to relate; relation mode only collects
-    // clicks on nodes and map features.
-    if (relationMode.value || relationCreating.value) {
-      return
-    }
     if (selectedProviderNodeId !== undefined) {
       clearSelection()
       emit('deselect-node')
@@ -581,81 +508,49 @@ onBeforeUnmount(() => {
         :disabled="creating"
         @click="toggleCreateMode"
       />
-      <!-- Relating nodes also requires an editor. -->
-      <Button
-        v-if="auth.canEdit"
-        class="relation-toggle"
-        :class="{ active: relationMode }"
-        icon="pi pi-link"
-        :aria-label="t('map.relation.button')"
-        :title="t('map.relation.button')"
-        :aria-pressed="relationMode"
-        :severity="relationMode ? 'primary' : 'secondary'"
-        :disabled="relationCreating"
-        @click="toggleRelationMode"
-      />
     </div>
-    <p v-if="routing.mode" role="status">{{ t('map.routing.hint') }}</p>
     <p v-if="routing.loading" role="status">{{ t('map.routing.calculating') }}</p>
     <p v-if="routing.noRoute" role="alert">{{ t('map.routing.noRoute') }}</p>
     <p v-if="routing.failed" role="alert">{{ t('map.routing.failed') }}</p>
     <p v-if="routeSummary" role="status">{{ routeSummary }}</p>
-    <p v-if="createMode" role="status">{{ t('map.create.hint') }}</p>
-    <!-- The dialog for the nodes placed in edit mode; nothing is sent until
-         Save commits the batch. -->
-    <div
-      v-if="createMode && pendingNodes.length > 0"
-      class="pending-dialog"
-      role="form"
-      :aria-label="t('map.create.pendingDialog')"
-    >
-      <p class="pending-count" role="status">{{ t('map.create.placed', { count: pendingNodes.length }) }}</p>
-      <div class="pending-field">
-        <label class="pending-label" for="pending-node-name">{{ t('map.create.name') }}</label>
-        <InputText
-          id="pending-node-name"
-          v-model="pendingName"
-          :placeholder="t('map.create.namePlaceholder')"
-          class="pending-name"
-        />
-      </div>
-      <p class="pending-parent">
-        {{ t('map.create.parentNode') }}:
-        <span>{{ pendingAnchorLabel || t('map.create.noParent') }}</span>
-      </p>
-      <div class="pending-actions">
-        <Button :label="t('map.create.save')" icon="pi pi-check" :loading="creating" @click="savePendingNodes" />
-        <Button
-          :label="t('map.create.abort')"
-          icon="pi pi-times"
-          text
-          severity="danger"
-          :disabled="creating"
-          @click="abortCreation"
-        />
-      </div>
-    </div>
     <div v-if="createFailed" role="alert">
       <p>{{ t('map.create.failed') }}</p>
       <Button :label="t('map.create.retry')" :disabled="creating" @click="savePendingNodes" />
     </div>
-    <p v-if="relationMode" role="status">{{ t('map.relation.hint') }}</p>
-    <p v-if="relationMode && relationMembers.length > 0" role="status">
-      {{ t('map.relation.members', { count: relationMembers.length }) }}
-    </p>
-    <div v-if="relationMode" class="relation-actions">
-      <Button
-        :label="t('map.relation.create')"
-        icon="pi pi-check"
-        :disabled="relationMembers.length < 2"
-        :loading="relationCreating"
-        @click="finishRelation"
+  </div>
+  <!-- Bottom bar for the nodes placed in edit mode; nothing is sent until
+       Save commits the batch. -->
+  <div
+    v-if="createMode && pendingNodes.length > 0"
+    class="pending-dialog"
+    role="form"
+    :aria-label="t('map.create.pendingDialog')"
+  >
+    <p class="pending-count" role="status">{{ t('map.create.placed', { count: pendingNodes.length }) }}</p>
+    <div class="pending-field">
+      <label class="pending-label" for="pending-node-name">{{ t('map.create.name') }}</label>
+      <InputText
+        id="pending-node-name"
+        v-model="pendingName"
+        :placeholder="t('map.create.namePlaceholder')"
+        class="pending-name"
       />
-      <Button :label="t('map.relation.cancel')" text severity="secondary" :disabled="relationCreating" @click="toggleRelationMode" />
     </div>
-    <div v-if="relationFailed" role="alert">
-      <p>{{ t('map.relation.failed') }}</p>
-      <Button :label="t('map.create.retry')" :disabled="relationCreating" @click="finishRelation" />
+    <p class="pending-parent">
+      {{ t('map.create.parentNode') }}:
+      <span>{{ pendingAnchorLabel || t('map.create.noParent') }}</span>
+    </p>
+    <div class="pending-actions">
+      <Button size="small" :label="t('map.create.save')" icon="pi pi-check" :loading="creating" @click="savePendingNodes" />
+      <Button
+        size="small"
+        :label="t('map.create.abort')"
+        icon="pi pi-times"
+        text
+        severity="danger"
+        :disabled="creating"
+        @click="abortCreation"
+      />
     </div>
   </div>
 </template>
@@ -668,9 +563,7 @@ onBeforeUnmount(() => {
 }
 
 .map.create-mode,
-.map.create-mode :deep(.leaflet-interactive),
-.map.relation-mode,
-.map.relation-mode :deep(.leaflet-interactive) {
+.map.create-mode :deep(.leaflet-interactive) {
   cursor: crosshair;
 }
 
@@ -701,17 +594,22 @@ onBeforeUnmount(() => {
   font-size: 0.875rem;
 }
 
-/* Panel styling for the placed-nodes dialog, matching the hint chips. */
+/* The name bar for placed nodes: pinned to the very bottom of the screen,
+   full width, small font for a mobile screen. */
 .pending-dialog {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-  padding: 0.75rem;
+  gap: 0.375rem;
+  padding: 0.5rem calc(0.75rem + env(safe-area-inset-right)) calc(0.5rem + env(safe-area-inset-bottom)) calc(0.75rem + env(safe-area-inset-left));
   background: var(--p-content-background);
-  border-radius: var(--p-content-border-radius);
-  box-shadow: 0 2px 6px #0002;
-  font-size: 0.875rem;
+  border-radius: var(--p-content-border-radius) var(--p-content-border-radius) 0 0;
+  box-shadow: 0 -2px 6px #0002;
+  font-size: 0.75rem;
 }
 
 .pending-dialog .pending-count {
@@ -719,17 +617,22 @@ onBeforeUnmount(() => {
   padding: 0;
   background: transparent;
   box-shadow: none;
+  font-size: 0.75rem;
 }
 
 .pending-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .pending-label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--p-text-muted-color);
+}
+
+.pending-name {
+  font-size: 0.75rem;
 }
 
 .pending-parent {
@@ -737,6 +640,7 @@ onBeforeUnmount(() => {
   padding: 0;
   background: transparent;
   box-shadow: none;
+  font-size: 0.7rem;
   color: var(--p-text-muted-color);
 }
 
@@ -750,19 +654,12 @@ onBeforeUnmount(() => {
 }
 
 .create-toggle.active,
-.relation-toggle.active,
 .routing-toggle.active {
   background: var(--p-primary-color, #059669);
   border-color: var(--p-primary-color, #059669);
   color: var(--p-primary-contrast-color, #fff);
   outline: 2px solid var(--p-primary-color, #059669);
   outline-offset: 2px;
-}
-
-.relation-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
 }
 
 /* Bottom-right corner: clear of the top-left zoom and create controls and

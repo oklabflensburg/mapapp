@@ -11,7 +11,6 @@ export default {
   map: {
     create: {
       add: 'Add node',
-      hint: 'Click the map to place nodes. Save turns them into a node relation; Escape aborts.',
       placed: '{count} nodes placed',
       pendingDialog: 'Placed nodes',
       name: 'Name',
@@ -34,19 +33,10 @@ export default {
     },
     routing: {
       button: 'Plan a route',
-      hint: 'Click the map to set a start and an end point. Press Escape to leave route planning.',
       calculating: 'Calculating route…',
       noRoute: 'No walkable route was found between these points.',
       failed: 'The route could not be calculated. Please try again.',
       summary: '{distance} · {minutes} min walk',
-    },
-    relation: {
-      button: 'Create a node relation',
-      hint: 'Click nodes or map features to add them to the relation. Click a member again to remove it. Press Escape to cancel.',
-      members: '{count} nodes selected',
-      create: 'Create relation',
-      cancel: 'Cancel',
-      failed: 'Could not create the node relation. Please try again.',
     },
   },
   nodeEditor: {
