@@ -62,17 +62,22 @@ final class NodeCrudController extends AbstractCrudController
         // around to the first so the queue can be worked through in a loop.
         $nextId = $this->findPendingNodeId(afterId: $id) ?? $this->findPendingNodeId();
 
-        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
-
         if ($nextId === null) {
             $this->addFlash('warning', 'No pending observations.');
 
-            return $this->redirectToRoute('app_admin_pending_observations');
+            // The queue page extends @EasyAdmin/layout.html.twig and only
+            // renders with the EasyAdmin request context, which bare routes
+            // do not carry; setRoute() routes through the admin route.
+            return $this->redirect($this->container->get(AdminUrlGenerator::class)
+                ->setRoute('app_admin_pending_observations')
+                ->generateUrl());
         }
 
         // Stay in the section the button was clicked from; only trust
         // referers of this app instance.
         $controller = $this->refererIsNodeEdit($request) ? self::class : PendingObservationCrudController::class;
+
+        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
 
         return $this->redirect($adminUrlGenerator
             ->setController($controller)

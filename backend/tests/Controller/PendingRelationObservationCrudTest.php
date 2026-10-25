@@ -101,7 +101,11 @@ final class PendingRelationObservationCrudTest extends WebTestCase
 
         try {
             // Nodes and areas share the combined pending observations list.
+            // The bare route carries no EasyAdmin context, which the layout
+            // template needs, so it re-enters through the admin route.
             $client->request('GET', '/admin/pending-observations');
+            self::assertResponseRedirects('/admin?routeName=app_admin_pending_observations');
+            $client->followRedirect();
 
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('table', $groupWithPendingTag->getName());
@@ -134,7 +138,7 @@ final class PendingRelationObservationCrudTest extends WebTestCase
             self::assertSelectorTextContains('body', 'Next pending');
             self::assertSelectorExists(sprintf('a[href*="/admin/node-group/%d/next-pending"]', $groupWithPendingTag->getId()));
             // The combined list is reachable from the sidebar.
-            self::assertSelectorExists('a[href*="/admin/pending-observations"]');
+            self::assertSelectorExists('a[href*="routeName=app_admin_pending_observations"]');
 
             // The button opens the edit view of the next relation with
             // unapproved tags, skipping relations without any.

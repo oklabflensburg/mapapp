@@ -8,8 +8,10 @@ use App\Entity\NodeGroupTag;
 use App\Entity\NodeTag;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Option\EA;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -30,8 +32,17 @@ final class PendingObservationListController extends AbstractController
 
     #[Route('/admin/pending-observations', name: 'app_admin_pending_observations', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function list(): Response
+    public function list(Request $request): Response
     {
+        // The template extends @EasyAdmin/layout.html.twig and only renders
+        // with the EasyAdmin request context, which bare routes do not
+        // carry; requests without it are re-entered through the admin route.
+        if (null === $request->attributes->get(EA::CONTEXT_REQUEST_ATTRIBUTE)) {
+            return $this->redirect($this->adminUrlGenerator
+                ->setRoute('app_admin_pending_observations')
+                ->generateUrl());
+        }
+
         return $this->render('admin/pending_observations.html.twig', [
             'pending' => $this->pendingRows(),
         ]);

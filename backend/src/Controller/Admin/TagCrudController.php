@@ -11,6 +11,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -116,6 +117,11 @@ final class TagCrudController extends AbstractCrudController
             return $this->redirect($referer);
         }
 
-        return $this->redirectToRoute('app_admin_pending_observations');
+        // The queue page extends @EasyAdmin/layout.html.twig and only renders
+        // with the EasyAdmin request context, which bare routes do not carry;
+        // setRoute() routes through the admin route.
+        return $this->redirect($this->container->get(AdminUrlGenerator::class)
+            ->setRoute('app_admin_pending_observations')
+            ->generateUrl());
     }
 }

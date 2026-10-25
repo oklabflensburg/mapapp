@@ -149,8 +149,8 @@ final class PendingObservationCrudTest extends WebTestCase
             // The edit view offers a button to the next pending node.
             self::assertSelectorTextContains('body', 'Next pending');
             self::assertSelectorExists(sprintf('a[href*="/admin/node/%d/next-pending"]', $nodeWithPendingTag->getId()));
-            // The list is reachable from the sidebar.
-            self::assertSelectorExists('a[href*="/admin/pending-observation"]');
+            // The combined list is reachable from the sidebar.
+            self::assertSelectorExists('a[href*="routeName=app_admin_pending_observations"]');
 
             // The node edit view still shows the full form.
             $client->request('GET', '/admin/node/'.$nodeWithPendingTag->getId().'/edit');

@@ -71,7 +71,11 @@ final class PendingObservationListTest extends WebTestCase
         $entityManager->flush();
 
         try {
+            // The bare route carries no EasyAdmin context, which the layout
+            // template needs, so it re-enters through the admin route.
             $client->request('GET', '/admin/pending-observations');
+            self::assertResponseRedirects('/admin?routeName=app_admin_pending_observations');
+            $client->followRedirect();
 
             self::assertResponseIsSuccessful();
             $tableText = $client->getCrawler()->filter('table')->text();
@@ -85,7 +89,7 @@ final class PendingObservationListTest extends WebTestCase
             self::assertSelectorTextContains('table', 'Node');
             self::assertSelectorTextContains('table', 'Area');
             // The list is reachable from the sidebar.
-            self::assertSelectorExists('a[href*="/admin/pending-observations"]');
+            self::assertSelectorExists('a[href*="routeName=app_admin_pending_observations"]');
         } finally {
             $manager = static::getContainer()->get('doctrine')->getManager();
             $manager->clear();

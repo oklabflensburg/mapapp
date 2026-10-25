@@ -122,15 +122,18 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
         // around to the first so the queue can be worked through in a loop.
         $nextId = $this->findPendingGroupId(afterId: $id) ?? $this->findPendingGroupId();
 
-        $adminUrlGenerator = $this->container->get(AdminUrlGenerator::class);
-
         if ($nextId === null) {
             $this->addFlash('warning', 'No pending relation observations.');
 
-            return $this->redirectToRoute('app_admin_pending_observations');
+            // The queue page extends @EasyAdmin/layout.html.twig and only
+            // renders with the EasyAdmin request context, which bare routes
+            // do not carry; setRoute() routes through the admin route.
+            return $this->redirect($this->container->get(AdminUrlGenerator::class)
+                ->setRoute('app_admin_pending_observations')
+                ->generateUrl());
         }
 
-        return $this->redirect($adminUrlGenerator
+        return $this->redirect($this->container->get(AdminUrlGenerator::class)
             ->setController(self::class)
             ->setAction(Action::EDIT)
             ->setEntityId($nextId)
