@@ -374,6 +374,18 @@ watch(
   () => routingLayer?.render(routing.start, routing.end, routing.route),
 )
 
+// Logging in or out changes what the API returns: nodes and relations
+// without approved content are only visible to their author, so the stores
+// must be reloaded with the new session instead of keeping the previous
+// user's data on the map.
+watch(
+  () => auth.user?.email,
+  () => {
+    void userNodes.load()
+    void nodeGroups.load()
+  },
+)
+
 async function loadOsmFeatures(): Promise<void> {
   const data = await osmData.load()
   if (!data) {

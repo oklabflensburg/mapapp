@@ -91,9 +91,29 @@ final class UserNodeManager
      */
     public function listUserNodes(): array
     {
-        $nodes = $this->nodeRepository->findAllByNodeType(self::NODE_TYPE_USER);
+        $user = $this->currentUser();
+        $nodes = array_filter(
+            $this->nodeRepository->findAllByNodeType(self::NODE_TYPE_USER),
+            fn (Node $node): bool => $this->nodeIsVisible($node, $user),
+        );
 
-        return array_map($this->toResponse(...), $nodes);
+        return array_map($this->toResponse(...), array_values($nodes));
+    }
+
+    /**
+     * A node without a single approved tag is still pending review, so only
+     * the user who created it sees it listed — mirroring how unapproved tags
+     * are only visible to their author.
+     */
+    private function nodeIsVisible(Node $node, ?User $user): bool
+    {
+        foreach ($node->getNodeTags() as $nodeTag) {
+            if ($nodeTag->isApproved()) {
+                return true;
+            }
+        }
+
+        return $user !== null && $node->getCreatedByUser() === $user;
     }
 
     private function newNode(string $provider, string $providerNodeId, string $type): Node

@@ -182,6 +182,61 @@ final class NodeGroupControllerTest extends WebTestCase
         $this->assertAreaAroundMembers($matching[0]);
     }
 
+    public function testGroupWithoutApprovedTagsIsOnlyVisibleToItsCreator(): void
+    {
+        $client = static::createClient();
+        $editorOne = $this->createUser(self::EDITOR_EMAIL, ['editor']);
+        $editorTwo = $this->createUser('editor-two@example.test', ['editor']);
+
+        $client->loginUser($editorOne);
+        $group = $this->save($client, [
+            'members' => [$this->memberPayload(), $this->memberPayload()],
+            'tags' => ['surface' => 'cobblestone'],
+        ], 201);
+
+        $findGroup = function () use ($client, $group): ?array {
+            $client->request('GET', '/api/node-groups');
+            $list = json_decode((string) $client->getResponse()->getContent(), true);
+            $matching = array_values(array_filter(
+                $list,
+                static fn (array $entry): bool => $entry['id'] === $group['id'],
+            ));
+
+            return $matching[0] ?? null;
+        };
+
+        // The creator sees the relation while its tags await approval.
+        $listed = $findGroup();
+        self::assertNotNull($listed);
+        self::assertSame(['surface' => 'cobblestone'], $listed['observations']);
+
+        // Another editor does not, until one tag is approved.
+        $client->loginUser($editorTwo);
+        self::assertNull($findGroup());
+
+        $this->setGroupTagApproval($group['id'], 'surface', 'cobblestone', true);
+        $listed = $findGroup();
+        self::assertNotNull($listed);
+        self::assertSame(['surface' => 'cobblestone'], $listed['tags']);
+        self::assertSame([], $listed['observations']);
+    }
+
+    private function setGroupTagApproval(int $groupId, string $key, string $value, bool $approved): void
+    {
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $group = $entityManager->find(NodeGroup::class, $groupId);
+        if ($group === null) {
+            return;
+        }
+
+        foreach ($group->getGroupTags() as $groupTag) {
+            if ($groupTag->getTag()->getKey() === $key && $groupTag->getTag()->getValue() === $value) {
+                $groupTag->setApproved($approved);
+            }
+        }
+        $entityManager->flush();
+    }
+
     public function testSavingRequiresAnEditor(): void
     {
         $client = static::createClient();

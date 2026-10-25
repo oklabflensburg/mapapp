@@ -129,7 +129,7 @@ final class NodeControllerTest extends WebTestCase
         ]));
         self::assertSame(200, $client->getResponse()->getStatusCode());
 
-        $findNodeUnderTest = function () use ($client): array {
+        $findNodeUnderTest = function () use ($client): ?array {
             $client->request('GET', '/api/nodes');
             $list = json_decode((string) $client->getResponse()->getContent(), true);
             $matching = array_values(array_filter(
@@ -137,28 +137,29 @@ final class NodeControllerTest extends WebTestCase
                 static fn (array $node): bool => $node['providerNodeId'] === self::PROVIDER_NODE_ID,
             ));
 
-            return $matching[0];
+            return $matching[0] ?? null;
         };
 
         $client->loginUser($editorOne);
         $node = $findNodeUnderTest();
+        self::assertNotNull($node);
         self::assertSame(['note' => 'entrance from the north'], $node['tags']);
         self::assertSame(['note' => 'entrance from the north'], $node['observations']);
 
+        // The node still has no approved tag, so only its creator sees it.
         $client->loginUser($editorTwo);
-        $node = $findNodeUnderTest();
-        self::assertSame(['comment' => 'steep stairs'], $node['tags']);
-        self::assertSame(['comment' => 'steep stairs'], $node['observations']);
+        self::assertNull($findNodeUnderTest());
 
         $this->setTagApproval('note', 'entrance from the north', true);
         $node = $findNodeUnderTest();
+        self::assertNotNull($node);
         // The tag map's key order follows the database rows and is not part
         // of the API contract.
         self::assertEqualsCanonicalizing(['note' => 'entrance from the north', 'comment' => 'steep stairs'], $node['tags']);
         self::assertSame(['comment' => 'steep stairs'], $node['observations']);
     }
 
-    public function testAnonymousVisitorsSeeNoUnapprovedTags(): void
+    public function testAnonymousVisitorsSeeNoNodesWithoutApprovedTags(): void
     {
         $client = static::createClient();
         $this->removeNodeUnderTest();
@@ -182,8 +183,7 @@ final class NodeControllerTest extends WebTestCase
             static fn (array $node): bool => $node['providerNodeId'] === self::PROVIDER_NODE_ID,
         ));
 
-        self::assertSame([], $matching[0]['tags']);
-        self::assertSame([], $matching[0]['observations']);
+        self::assertSame([], $matching);
     }
 
     private function setTagApproval(string $key, string $value, bool $approved): void

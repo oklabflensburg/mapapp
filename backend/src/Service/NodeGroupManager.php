@@ -95,7 +95,28 @@ final class NodeGroupManager
      */
     public function listNodeGroups(): array
     {
-        return array_map($this->toResponse(...), $this->nodeGroupRepository->findAllOrderedByRecentUpdate());
+        $user = $this->currentUser();
+        $groups = array_filter(
+            $this->nodeGroupRepository->findAllOrderedByRecentUpdate(),
+            fn (NodeGroup $group): bool => $this->groupIsVisible($group, $user),
+        );
+
+        return array_map($this->toResponse(...), array_values($groups));
+    }
+
+    /**
+     * A relation without a single approved tag is still pending review, so
+     * only the user who created it sees it listed — mirroring the node rule.
+     */
+    private function groupIsVisible(NodeGroup $group, ?User $user): bool
+    {
+        foreach ($group->getGroupTags() as $groupTag) {
+            if ($groupTag->isApproved()) {
+                return true;
+            }
+        }
+
+        return $user !== null && $group->getCreatedByUser() === $user;
     }
 
     private function resolveMember(?int $id, ?string $providerNodeId, ?float $latitude, ?float $longitude): Node
