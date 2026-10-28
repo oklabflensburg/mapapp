@@ -54,6 +54,8 @@ export default {
     parentOsmUnavailable: 'Parent OSM tags are unavailable.',
     osmTags: 'OSM tags',
     observations: 'Observations',
+    suggestedTags: 'Suggested tags',
+    searchTags: 'Search tags',
     addObservation: 'Add observation',
     key: 'Key',
     value: 'Value',

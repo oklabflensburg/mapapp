@@ -224,6 +224,25 @@ fallback.
 Supported locales are `en` and `de`, defined by `TagKeyLabeler::SUPPORTED_LOCALES`
 and the frontend's `AppLocale`.
 
+## Default observation tags
+
+Admins choose the tag keys users are offered as ready-made observations, in
+the backend admin UI under **Map data → Default observation tags**. Any key
+works — OSM ones (e.g. `wheelchair`) and custom ones alike — and each key
+can carry a list of **default values**; the admin list shows the readable
+label, the raw key is stored. The keys and values are served by
+`GET /api/default-observation-tags` and loaded once at startup by the
+`defaultObservationTags` Pinia store. The node and relation editors offer
+them in a searchable dropdown above the observation rows (options show the
+readable label through `tagKeyLabels`; the search matches label and raw
+key). Picking one adds a prefilled observation row whose key shows as a
+read-only translated label (raw key in the tooltip); when the key carries
+default values, its value cell is a dropdown of those choices (clearable,
+and editable so users can propose an own value) instead of the free-form
+input. Keys already present on the node or relation are not offered. The
+"Add observation" button for free-form keys stays, and its rows keep the
+editable key and value inputs.
+
 ## Routing stack
 
 Walking routes are served by GraphHopper 11.1 (`graphhopper-web` library jar,

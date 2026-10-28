@@ -10,6 +10,7 @@ import i18n from './i18n'
 import { useAuthStore } from './stores/auth'
 import { useSettingsStore } from './stores/settings'
 import { useTagKeyLabelsStore } from './stores/tagKeyLabels'
+import { useDefaultObservationTagsStore } from './stores/defaultObservationTags'
 
 const app = createApp(App)
 
@@ -34,6 +35,9 @@ void auth.load().then(() => {
 const tagKeyLabels = useTagKeyLabelsStore()
 void tagKeyLabels.load(settings.locale)
 watch(() => settings.locale, (locale) => void tagKeyLabels.load(locale))
+// The tag keys offered as default observations are admin-managed too, so
+// they always come from the backend.
+void useDefaultObservationTagsStore().load()
 // Applying the persisted locale before mounting keeps the first render in
 // the language chosen on the profile page.
 settings

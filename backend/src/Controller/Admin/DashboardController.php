@@ -43,6 +43,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToRoute('Pending observations', 'fa fa-clock', 'app_admin_pending_observations');
         yield MenuItem::linkTo(TagCrudController::class, 'Tags', 'fa fa-tags');
         yield MenuItem::linkTo(TagKeyLabelCrudController::class, 'Tag key labels', 'fa fa-language');
+        yield MenuItem::linkTo(DefaultObservationTagCrudController::class, 'Default observation tags', 'fa fa-list-check');
         yield MenuItem::linkTo(NodeTagCrudController::class, 'Node tags', 'fa fa-user-tag');
         yield MenuItem::linkTo(NodeTypeCrudController::class, 'Node types', 'fa fa-shapes');
         yield MenuItem::linkTo(NodeProviderCrudController::class, 'Node providers', 'fa fa-server');

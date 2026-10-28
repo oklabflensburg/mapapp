@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
+import { useDefaultObservationTagsStore } from '../stores/defaultObservationTags'
 
 interface TagRow {
   key: string
@@ -27,6 +29,7 @@ const { t } = useI18n()
 const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
 const tagKeyLabels = useTagKeyLabelsStore()
+const defaultObservationTags = useDefaultObservationTagsStore()
 
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
@@ -58,6 +61,40 @@ watch(
 
 function addObservationRow(): void {
   observationRows.value.push({ key: '', value: '' })
+}
+
+// The admin-exposed default tags not yet on this relation (neither as an
+// approved tag nor as an observation), offered as a searchable dropdown.
+// The dropdown shows the readable label; the raw key is the value that is
+// added as an observation row. Searching matches both.
+const suggestedObservationOptions = computed(() => {
+  if (!auth.canEdit) {
+    return []
+  }
+  const used = new Set([...rows.value, ...observationRows.value].map((row) => row.key.trim()))
+  return defaultObservationTags.tags
+    .filter((entry) => !used.has(entry.key))
+    .map((entry) => ({ key: entry.key, label: tagKeyLabels.label(entry.key) }))
+})
+
+// The select stays uncontrolled (no value); picking an option immediately
+// adds the observation row and returns the dropdown to its placeholder.
+function addSuggestedObservation(key: unknown): void {
+  if (typeof key === 'string') {
+    observationRows.value.push({ key, value: '' })
+  }
+}
+
+// Rows for admin-exposed default tags show the translated label as a
+// read-only field instead of the raw key input, and their value comes from
+// the admin-configured choices. Derived from the key (not a row flag) so it
+// also holds after the rows are re-split from the saved response.
+function isDefaultObservationTag(key: string): boolean {
+  return defaultObservationTags.keys.includes(key.trim())
+}
+
+function defaultValuesFor(key: string): string[] {
+  return defaultObservationTags.valuesFor(key.trim())
 }
 
 function removeObservationRow(index: number): void {
@@ -92,6 +129,7 @@ async function save(): Promise<void> {
     :visible="visible"
     position="right"
     :modal="false"
+    :dismissable="false"
     :header="group?.name || t('relationEditor.title')"
     :style="{ width: '24rem', maxWidth: '100vw' }"
     @update:visible="emit('update:visible', $event)"
@@ -129,9 +167,47 @@ async function save(): Promise<void> {
     <section v-if="group && (auth.canEdit || observationRows.length > 0)" class="observations-section">
       <h4 class="section-title">{{ t('nodeEditor.observations') }}</h4>
       <template v-if="auth.canEdit">
+        <Select
+          v-if="suggestedObservationOptions.length > 0"
+          :model-value="null"
+          :options="suggestedObservationOptions"
+          option-label="label"
+          option-value="key"
+          :filter-fields="['label', 'key']"
+          :placeholder="t('nodeEditor.suggestedTags')"
+          :filter="true"
+          :filter-placeholder="t('nodeEditor.searchTags')"
+          size="small"
+          class="suggestion-select"
+          :aria-label="t('nodeEditor.suggestedTags')"
+          @update:model-value="addSuggestedObservation"
+        />
         <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
-          <InputText v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
-          <InputText v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
+          <!-- Keys picked from the suggested-tag dropdown are fixed: the
+               translated label shows read-only (raw key in the tooltip),
+               the free-form rows keep the editable key input. -->
+          <InputText
+            v-if="isDefaultObservationTag(row.key)"
+            :model-value="tagKeyLabels.label(row.key)"
+            :title="row.key"
+            readonly
+            class="tag-key"
+          />
+          <InputText v-else v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
+          <!-- Keys with admin-configured values pick from a dropdown, but a
+               user may also propose an own value by typing it (editable
+               input); clearing it empties the value again. -->
+          <Select
+            v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
+            :model-value="row.value === '' ? null : row.value"
+            :options="defaultValuesFor(row.key)"
+            :placeholder="t('nodeEditor.value')"
+            :editable="true"
+            show-clear
+            class="tag-value"
+            @update:model-value="row.value = $event ?? ''"
+          />
+          <InputText v-else v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
           <Button
             :aria-label="t('nodeEditor.removeTag')"
             icon="pi pi-times"
@@ -251,8 +327,22 @@ async function save(): Promise<void> {
   margin-bottom: 0.375rem;
 }
 
+/* The searchable suggestion dropdown fills the panel width, like the tag
+   rows below it. */
+.suggestion-select {
+  display: flex;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
 .tag-key {
   flex: 1;
+}
+
+/* The translated label of a suggested tag reads as inert, not editable. */
+.tag-key[readonly] {
+  color: var(--p-text-muted-color);
+  background: var(--p-content-background);
 }
 
 .tag-value {

@@ -54,6 +54,8 @@ export default {
     parentOsmUnavailable: 'OSM-Tags des übergeordneten Knotens sind nicht verfügbar.',
     osmTags: 'OSM-Tags',
     observations: 'Beobachtungen',
+    suggestedTags: 'Vorgeschlagene Tags',
+    searchTags: 'Tags suchen',
     addObservation: 'Beobachtung hinzufügen',
     key: 'Schlüssel',
     value: 'Wert',
