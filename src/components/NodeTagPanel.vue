@@ -8,6 +8,7 @@ import ParentNodeTags from './ParentNodeTags.vue'
 import { nodeKey, useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
+import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 
 interface TagRow {
   key: string
@@ -28,6 +29,7 @@ const { t } = useI18n()
 const userNodes = useUserNodesStore()
 const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
+const tagKeyLabels = useTagKeyLabelsStore()
 
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
@@ -170,7 +172,7 @@ async function save(): Promise<void> {
         <div v-if="Object.keys(group.tags).length > 0" class="tag-table-scroll">
           <table class="tag-table">
             <tr v-for="[key, value] in Object.entries(group.tags)" :key="key">
-              <th>{{ key }}</th>
+              <th>{{ tagKeyLabels.label(key) }}</th>
               <td>{{ value }}</td>
             </tr>
           </table>
@@ -183,7 +185,7 @@ async function save(): Promise<void> {
       <div class="tag-table-scroll">
         <table class="tag-table">
           <tr v-for="[key, value] in osmTagEntries" :key="key">
-            <th>{{ key }}</th>
+            <th>{{ tagKeyLabels.label(key) }}</th>
             <td>{{ value }}</td>
           </tr>
         </table>
@@ -199,7 +201,7 @@ async function save(): Promise<void> {
       <div v-if="rows.length > 0" class="tag-table-scroll">
         <table class="tag-table">
           <tr v-for="row in rows" :key="row.key">
-            <th>{{ row.key }}</th>
+            <th>{{ tagKeyLabels.label(row.key) }}</th>
             <td>{{ row.value }}</td>
           </tr>
         </table>
@@ -235,7 +237,7 @@ async function save(): Promise<void> {
         <div class="tag-table-scroll">
           <table class="tag-table">
             <tr v-for="row in observationRows" :key="row.key">
-              <th>{{ row.key }}</th>
+              <th>{{ tagKeyLabels.label(row.key) }}</th>
               <td>{{ row.value }}</td>
             </tr>
           </table>

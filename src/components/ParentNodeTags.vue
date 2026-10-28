@@ -3,10 +3,12 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RelatedNode } from '../stores/userNodes'
 import { useOsmDataStore } from '../stores/osmData'
+import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 
 const props = defineProps<{ parent: RelatedNode }>()
 const { t } = useI18n()
 const osmData = useOsmDataStore()
+const tagKeyLabels = useTagKeyLabelsStore()
 const osmTags = computed(() => props.parent.provider === 'OSM'
   ? osmData.tagsById?.get(props.parent.providerNodeId)
   : undefined)
@@ -38,7 +40,7 @@ onMounted(() => {
         <table :aria-label="t(group.label)">
           <tbody>
             <tr v-for="[key, value] in group.entries" :key="key">
-              <th scope="row">{{ key }}</th>
+              <th scope="row">{{ tagKeyLabels.label(key) }}</th>
               <td>{{ value }}</td>
             </tr>
           </tbody>

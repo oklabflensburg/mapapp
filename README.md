@@ -172,6 +172,58 @@ npm run dev -- --port 5199 &
 node scripts/check-osm-render.mjs
 ```
 
+## Tag key translations
+
+Raw tag keys — OSM keys like `fire_hydrant:type` as well as keys users type
+into tag editors — are shown as readable labels in the node/relation panels
+and in the admin UI. Every lookup walks the same chain, and a key without any
+entry still renders readably, so nothing blocks on translation coverage:
+
+1. an **admin-managed label** from the `tag_key_labels` table (per key and
+   locale, edited in the admin UI under "Tag key labels"); it overrides the
+   catalogue and is how user-created keys get proper names without a deploy;
+2. the **`tag_keys` translation catalogue**
+   (`backend/translations/tag_keys.{en,de}.xlf`), generated from the OSM key
+   import `scripts/data/flensburg-node-tag-keys.tsv`;
+3. the **prettified key** as fallback (`tactile_paving` → `tactile paving`).
+
+Regenerate the catalogues with:
+
+```bash
+node scripts/generate-tag-key-catalog.mjs
+```
+
+The script writes one `<unit>` per key (906 at the moment), prefills the
+common keys from a German dictionary kept in the script, and uses the
+prettified key for the rest. It merges: targets already in the `.xlf` files
+are kept, so hand-edited translations survive a regeneration. Add real
+translations by editing the `.xlf` files (or the dictionary) — only the
+common keys need them, the tail stays on the prettified fallback.
+
+The backend resolves labels in `App\Service\TagKeyLabeler` (used by the Tag
+admin list) and serves the frontend a merged map (catalogue plus database
+overrides) via the public endpoint:
+
+```
+GET /api/i18n/tag-keys/{locale}   # en | de → { "locale": ..., "labels": { "<key>": "<label>" } }
+```
+
+The response carries an ETag derived from the label table, so unchanged maps
+revalidate as `304`.
+
+The frontend keeps this map in the `tagKeyLabels` Pinia store
+(`src/stores/tagKeyLabels.ts`), fetched once per locale in `main.ts` and
+reloaded when the user switches the app language. It deliberately lives
+**outside** vue-i18n: keys like `fire_hydrant:type` collide with vue-i18n's
+message-path syntax. The store applies the same fallback chain client-side,
+and the tag tables in `NodeTagPanel`, `RelationTagPanel` and `ParentNodeTags`
+render `tagKeyLabels.label(key)` (editors still type raw keys). Keep
+`TagKeyLabeler::prettify()` and `prettifyTagKey()` in sync when changing the
+fallback.
+
+Supported locales are `en` and `de`, defined by `TagKeyLabeler::SUPPORTED_LOCALES`
+and the frontend's `AppLocale`.
+
 ## Routing stack
 
 Walking routes are served by GraphHopper 11.1 (`graphhopper-web` library jar,

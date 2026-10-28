@@ -1,0 +1,5441 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="en">
+  <file id="tag_keys.en">
+    <unit id="k_2a20afe02329" name="entrance">
+      <segment>
+        <source>entrance</source>
+        <target>entrance</target>
+      </segment>
+    </unit>
+    <unit id="k_d6b904031a80" name="highway">
+      <segment>
+        <source>highway</source>
+        <target>highway</target>
+      </segment>
+    </unit>
+    <unit id="k_43ae3b595a28" name="amenity">
+      <segment>
+        <source>amenity</source>
+        <target>amenity</target>
+      </segment>
+    </unit>
+    <unit id="k_b068931cc450" name="name">
+      <segment>
+        <source>name</source>
+        <target>name</target>
+      </segment>
+    </unit>
+    <unit id="k_8f4ef05b543f" name="natural">
+      <segment>
+        <source>natural</source>
+        <target>natural</target>
+      </segment>
+    </unit>
+    <unit id="k_545fb7f48d02" name="addr:street">
+      <segment>
+        <source>addr:street</source>
+        <target>addr:street</target>
+      </segment>
+    </unit>
+    <unit id="k_78e29f8d2b35" name="addr:housenumber">
+      <segment>
+        <source>addr:housenumber</source>
+        <target>addr:housenumber</target>
+      </segment>
+    </unit>
+    <unit id="k_d0d8d01d48b9" name="addr:city">
+      <segment>
+        <source>addr:city</source>
+        <target>addr:city</target>
+      </segment>
+    </unit>
+    <unit id="k_3ab0a45b136f" name="addr:postcode">
+      <segment>
+        <source>addr:postcode</source>
+        <target>addr:postcode</target>
+      </segment>
+    </unit>
+    <unit id="k_72630d160096" name="addr:country">
+      <segment>
+        <source>addr:country</source>
+        <target>addr:country</target>
+      </segment>
+    </unit>
+    <unit id="k_ef099c22c561" name="leaf_type">
+      <segment>
+        <source>leaf_type</source>
+        <target>leaf type</target>
+      </segment>
+    </unit>
+    <unit id="k_05a5c1ea8fc0" name="opening_hours">
+      <segment>
+        <source>opening_hours</source>
+        <target>opening hours</target>
+      </segment>
+    </unit>
+    <unit id="k_fa9c8ab925b4" name="barrier">
+      <segment>
+        <source>barrier</source>
+        <target>barrier</target>
+      </segment>
+    </unit>
+    <unit id="k_b65d50673fb1" name="emergency">
+      <segment>
+        <source>emergency</source>
+        <target>emergency</target>
+      </segment>
+    </unit>
+    <unit id="k_396421905d50" name="fire_hydrant:type">
+      <segment>
+        <source>fire_hydrant:type</source>
+        <target>fire hydrant:type</target>
+      </segment>
+    </unit>
+    <unit id="k_e8dca1542eb0" name="wheelchair">
+      <segment>
+        <source>wheelchair</source>
+        <target>wheelchair</target>
+      </segment>
+    </unit>
+    <unit id="k_4c7b91acee93" name="fire_hydrant:diameter">
+      <segment>
+        <source>fire_hydrant:diameter</source>
+        <target>fire hydrant:diameter</target>
+      </segment>
+    </unit>
+    <unit id="k_f7a42fe7211f" name="phone">
+      <segment>
+        <source>phone</source>
+        <target>phone</target>
+      </segment>
+    </unit>
+    <unit id="k_d1befa03c79c" name="website">
+      <segment>
+        <source>website</source>
+        <target>website</target>
+      </segment>
+    </unit>
+    <unit id="k_fb54f3c5992b" name="shop">
+      <segment>
+        <source>shop</source>
+        <target>shop</target>
+      </segment>
+    </unit>
+    <unit id="k_43c62d1c718d" name="backrest">
+      <segment>
+        <source>backrest</source>
+        <target>backrest</target>
+      </segment>
+    </unit>
+    <unit id="k_ac40b825d2eb" name="tactile_paving">
+      <segment>
+        <source>tactile_paving</source>
+        <target>tactile paving</target>
+      </segment>
+    </unit>
+    <unit id="k_994359f5e00f" name="fire_hydrant:position">
+      <segment>
+        <source>fire_hydrant:position</source>
+        <target>fire hydrant:position</target>
+      </segment>
+    </unit>
+    <unit id="k_78e2b6f43ee8" name="check_date">
+      <segment>
+        <source>check_date</source>
+        <target>check date</target>
+      </segment>
+    </unit>
+    <unit id="k_9df3b01c60df" name="access">
+      <segment>
+        <source>access</source>
+        <target>access</target>
+      </segment>
+    </unit>
+    <unit id="k_4b583376b276" name="operator">
+      <segment>
+        <source>operator</source>
+        <target>operator</target>
+      </segment>
+    </unit>
+    <unit id="k_68165f8a1cc5" name="public_transport">
+      <segment>
+        <source>public_transport</source>
+        <target>public transport</target>
+      </segment>
+    </unit>
+    <unit id="k_c9e9a8489208" name="level">
+      <segment>
+        <source>level</source>
+        <target>level</target>
+      </segment>
+    </unit>
+    <unit id="k_d20f83ee6933" name="bus">
+      <segment>
+        <source>bus</source>
+        <target>bus</target>
+      </segment>
+    </unit>
+    <unit id="k_eec34d804c9c" name="material">
+      <segment>
+        <source>material</source>
+        <target>material</target>
+      </segment>
+    </unit>
+    <unit id="k_d8735f7489c9" name="foot">
+      <segment>
+        <source>foot</source>
+        <target>foot</target>
+      </segment>
+    </unit>
+    <unit id="k_1d28d2582508" name="bench">
+      <segment>
+        <source>bench</source>
+        <target>bench</target>
+      </segment>
+    </unit>
+    <unit id="k_c1111bd512b2" name="bin">
+      <segment>
+        <source>bin</source>
+        <target>bin</target>
+      </segment>
+    </unit>
+    <unit id="k_9e8e37aeb444" name="bicycle">
+      <segment>
+        <source>bicycle</source>
+        <target>bicycle</target>
+      </segment>
+    </unit>
+    <unit id="k_8bcf6c4fb364" name="shelter">
+      <segment>
+        <source>shelter</source>
+        <target>shelter</target>
+      </segment>
+    </unit>
+    <unit id="k_0c83f57c786a" name="email">
+      <segment>
+        <source>email</source>
+        <target>email</target>
+      </segment>
+    </unit>
+    <unit id="k_ef28f869b241" name="lit">
+      <segment>
+        <source>lit</source>
+        <target>lit</target>
+      </segment>
+    </unit>
+    <unit id="k_3781ef67ffca" name="man_made">
+      <segment>
+        <source>man_made</source>
+        <target>man made</target>
+      </segment>
+    </unit>
+    <unit id="k_a72ed46ebb12" name="covered">
+      <segment>
+        <source>covered</source>
+        <target>covered</target>
+      </segment>
+    </unit>
+    <unit id="k_8c4d3a946a1f" name="brand">
+      <segment>
+        <source>brand</source>
+        <target>brand</target>
+      </segment>
+    </unit>
+    <unit id="k_c9913e990275" name="crossing">
+      <segment>
+        <source>crossing</source>
+        <target>crossing</target>
+      </segment>
+    </unit>
+    <unit id="k_18389a4a9ad5" name="ref">
+      <segment>
+        <source>ref</source>
+        <target>ref</target>
+      </segment>
+    </unit>
+    <unit id="k_3caf4b08a32e" name="brand:wikidata">
+      <segment>
+        <source>brand:wikidata</source>
+        <target>brand:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_7116ed49c436" name="check_date:opening_hours">
+      <segment>
+        <source>check_date:opening_hours</source>
+        <target>check date:opening hours</target>
+      </segment>
+    </unit>
+    <unit id="k_0edf49df2720" name="railway">
+      <segment>
+        <source>railway</source>
+        <target>railway</target>
+      </segment>
+    </unit>
+    <unit id="k_31c844be9ad6" name="crossing:island">
+      <segment>
+        <source>crossing:island</source>
+        <target>crossing:island</target>
+      </segment>
+    </unit>
+    <unit id="k_7bd14a231864" name="capacity">
+      <segment>
+        <source>capacity</source>
+        <target>capacity</target>
+      </segment>
+    </unit>
+    <unit id="k_02a954aad29f" name="tourism">
+      <segment>
+        <source>tourism</source>
+        <target>tourism</target>
+      </segment>
+    </unit>
+    <unit id="k_cc62aebf9a53" name="leisure">
+      <segment>
+        <source>leisure</source>
+        <target>leisure</target>
+      </segment>
+    </unit>
+    <unit id="k_6366e0e96f79" name="bollard">
+      <segment>
+        <source>bollard</source>
+        <target>bollard</target>
+      </segment>
+    </unit>
+    <unit id="k_91e02cd2b862" name="network">
+      <segment>
+        <source>network</source>
+        <target>network</target>
+      </segment>
+    </unit>
+    <unit id="k_22ac38119faa" name="crossing:markings">
+      <segment>
+        <source>crossing:markings</source>
+        <target>crossing:markings</target>
+      </segment>
+    </unit>
+    <unit id="k_9e89cb67a07f" name="vending">
+      <segment>
+        <source>vending</source>
+        <target>vending</target>
+      </segment>
+    </unit>
+    <unit id="k_e72f4545eb68" name="office">
+      <segment>
+        <source>office</source>
+        <target>office</target>
+      </segment>
+    </unit>
+    <unit id="k_7f2cc132345e" name="brand:wikipedia">
+      <segment>
+        <source>brand:wikipedia</source>
+        <target>brand:wikipedia</target>
+      </segment>
+    </unit>
+    <unit id="k_851a8317dd11" name="leaf_cycle">
+      <segment>
+        <source>leaf_cycle</source>
+        <target>leaf cycle</target>
+      </segment>
+    </unit>
+    <unit id="k_b60e555c5758" name="bicycle_parking">
+      <segment>
+        <source>bicycle_parking</source>
+        <target>bicycle parking</target>
+      </segment>
+    </unit>
+    <unit id="k_cd9f0f296153" name="outdoor_seating">
+      <segment>
+        <source>outdoor_seating</source>
+        <target>outdoor seating</target>
+      </segment>
+    </unit>
+    <unit id="k_d4319fefc66c" name="fee">
+      <segment>
+        <source>fee</source>
+        <target>fee</target>
+      </segment>
+    </unit>
+    <unit id="k_9c78e6d9273e" name="indoor_seating">
+      <segment>
+        <source>indoor_seating</source>
+        <target>indoor seating</target>
+      </segment>
+    </unit>
+    <unit id="k_fed8a45ee4c2" name="seamark:type">
+      <segment>
+        <source>seamark:type</source>
+        <target>seamark:type</target>
+      </segment>
+    </unit>
+    <unit id="k_d1f3a2c8a755" name="button_operated">
+      <segment>
+        <source>button_operated</source>
+        <target>button operated</target>
+      </segment>
+    </unit>
+    <unit id="k_a66e161d9209" name="armrest">
+      <segment>
+        <source>armrest</source>
+        <target>armrest</target>
+      </segment>
+    </unit>
+    <unit id="k_e82f13bac2f6" name="cuisine">
+      <segment>
+        <source>cuisine</source>
+        <target>cuisine</target>
+      </segment>
+    </unit>
+    <unit id="k_62925845826b" name="noexit">
+      <segment>
+        <source>noexit</source>
+        <target>noexit</target>
+      </segment>
+    </unit>
+    <unit id="k_3a229433643c" name="old_name">
+      <segment>
+        <source>old_name</source>
+        <target>old name</target>
+      </segment>
+    </unit>
+    <unit id="k_2c6e8971cb5f" name="traffic_signals:sound">
+      <segment>
+        <source>traffic_signals:sound</source>
+        <target>traffic signals:sound</target>
+      </segment>
+    </unit>
+    <unit id="k_396fa6d5e63e" name="railway:signal:position">
+      <segment>
+        <source>railway:signal:position</source>
+        <target>railway:signal:position</target>
+      </segment>
+    </unit>
+    <unit id="k_3d259aab4d19" name="railway:signal:direction">
+      <segment>
+        <source>railway:signal:direction</source>
+        <target>railway:signal:direction</target>
+      </segment>
+    </unit>
+    <unit id="k_c19f6a53562e" name="operator:wikidata">
+      <segment>
+        <source>operator:wikidata</source>
+        <target>operator:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_9ff28bfa80b1" name="healthcare">
+      <segment>
+        <source>healthcare</source>
+        <target>healthcare</target>
+      </segment>
+    </unit>
+    <unit id="k_b27639384065" name="indoor">
+      <segment>
+        <source>indoor</source>
+        <target>indoor</target>
+      </segment>
+    </unit>
+    <unit id="k_ab280114f076" name="kerb">
+      <segment>
+        <source>kerb</source>
+        <target>kerb</target>
+      </segment>
+    </unit>
+    <unit id="k_013c5a82504b" name="traffic_signals:vibration">
+      <segment>
+        <source>traffic_signals:vibration</source>
+        <target>traffic signals:vibration</target>
+      </segment>
+    </unit>
+    <unit id="k_ef72c37be9d1" name="direction">
+      <segment>
+        <source>direction</source>
+        <target>direction</target>
+      </segment>
+    </unit>
+    <unit id="k_5e32b0687198" name="payment:credit_cards">
+      <segment>
+        <source>payment:credit_cards</source>
+        <target>payment:credit cards</target>
+      </segment>
+    </unit>
+    <unit id="k_64b10600c7dc" name="local_ref">
+      <segment>
+        <source>local_ref</source>
+        <target>local ref</target>
+      </segment>
+    </unit>
+    <unit id="k_36cd38f49b9a" name="source">
+      <segment>
+        <source>source</source>
+        <target>source</target>
+      </segment>
+    </unit>
+    <unit id="k_bb3ccd5881d6" name="information">
+      <segment>
+        <source>information</source>
+        <target>information</target>
+      </segment>
+    </unit>
+    <unit id="k_62cd275989e7" name="power">
+      <segment>
+        <source>power</source>
+        <target>power</target>
+      </segment>
+    </unit>
+    <unit id="k_e1ad88e826c7" name="payment:debit_cards">
+      <segment>
+        <source>payment:debit_cards</source>
+        <target>payment:debit cards</target>
+      </segment>
+    </unit>
+    <unit id="k_236c3b7f7612" name="fax">
+      <segment>
+        <source>fax</source>
+        <target>fax</target>
+      </segment>
+    </unit>
+    <unit id="k_701b351fc192" name="payment:cash">
+      <segment>
+        <source>payment:cash</source>
+        <target>payment:cash</target>
+      </segment>
+    </unit>
+    <unit id="k_04052fc40c2a" name="network:wikidata">
+      <segment>
+        <source>network:wikidata</source>
+        <target>network:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_9cda3178383e" name="historic">
+      <segment>
+        <source>historic</source>
+        <target>historic</target>
+      </segment>
+    </unit>
+    <unit id="k_63a60be2f211" name="network:short">
+      <segment>
+        <source>network:short</source>
+        <target>network:short</target>
+      </segment>
+    </unit>
+    <unit id="k_aad653ca3ee6" name="note">
+      <segment>
+        <source>note</source>
+        <target>note</target>
+      </segment>
+    </unit>
+    <unit id="k_2f527306dd6c" name="recycling_type">
+      <segment>
+        <source>recycling_type</source>
+        <target>recycling type</target>
+      </segment>
+    </unit>
+    <unit id="k_4c664c598ad9" name="memorial">
+      <segment>
+        <source>memorial</source>
+        <target>memorial</target>
+      </segment>
+    </unit>
+    <unit id="k_7185d567dcd8" name="departures_board">
+      <segment>
+        <source>departures_board</source>
+        <target>departures board</target>
+      </segment>
+    </unit>
+    <unit id="k_c25f35f02abb" name="opening_hours:signed">
+      <segment>
+        <source>opening_hours:signed</source>
+        <target>opening hours:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_bfa2cdc55939" name="disused:shop">
+      <segment>
+        <source>disused:shop</source>
+        <target>disused:shop</target>
+      </segment>
+    </unit>
+    <unit id="k_de43d6747599" name="seamark:mooring:category">
+      <segment>
+        <source>seamark:mooring:category</source>
+        <target>seamark:mooring:category</target>
+      </segment>
+    </unit>
+    <unit id="k_67daf92c833c" name="description">
+      <segment>
+        <source>description</source>
+        <target>description</target>
+      </segment>
+    </unit>
+    <unit id="k_89a02d0d068c" name="maxwidth:physical">
+      <segment>
+        <source>maxwidth:physical</source>
+        <target>maxwidth:physical</target>
+      </segment>
+    </unit>
+    <unit id="k_d2bc9d4e0652" name="toilets:wheelchair">
+      <segment>
+        <source>toilets:wheelchair</source>
+        <target>toilets:wheelchair</target>
+      </segment>
+    </unit>
+    <unit id="k_0ce62576c038" name="panoramax">
+      <segment>
+        <source>panoramax</source>
+        <target>panoramax</target>
+      </segment>
+    </unit>
+    <unit id="k_96c70b1dc045" name="playground">
+      <segment>
+        <source>playground</source>
+        <target>playground</target>
+      </segment>
+    </unit>
+    <unit id="k_50fc62bfbdd3" name="board_type">
+      <segment>
+        <source>board_type</source>
+        <target>board type</target>
+      </segment>
+    </unit>
+    <unit id="k_41b625c3bc54" name="crossing:signals">
+      <segment>
+        <source>crossing:signals</source>
+        <target>crossing:signals</target>
+      </segment>
+    </unit>
+    <unit id="k_78805a221a98" name="image">
+      <segment>
+        <source>image</source>
+        <target>image</target>
+      </segment>
+    </unit>
+    <unit id="k_5483560e5d64" name="inscription">
+      <segment>
+        <source>inscription</source>
+        <target>inscription</target>
+      </segment>
+    </unit>
+    <unit id="k_5cc224100427" name="smoking">
+      <segment>
+        <source>smoking</source>
+        <target>smoking</target>
+      </segment>
+    </unit>
+    <unit id="k_6f42913b3dcc" name="traffic_signals:direction">
+      <segment>
+        <source>traffic_signals:direction</source>
+        <target>traffic signals:direction</target>
+      </segment>
+    </unit>
+    <unit id="k_8fbadb266825" name="route_ref">
+      <segment>
+        <source>route_ref</source>
+        <target>route ref</target>
+      </segment>
+    </unit>
+    <unit id="k_b07836fe36cc" name="diet:vegetarian">
+      <segment>
+        <source>diet:vegetarian</source>
+        <target>diet:vegetarian</target>
+      </segment>
+    </unit>
+    <unit id="k_63953ef05651" name="wikidata">
+      <segment>
+        <source>wikidata</source>
+        <target>wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_2f83fb47a94a" name="recycling:clothes">
+      <segment>
+        <source>recycling:clothes</source>
+        <target>recycling:clothes</target>
+      </segment>
+    </unit>
+    <unit id="k_0bb115b0c122" name="recycling:glass_bottles">
+      <segment>
+        <source>recycling:glass_bottles</source>
+        <target>recycling:glass bottles</target>
+      </segment>
+    </unit>
+    <unit id="k_224d8a7aec83" name="traffic_signals">
+      <segment>
+        <source>traffic_signals</source>
+        <target>traffic signals</target>
+      </segment>
+    </unit>
+    <unit id="k_56ddb5198dc5" name="memorial:name">
+      <segment>
+        <source>memorial:name</source>
+        <target>memorial:name</target>
+      </segment>
+    </unit>
+    <unit id="k_6935514e4c28" name="traffic_sign">
+      <segment>
+        <source>traffic_sign</source>
+        <target>traffic sign</target>
+      </segment>
+    </unit>
+    <unit id="k_838661c544eb" name="collection_times">
+      <segment>
+        <source>collection_times</source>
+        <target>collection times</target>
+      </segment>
+    </unit>
+    <unit id="k_bf4f5fb804db" name="memorial:addr">
+      <segment>
+        <source>memorial:addr</source>
+        <target>memorial:addr</target>
+      </segment>
+    </unit>
+    <unit id="k_030e7a0c8867" name="genus">
+      <segment>
+        <source>genus</source>
+        <target>genus</target>
+      </segment>
+    </unit>
+    <unit id="k_c73853a27e01" name="person:date_of_birth">
+      <segment>
+        <source>person:date_of_birth</source>
+        <target>person:date of birth</target>
+      </segment>
+    </unit>
+    <unit id="k_add91a7e2e5a" name="surveillance:type">
+      <segment>
+        <source>surveillance:type</source>
+        <target>surveillance:type</target>
+      </segment>
+    </unit>
+    <unit id="k_eb70da73a9bf" name="railway:signal:minor">
+      <segment>
+        <source>railway:signal:minor</source>
+        <target>railway:signal:minor</target>
+      </segment>
+    </unit>
+    <unit id="k_ec2fd072a4c7" name="railway:signal:minor:form">
+      <segment>
+        <source>railway:signal:minor:form</source>
+        <target>railway:signal:minor:form</target>
+      </segment>
+    </unit>
+    <unit id="k_b22a443f97e2" name="diet:vegan">
+      <segment>
+        <source>diet:vegan</source>
+        <target>diet:vegan</target>
+      </segment>
+    </unit>
+    <unit id="k_296cc9a02b16" name="colour">
+      <segment>
+        <source>colour</source>
+        <target>colour</target>
+      </segment>
+    </unit>
+    <unit id="k_07cf4f8f5d8b" name="male">
+      <segment>
+        <source>male</source>
+        <target>male</target>
+      </segment>
+    </unit>
+    <unit id="k_3f07440c29ec" name="operator:wikipedia">
+      <segment>
+        <source>operator:wikipedia</source>
+        <target>operator:wikipedia</target>
+      </segment>
+    </unit>
+    <unit id="k_106fa3eccf0a" name="takeaway">
+      <segment>
+        <source>takeaway</source>
+        <target>takeaway</target>
+      </segment>
+    </unit>
+    <unit id="k_9a5287df6676" name="seats">
+      <segment>
+        <source>seats</source>
+        <target>seats</target>
+      </segment>
+    </unit>
+    <unit id="k_e5b0ffb16057" name="advertising">
+      <segment>
+        <source>advertising</source>
+        <target>advertising</target>
+      </segment>
+    </unit>
+    <unit id="k_f82e4624fc3f" name="disused:amenity">
+      <segment>
+        <source>disused:amenity</source>
+        <target>disused:amenity</target>
+      </segment>
+    </unit>
+    <unit id="k_c05266c87c62" name="traffic_calming">
+      <segment>
+        <source>traffic_calming</source>
+        <target>traffic calming</target>
+      </segment>
+    </unit>
+    <unit id="k_44ddf85ddcd9" name="lamp_mount">
+      <segment>
+        <source>lamp_mount</source>
+        <target>lamp mount</target>
+      </segment>
+    </unit>
+    <unit id="k_ed4821709d3d" name="healthcare:speciality">
+      <segment>
+        <source>healthcare:speciality</source>
+        <target>healthcare:speciality</target>
+      </segment>
+    </unit>
+    <unit id="k_a73e5216c4e2" name="artwork_type">
+      <segment>
+        <source>artwork_type</source>
+        <target>artwork type</target>
+      </segment>
+    </unit>
+    <unit id="k_cb15e32f389b" name="waste">
+      <segment>
+        <source>waste</source>
+        <target>waste</target>
+      </segment>
+    </unit>
+    <unit id="k_2a747c788e2c" name="cycle_barrier">
+      <segment>
+        <source>cycle_barrier</source>
+        <target>cycle barrier</target>
+      </segment>
+    </unit>
+    <unit id="k_6e29459f571e" name="railway:signal:distant:states">
+      <segment>
+        <source>railway:signal:distant:states</source>
+        <target>railway:signal:distant:states</target>
+      </segment>
+    </unit>
+    <unit id="k_9113221e3a86" name="railway:signal:distant:form">
+      <segment>
+        <source>railway:signal:distant:form</source>
+        <target>railway:signal:distant:form</target>
+      </segment>
+    </unit>
+    <unit id="k_be7f2281485e" name="railway:signal:distant">
+      <segment>
+        <source>railway:signal:distant</source>
+        <target>railway:signal:distant</target>
+      </segment>
+    </unit>
+    <unit id="k_c0a595fc91ec" name="railway:signal:distant:height">
+      <segment>
+        <source>railway:signal:distant:height</source>
+        <target>railway:signal:distant:height</target>
+      </segment>
+    </unit>
+    <unit id="k_f1ec38c9dcf2" name="railway:signal:main">
+      <segment>
+        <source>railway:signal:main</source>
+        <target>railway:signal:main</target>
+      </segment>
+    </unit>
+    <unit id="k_2feaaf89c217" name="door">
+      <segment>
+        <source>door</source>
+        <target>door</target>
+      </segment>
+    </unit>
+    <unit id="k_4290b575422e" name="railway:signal:main:states">
+      <segment>
+        <source>railway:signal:main:states</source>
+        <target>railway:signal:main:states</target>
+      </segment>
+    </unit>
+    <unit id="k_6667b78b9d59" name="railway:signal:main:form">
+      <segment>
+        <source>railway:signal:main:form</source>
+        <target>railway:signal:main:form</target>
+      </segment>
+    </unit>
+    <unit id="k_e00143dfbddc" name="railway:signal:main:function">
+      <segment>
+        <source>railway:signal:main:function</source>
+        <target>railway:signal:main:function</target>
+      </segment>
+    </unit>
+    <unit id="k_c5237b0c396a" name="railway:signal:main:height">
+      <segment>
+        <source>railway:signal:main:height</source>
+        <target>railway:signal:main:height</target>
+      </segment>
+    </unit>
+    <unit id="k_69ced007807d" name="fixme">
+      <segment>
+        <source>fixme</source>
+        <target>fixme</target>
+      </segment>
+    </unit>
+    <unit id="k_273b9ae535de" name="female">
+      <segment>
+        <source>female</source>
+        <target>female</target>
+      </segment>
+    </unit>
+    <unit id="k_6f8b412130c5" name="internet_access">
+      <segment>
+        <source>internet_access</source>
+        <target>internet access</target>
+      </segment>
+    </unit>
+    <unit id="k_5b2cf5c0e0bd" name="railway:signal:distant:shape">
+      <segment>
+        <source>railway:signal:distant:shape</source>
+        <target>railway:signal:distant:shape</target>
+      </segment>
+    </unit>
+    <unit id="k_d84ff935144e" name="alt_name">
+      <segment>
+        <source>alt_name</source>
+        <target>alt name</target>
+      </segment>
+    </unit>
+    <unit id="k_32838c2d73b6" name="genus:de">
+      <segment>
+        <source>genus:de</source>
+        <target>genus:de</target>
+      </segment>
+    </unit>
+    <unit id="k_ebed715e82a0" name="place">
+      <segment>
+        <source>place</source>
+        <target>place</target>
+      </segment>
+    </unit>
+    <unit id="k_9ec31491928e" name="railway:signal:main:substitute_signal">
+      <segment>
+        <source>railway:signal:main:substitute_signal</source>
+        <target>railway:signal:main:substitute signal</target>
+      </segment>
+    </unit>
+    <unit id="k_23ca2c6b139f" name="craft">
+      <segment>
+        <source>craft</source>
+        <target>craft</target>
+      </segment>
+    </unit>
+    <unit id="k_4516c0fc6d90" name="railway:signal:traversable:type">
+      <segment>
+        <source>railway:signal:traversable:type</source>
+        <target>railway:signal:traversable:type</target>
+      </segment>
+    </unit>
+    <unit id="k_4ba3d09f58ba" name="railway:signal:traversable">
+      <segment>
+        <source>railway:signal:traversable</source>
+        <target>railway:signal:traversable</target>
+      </segment>
+    </unit>
+    <unit id="k_3ac156eead4a" name="parking">
+      <segment>
+        <source>parking</source>
+        <target>parking</target>
+      </segment>
+    </unit>
+    <unit id="k_4698bac7fdbf" name="short_name">
+      <segment>
+        <source>short_name</source>
+        <target>short name</target>
+      </segment>
+    </unit>
+    <unit id="k_c6735aa811d6" name="recycling:glass">
+      <segment>
+        <source>recycling:glass</source>
+        <target>recycling:glass</target>
+      </segment>
+    </unit>
+    <unit id="k_c68a654b4e43" name="addr:suburb">
+      <segment>
+        <source>addr:suburb</source>
+        <target>addr:suburb</target>
+      </segment>
+    </unit>
+    <unit id="k_3823552b7a2b" name="sport">
+      <segment>
+        <source>sport</source>
+        <target>sport</target>
+      </segment>
+    </unit>
+    <unit id="k_f0e807d254cc" name="network:wikipedia">
+      <segment>
+        <source>network:wikipedia</source>
+        <target>network:wikipedia</target>
+      </segment>
+    </unit>
+    <unit id="k_f498eee6e4af" name="railway:signal:speed_limit:height">
+      <segment>
+        <source>railway:signal:speed_limit:height</source>
+        <target>railway:signal:speed limit:height</target>
+      </segment>
+    </unit>
+    <unit id="k_c324c3a14227" name="railway:signal:speed_limit:form">
+      <segment>
+        <source>railway:signal:speed_limit:form</source>
+        <target>railway:signal:speed limit:form</target>
+      </segment>
+    </unit>
+    <unit id="k_8a3297786559" name="railway:signal:speed_limit">
+      <segment>
+        <source>railway:signal:speed_limit</source>
+        <target>railway:signal:speed limit</target>
+      </segment>
+    </unit>
+    <unit id="k_457728413c6a" name="segregated">
+      <segment>
+        <source>segregated</source>
+        <target>segregated</target>
+      </segment>
+    </unit>
+    <unit id="k_82905363a2a8" name="railway:switch">
+      <segment>
+        <source>railway:switch</source>
+        <target>railway:switch</target>
+      </segment>
+    </unit>
+    <unit id="k_0cab9f2bd5d5" name="recycling:shoes">
+      <segment>
+        <source>recycling:shoes</source>
+        <target>recycling:shoes</target>
+      </segment>
+    </unit>
+    <unit id="k_d7665a0ceda8" name="contact:website">
+      <segment>
+        <source>contact:website</source>
+        <target>contact:website</target>
+      </segment>
+    </unit>
+    <unit id="k_3425dfd6ceca" name="railway:signal:minor:states">
+      <segment>
+        <source>railway:signal:minor:states</source>
+        <target>railway:signal:minor:states</target>
+      </segment>
+    </unit>
+    <unit id="k_df9e727430ed" name="railway:signal:minor:height">
+      <segment>
+        <source>railway:signal:minor:height</source>
+        <target>railway:signal:minor:height</target>
+      </segment>
+    </unit>
+    <unit id="k_86c83f13fed5" name="lamp_type">
+      <segment>
+        <source>lamp_type</source>
+        <target>lamp type</target>
+      </segment>
+    </unit>
+    <unit id="k_a4afd13c4ab1" name="traffic_sign:direction">
+      <segment>
+        <source>traffic_sign:direction</source>
+        <target>traffic sign:direction</target>
+      </segment>
+    </unit>
+    <unit id="k_44d2080db95b" name="cycle_barrier:installation">
+      <segment>
+        <source>cycle_barrier:installation</source>
+        <target>cycle barrier:installation</target>
+      </segment>
+    </unit>
+    <unit id="k_2e0b1196935f" name="person:date_of_death">
+      <segment>
+        <source>person:date_of_death</source>
+        <target>person:date of death</target>
+      </segment>
+    </unit>
+    <unit id="k_70f5e470c476" name="payment:coins">
+      <segment>
+        <source>payment:coins</source>
+        <target>payment:coins</target>
+      </segment>
+    </unit>
+    <unit id="k_e06c2c428a60" name="railway:signal:speed_limit:speed">
+      <segment>
+        <source>railway:signal:speed_limit:speed</source>
+        <target>railway:signal:speed limit:speed</target>
+      </segment>
+    </unit>
+    <unit id="k_54657eddbc2f" name="TMC:cid_58:tabcd_1:Direction">
+      <segment>
+        <source>TMC:cid_58:tabcd_1:Direction</source>
+        <target>TMC:cid 58:tabcd 1:Direction</target>
+      </segment>
+    </unit>
+    <unit id="k_3d11ea60b0dd" name="TMC:cid_58:tabcd_1:Class">
+      <segment>
+        <source>TMC:cid_58:tabcd_1:Class</source>
+        <target>TMC:cid 58:tabcd 1:Class</target>
+      </segment>
+    </unit>
+    <unit id="k_4fbc886c04e3" name="TMC:cid_58:tabcd_1:LocationCode">
+      <segment>
+        <source>TMC:cid_58:tabcd_1:LocationCode</source>
+        <target>TMC:cid 58:tabcd 1:LocationCode</target>
+      </segment>
+    </unit>
+    <unit id="k_42da82925a7e" name="TMC:cid_58:tabcd_1:LCLversion">
+      <segment>
+        <source>TMC:cid_58:tabcd_1:LCLversion</source>
+        <target>TMC:cid 58:tabcd 1:LCLversion</target>
+      </segment>
+    </unit>
+    <unit id="k_12672e79b01e" name="wikipedia">
+      <segment>
+        <source>wikipedia</source>
+        <target>wikipedia</target>
+      </segment>
+    </unit>
+    <unit id="k_afef6620489b" name="wikimedia_commons">
+      <segment>
+        <source>wikimedia_commons</source>
+        <target>wikimedia commons</target>
+      </segment>
+    </unit>
+    <unit id="k_78f9837bf82c" name="TMC:cid_58:tabcd_1:NextLocationCode">
+      <segment>
+        <source>TMC:cid_58:tabcd_1:NextLocationCode</source>
+        <target>TMC:cid 58:tabcd 1:NextLocationCode</target>
+      </segment>
+    </unit>
+    <unit id="k_1f003839f23f" name="drive_through">
+      <segment>
+        <source>drive_through</source>
+        <target>drive through</target>
+      </segment>
+    </unit>
+    <unit id="k_a6749aa0c39f" name="payment:visa">
+      <segment>
+        <source>payment:visa</source>
+        <target>payment:visa</target>
+      </segment>
+    </unit>
+    <unit id="k_31c13f47ad87" name="design">
+      <segment>
+        <source>design</source>
+        <target>design</target>
+      </segment>
+    </unit>
+    <unit id="k_6dd50865e360" name="flag:type">
+      <segment>
+        <source>flag:type</source>
+        <target>flag:type</target>
+      </segment>
+    </unit>
+    <unit id="k_574907724fa6" name="TMC:cid_58:tabcd_1:PrevLocationCode">
+      <segment>
+        <source>TMC:cid_58:tabcd_1:PrevLocationCode</source>
+        <target>TMC:cid 58:tabcd 1:PrevLocationCode</target>
+      </segment>
+    </unit>
+    <unit id="k_eadbb9116952" name="start_date">
+      <segment>
+        <source>start_date</source>
+        <target>start date</target>
+      </segment>
+    </unit>
+    <unit id="k_dcf4ba0da8e6" name="mapillary">
+      <segment>
+        <source>mapillary</source>
+        <target>mapillary</target>
+      </segment>
+    </unit>
+    <unit id="k_4cef2f30ac7d" name="locked">
+      <segment>
+        <source>locked</source>
+        <target>locked</target>
+      </segment>
+    </unit>
+    <unit id="k_26daa4f16344" name="payment:cards">
+      <segment>
+        <source>payment:cards</source>
+        <target>payment:cards</target>
+      </segment>
+    </unit>
+    <unit id="k_498774c82a77" name="payment:mastercard">
+      <segment>
+        <source>payment:mastercard</source>
+        <target>payment:mastercard</target>
+      </segment>
+    </unit>
+    <unit id="k_c08e12a9ccfc" name="cash_in">
+      <segment>
+        <source>cash_in</source>
+        <target>cash in</target>
+      </segment>
+    </unit>
+    <unit id="k_edf28d7392c2" name="ref:signed">
+      <segment>
+        <source>ref:signed</source>
+        <target>ref:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_6a6b206f0275" name="drinking_water">
+      <segment>
+        <source>drinking_water</source>
+        <target>drinking water</target>
+      </segment>
+    </unit>
+    <unit id="k_97750b611736" name="seamark:lnam">
+      <segment>
+        <source>seamark:lnam</source>
+        <target>seamark:lnam</target>
+      </segment>
+    </unit>
+    <unit id="k_ea2fc9f60378" name="line_attachment">
+      <segment>
+        <source>line_attachment</source>
+        <target>line attachment</target>
+      </segment>
+    </unit>
+    <unit id="k_7ebf1511b7d7" name="crossing:barrier">
+      <segment>
+        <source>crossing:barrier</source>
+        <target>crossing:barrier</target>
+      </segment>
+    </unit>
+    <unit id="k_fd9fabebc254" name="changing_table">
+      <segment>
+        <source>changing_table</source>
+        <target>changing table</target>
+      </segment>
+    </unit>
+    <unit id="k_3caacd46adc5" name="internet_access:fee">
+      <segment>
+        <source>internet_access:fee</source>
+        <target>internet access:fee</target>
+      </segment>
+    </unit>
+    <unit id="k_2ee49583dd9e" name="operator:type">
+      <segment>
+        <source>operator:type</source>
+        <target>operator:type</target>
+      </segment>
+    </unit>
+    <unit id="k_4fc0a330bfa6" name="ref:IFOPT">
+      <segment>
+        <source>ref:IFOPT</source>
+        <target>ref:IFOPT</target>
+      </segment>
+    </unit>
+    <unit id="k_cd3d20b94619" name="species">
+      <segment>
+        <source>species</source>
+        <target>species</target>
+      </segment>
+    </unit>
+    <unit id="k_0e0ea0c0c9b5" name="name:da">
+      <segment>
+        <source>name:da</source>
+        <target>name:da</target>
+      </segment>
+    </unit>
+    <unit id="k_434990c8a25d" name="support">
+      <segment>
+        <source>support</source>
+        <target>support</target>
+      </segment>
+    </unit>
+    <unit id="k_004d8ea0b3ac" name="seamark:buoy_special_purpose:shape">
+      <segment>
+        <source>seamark:buoy_special_purpose:shape</source>
+        <target>seamark:buoy special purpose:shape</target>
+      </segment>
+    </unit>
+    <unit id="k_e63560804edd" name="seamark:buoy_special_purpose:colour">
+      <segment>
+        <source>seamark:buoy_special_purpose:colour</source>
+        <target>seamark:buoy special purpose:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_e4d563a0989f" name="crossing_ref">
+      <segment>
+        <source>crossing_ref</source>
+        <target>crossing ref</target>
+      </segment>
+    </unit>
+    <unit id="k_d302e976c9dd" name="surface">
+      <segment>
+        <source>surface</source>
+        <target>surface</target>
+      </segment>
+    </unit>
+    <unit id="k_abbf9730a688" name="parcel_mail_in">
+      <segment>
+        <source>parcel_mail_in</source>
+        <target>parcel mail in</target>
+      </segment>
+    </unit>
+    <unit id="k_b17b8f44f0ad" name="survey:date">
+      <segment>
+        <source>survey:date</source>
+        <target>survey:date</target>
+      </segment>
+    </unit>
+    <unit id="k_8932418bbed6" name="payment:contactless">
+      <segment>
+        <source>payment:contactless</source>
+        <target>payment:contactless</target>
+      </segment>
+    </unit>
+    <unit id="k_8aad2cbbf247" name="species:de">
+      <segment>
+        <source>species:de</source>
+        <target>species:de</target>
+      </segment>
+    </unit>
+    <unit id="k_f350d23970ed" name="trolley:deposit">
+      <segment>
+        <source>trolley:deposit</source>
+        <target>trolley:deposit</target>
+      </segment>
+    </unit>
+    <unit id="k_21c1318134a8" name="fuel:diesel">
+      <segment>
+        <source>fuel:diesel</source>
+        <target>fuel:diesel</target>
+      </segment>
+    </unit>
+    <unit id="k_7f84961dc283" name="toilets">
+      <segment>
+        <source>toilets</source>
+        <target>toilets</target>
+      </segment>
+    </unit>
+    <unit id="k_2e3cbd7378eb" name="self_service">
+      <segment>
+        <source>self_service</source>
+        <target>self service</target>
+      </segment>
+    </unit>
+    <unit id="k_a425adcdc5ae" name="fuel:octane_95">
+      <segment>
+        <source>fuel:octane_95</source>
+        <target>fuel:octane 95</target>
+      </segment>
+    </unit>
+    <unit id="k_65cc6b90900d" name="seamark:small_craft_facility:category">
+      <segment>
+        <source>seamark:small_craft_facility:category</source>
+        <target>seamark:small craft facility:category</target>
+      </segment>
+    </unit>
+    <unit id="k_3e542dfc376f" name="parcel_pickup">
+      <segment>
+        <source>parcel_pickup</source>
+        <target>parcel pickup</target>
+      </segment>
+    </unit>
+    <unit id="k_b435e227d5dd" name="height">
+      <segment>
+        <source>height</source>
+        <target>height</target>
+      </segment>
+    </unit>
+    <unit id="k_b91c8c62cb10" name="surveillance">
+      <segment>
+        <source>surveillance</source>
+        <target>surveillance</target>
+      </segment>
+    </unit>
+    <unit id="k_3af6e7125e30" name="defibrillator:location">
+      <segment>
+        <source>defibrillator:location</source>
+        <target>defibrillator:location</target>
+      </segment>
+    </unit>
+    <unit id="k_248081ecb337" name="population">
+      <segment>
+        <source>population</source>
+        <target>population</target>
+      </segment>
+    </unit>
+    <unit id="k_aff236feadcd" name="population:date">
+      <segment>
+        <source>population:date</source>
+        <target>population:date</target>
+      </segment>
+    </unit>
+    <unit id="k_02efdba3d766" name="source:population">
+      <segment>
+        <source>source:population</source>
+        <target>source:population</target>
+      </segment>
+    </unit>
+    <unit id="k_464456ee5512" name="ref_name">
+      <segment>
+        <source>ref_name</source>
+        <target>ref name</target>
+      </segment>
+    </unit>
+    <unit id="k_9603a224b40d" name="branch">
+      <segment>
+        <source>branch</source>
+        <target>branch</target>
+      </segment>
+    </unit>
+    <unit id="k_dd6f3768935e" name="currency:EUR">
+      <segment>
+        <source>currency:EUR</source>
+        <target>currency:EUR</target>
+      </segment>
+    </unit>
+    <unit id="k_dad46b205875" name="created_by">
+      <segment>
+        <source>created_by</source>
+        <target>created by</target>
+      </segment>
+    </unit>
+    <unit id="k_8cba86855c55" name="name:de">
+      <segment>
+        <source>name:de</source>
+        <target>name:de</target>
+      </segment>
+    </unit>
+    <unit id="k_264dfe082b5e" name="railway:position">
+      <segment>
+        <source>railway:position</source>
+        <target>railway:position</target>
+      </segment>
+    </unit>
+    <unit id="k_492056479658" name="fuel:octane_98">
+      <segment>
+        <source>fuel:octane_98</source>
+        <target>fuel:octane 98</target>
+      </segment>
+    </unit>
+    <unit id="k_c2904bca62b2" name="manufacturer">
+      <segment>
+        <source>manufacturer</source>
+        <target>manufacturer</target>
+      </segment>
+    </unit>
+    <unit id="k_2c3df30ed3c2" name="parcel_locker:type">
+      <segment>
+        <source>parcel_locker:type</source>
+        <target>parcel locker:type</target>
+      </segment>
+    </unit>
+    <unit id="k_95cc6b4ac5ab" name="club">
+      <segment>
+        <source>club</source>
+        <target>club</target>
+      </segment>
+    </unit>
+    <unit id="k_f2b5ceb8d351" name="artist_name">
+      <segment>
+        <source>artist_name</source>
+        <target>artist name</target>
+      </segment>
+    </unit>
+    <unit id="k_e6af282eb709" name="social_facility">
+      <segment>
+        <source>social_facility</source>
+        <target>social facility</target>
+      </segment>
+    </unit>
+    <unit id="k_fcac83f820b3" name="camera:type">
+      <segment>
+        <source>camera:type</source>
+        <target>camera:type</target>
+      </segment>
+    </unit>
+    <unit id="k_5d9cbac84aee" name="denotation">
+      <segment>
+        <source>denotation</source>
+        <target>denotation</target>
+      </segment>
+    </unit>
+    <unit id="k_1555b4001e7e" name="dispensing">
+      <segment>
+        <source>dispensing</source>
+        <target>dispensing</target>
+      </segment>
+    </unit>
+    <unit id="k_7108537956af" name="delivery">
+      <segment>
+        <source>delivery</source>
+        <target>delivery</target>
+      </segment>
+    </unit>
+    <unit id="k_53c0ae0785cd" name="fuel:e10">
+      <segment>
+        <source>fuel:e10</source>
+        <target>fuel:e10</target>
+      </segment>
+    </unit>
+    <unit id="k_d2664d0431a3" name="is_in">
+      <segment>
+        <source>is_in</source>
+        <target>is in</target>
+      </segment>
+    </unit>
+    <unit id="k_5d073b4d636b" name="contact:facebook">
+      <segment>
+        <source>contact:facebook</source>
+        <target>contact:facebook</target>
+      </segment>
+    </unit>
+    <unit id="k_2fc6351aa420" name="long_name">
+      <segment>
+        <source>long_name</source>
+        <target>long name</target>
+      </segment>
+    </unit>
+    <unit id="k_fb3ac0d17b23" name="railway:turnout_side">
+      <segment>
+        <source>railway:turnout_side</source>
+        <target>railway:turnout side</target>
+      </segment>
+    </unit>
+    <unit id="k_e601d3510ec1" name="postal_code">
+      <segment>
+        <source>postal_code</source>
+        <target>postal code</target>
+      </segment>
+    </unit>
+    <unit id="k_ba710db95c68" name="crossing:light">
+      <segment>
+        <source>crossing:light</source>
+        <target>crossing:light</target>
+      </segment>
+    </unit>
+    <unit id="k_17e8e93a2270" name="air_conditioning">
+      <segment>
+        <source>air_conditioning</source>
+        <target>air conditioning</target>
+      </segment>
+    </unit>
+    <unit id="k_5741fba25474" name="flashing_lights">
+      <segment>
+        <source>flashing_lights</source>
+        <target>flashing lights</target>
+      </segment>
+    </unit>
+    <unit id="k_8bbea6b378db" name="website:menu">
+      <segment>
+        <source>website:menu</source>
+        <target>website:menu</target>
+      </segment>
+    </unit>
+    <unit id="k_265d3ffd0d27" name="contact:phone">
+      <segment>
+        <source>contact:phone</source>
+        <target>contact:phone</target>
+      </segment>
+    </unit>
+    <unit id="k_f16cc584cec5" name="religion">
+      <segment>
+        <source>religion</source>
+        <target>religion</target>
+      </segment>
+    </unit>
+    <unit id="k_6b47f793a525" name="contact:instagram">
+      <segment>
+        <source>contact:instagram</source>
+        <target>contact:instagram</target>
+      </segment>
+    </unit>
+    <unit id="k_16c49b3e72d6" name="aeroway">
+      <segment>
+        <source>aeroway</source>
+        <target>aeroway</target>
+      </segment>
+    </unit>
+    <unit id="k_45bda09e472f" name="motor_vehicle">
+      <segment>
+        <source>motor_vehicle</source>
+        <target>motor vehicle</target>
+      </segment>
+    </unit>
+    <unit id="k_68c2993fc816" name="surveillance:zone">
+      <segment>
+        <source>surveillance:zone</source>
+        <target>surveillance:zone</target>
+      </segment>
+    </unit>
+    <unit id="k_d03501e8b36a" name="service:bicycle:pump">
+      <segment>
+        <source>service:bicycle:pump</source>
+        <target>service:bicycle:pump</target>
+      </segment>
+    </unit>
+    <unit id="k_9f79d538ec2d" name="tower:type">
+      <segment>
+        <source>tower:type</source>
+        <target>tower:type</target>
+      </segment>
+    </unit>
+    <unit id="k_899a0403204b" name="payment:maestro">
+      <segment>
+        <source>payment:maestro</source>
+        <target>payment:maestro</target>
+      </segment>
+    </unit>
+    <unit id="k_e7a80f49aaf2" name="clothes">
+      <segment>
+        <source>clothes</source>
+        <target>clothes</target>
+      </segment>
+    </unit>
+    <unit id="k_9129619ab7ab" name="source:maxwidth:physical">
+      <segment>
+        <source>source:maxwidth:physical</source>
+        <target>source:maxwidth:physical</target>
+      </segment>
+    </unit>
+    <unit id="k_d2334256c3e8" name="operator:short">
+      <segment>
+        <source>operator:short</source>
+        <target>operator:short</target>
+      </segment>
+    </unit>
+    <unit id="k_ad015c8cfa66" name="socket:type2:output">
+      <segment>
+        <source>socket:type2:output</source>
+        <target>socket:type2:output</target>
+      </segment>
+    </unit>
+    <unit id="k_fa237190d493" name="seats:separated">
+      <segment>
+        <source>seats:separated</source>
+        <target>seats:separated</target>
+      </segment>
+    </unit>
+    <unit id="k_5d8f94598af1" name="atm">
+      <segment>
+        <source>atm</source>
+        <target>atm</target>
+      </segment>
+    </unit>
+    <unit id="k_248b2749fd02" name="toilets:disposal">
+      <segment>
+        <source>toilets:disposal</source>
+        <target>toilets:disposal</target>
+      </segment>
+    </unit>
+    <unit id="k_274596ef67eb" name="waterway">
+      <segment>
+        <source>waterway</source>
+        <target>waterway</target>
+      </segment>
+    </unit>
+    <unit id="k_7e62694d3cf3" name="seamark:name">
+      <segment>
+        <source>seamark:name</source>
+        <target>seamark:name</target>
+      </segment>
+    </unit>
+    <unit id="k_4cf0c01f2fd0" name="wheelchair:description">
+      <segment>
+        <source>wheelchair:description</source>
+        <target>wheelchair:description</target>
+      </segment>
+    </unit>
+    <unit id="k_6867d7ef982e" name="min_age">
+      <segment>
+        <source>min_age</source>
+        <target>min age</target>
+      </segment>
+    </unit>
+    <unit id="k_dbf884edaf3a" name="payment:apple_pay">
+      <segment>
+        <source>payment:apple_pay</source>
+        <target>payment:apple pay</target>
+      </segment>
+    </unit>
+    <unit id="k_5fb44a2feca3" name="contact:email">
+      <segment>
+        <source>contact:email</source>
+        <target>contact:email</target>
+      </segment>
+    </unit>
+    <unit id="k_9a1325330e78" name="payment:v_pay">
+      <segment>
+        <source>payment:v_pay</source>
+        <target>payment:v pay</target>
+      </segment>
+    </unit>
+    <unit id="k_f21df9dfb3eb" name="motorcar">
+      <segment>
+        <source>motorcar</source>
+        <target>motorcar</target>
+      </segment>
+    </unit>
+    <unit id="k_ed144f12d833" name="payment:notes">
+      <segment>
+        <source>payment:notes</source>
+        <target>payment:notes</target>
+      </segment>
+    </unit>
+    <unit id="k_f673fc0c086a" name="official_name">
+      <segment>
+        <source>official_name</source>
+        <target>official name</target>
+      </segment>
+    </unit>
+    <unit id="k_11ee057496e9" name="seasonal">
+      <segment>
+        <source>seasonal</source>
+        <target>seasonal</target>
+      </segment>
+    </unit>
+    <unit id="k_44835b01fe25" name="seamark:rock:water_level">
+      <segment>
+        <source>seamark:rock:water_level</source>
+        <target>seamark:rock:water level</target>
+      </segment>
+    </unit>
+    <unit id="k_a6de85594cc2" name="socket:type2">
+      <segment>
+        <source>socket:type2</source>
+        <target>socket:type2</target>
+      </segment>
+    </unit>
+    <unit id="k_3fa8789f02a6" name="socket:type2_combo">
+      <segment>
+        <source>socket:type2_combo</source>
+        <target>socket:type2 combo</target>
+      </segment>
+    </unit>
+    <unit id="k_d193c387fa1f" name="railway:signal:stop">
+      <segment>
+        <source>railway:signal:stop</source>
+        <target>railway:signal:stop</target>
+      </segment>
+    </unit>
+    <unit id="k_eae2cdbe9121" name="railway:signal:stop:form">
+      <segment>
+        <source>railway:signal:stop:form</source>
+        <target>railway:signal:stop:form</target>
+      </segment>
+    </unit>
+    <unit id="k_9f9fda8ff1bd" name="railway:signal:stop:height">
+      <segment>
+        <source>railway:signal:stop:height</source>
+        <target>railway:signal:stop:height</target>
+      </segment>
+    </unit>
+    <unit id="k_d797f362c4ef" name="compressed_air">
+      <segment>
+        <source>compressed_air</source>
+        <target>compressed air</target>
+      </segment>
+    </unit>
+    <unit id="k_5a11ed086b54" name="generator:source">
+      <segment>
+        <source>generator:source</source>
+        <target>generator:source</target>
+      </segment>
+    </unit>
+    <unit id="k_29e7396b6b7e" name="telecom">
+      <segment>
+        <source>telecom</source>
+        <target>telecom</target>
+      </segment>
+    </unit>
+    <unit id="k_f56a2fa8a7db" name="recycling:paper">
+      <segment>
+        <source>recycling:paper</source>
+        <target>recycling:paper</target>
+      </segment>
+    </unit>
+    <unit id="k_d094886d0782" name="seamark:light:colour">
+      <segment>
+        <source>seamark:light:colour</source>
+        <target>seamark:light:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_f7cbc421dc17" name="seamark:information">
+      <segment>
+        <source>seamark:information</source>
+        <target>seamark:information</target>
+      </segment>
+    </unit>
+    <unit id="k_11133d2aa775" name="passenger_information_display">
+      <segment>
+        <source>passenger_information_display</source>
+        <target>passenger information display</target>
+      </segment>
+    </unit>
+    <unit id="k_0f7f41166caa" name="payment:girocard">
+      <segment>
+        <source>payment:girocard</source>
+        <target>payment:girocard</target>
+      </segment>
+    </unit>
+    <unit id="k_f1bdf5ed1d7a" name="horse">
+      <segment>
+        <source>horse</source>
+        <target>horse</target>
+      </segment>
+    </unit>
+    <unit id="k_208516299bc8" name="navigationaid">
+      <segment>
+        <source>navigationaid</source>
+        <target>navigationaid</target>
+      </segment>
+    </unit>
+    <unit id="k_5768d6e5c8a6" name="social_facility:for">
+      <segment>
+        <source>social_facility:for</source>
+        <target>social facility:for</target>
+      </segment>
+    </unit>
+    <unit id="k_af026cde6395" name="depth:exposition">
+      <segment>
+        <source>depth:exposition</source>
+        <target>depth:exposition</target>
+      </segment>
+    </unit>
+    <unit id="k_930fa80d528c" name="manufacturer:wikidata">
+      <segment>
+        <source>manufacturer:wikidata</source>
+        <target>manufacturer:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_76f42c1c0303" name="railway:signal:wrong_road">
+      <segment>
+        <source>railway:signal:wrong_road</source>
+        <target>railway:signal:wrong road</target>
+      </segment>
+    </unit>
+    <unit id="k_62ac661b4af6" name="railway:signal:wrong_road:form">
+      <segment>
+        <source>railway:signal:wrong_road:form</source>
+        <target>railway:signal:wrong road:form</target>
+      </segment>
+    </unit>
+    <unit id="k_2ec17a7d5ea6" name="crossing:saltire">
+      <segment>
+        <source>crossing:saltire</source>
+        <target>crossing:saltire</target>
+      </segment>
+    </unit>
+    <unit id="k_713531775450" name="bic">
+      <segment>
+        <source>bic</source>
+        <target>bic</target>
+      </segment>
+    </unit>
+    <unit id="k_fb7ce1f6d3a2" name="generator:method">
+      <segment>
+        <source>generator:method</source>
+        <target>generator:method</target>
+      </segment>
+    </unit>
+    <unit id="k_e656c10228c2" name="onkz">
+      <segment>
+        <source>onkz</source>
+        <target>onkz</target>
+      </segment>
+    </unit>
+    <unit id="k_d24cd8df8f41" name="asb">
+      <segment>
+        <source>asb</source>
+        <target>asb</target>
+      </segment>
+    </unit>
+    <unit id="k_6b2c364f5507" name="note:de">
+      <segment>
+        <source>note:de</source>
+        <target>note:de</target>
+      </segment>
+    </unit>
+    <unit id="k_5eab13bca9ff" name="ref:vatin">
+      <segment>
+        <source>ref:vatin</source>
+        <target>ref:vatin</target>
+      </segment>
+    </unit>
+    <unit id="k_92247aa9766c" name="organic">
+      <segment>
+        <source>organic</source>
+        <target>organic</target>
+      </segment>
+    </unit>
+    <unit id="k_b92e7354ee3a" name="seamark:light:character">
+      <segment>
+        <source>seamark:light:character</source>
+        <target>seamark:light:character</target>
+      </segment>
+    </unit>
+    <unit id="k_cc9831b82399" name="rooms">
+      <segment>
+        <source>rooms</source>
+        <target>rooms</target>
+      </segment>
+    </unit>
+    <unit id="k_db97bbd7a106" name="speed_camera">
+      <segment>
+        <source>speed_camera</source>
+        <target>speed camera</target>
+      </segment>
+    </unit>
+    <unit id="k_7788b6fc0c7b" name="payment:google_pay">
+      <segment>
+        <source>payment:google_pay</source>
+        <target>payment:google pay</target>
+      </segment>
+    </unit>
+    <unit id="k_bd273e238dc0" name="beauty">
+      <segment>
+        <source>beauty</source>
+        <target>beauty</target>
+      </segment>
+    </unit>
+    <unit id="k_cec215831165" name="supervised">
+      <segment>
+        <source>supervised</source>
+        <target>supervised</target>
+      </segment>
+    </unit>
+    <unit id="k_92748772e2df" name="check_date:smoking">
+      <segment>
+        <source>check_date:smoking</source>
+        <target>check date:smoking</target>
+      </segment>
+    </unit>
+    <unit id="k_90e79d9704fe" name="lift_gate:type">
+      <segment>
+        <source>lift_gate:type</source>
+        <target>lift gate:type</target>
+      </segment>
+    </unit>
+    <unit id="k_5c44110d2264" name="removed:power">
+      <segment>
+        <source>removed:power</source>
+        <target>removed:power</target>
+      </segment>
+    </unit>
+    <unit id="k_3d3fd9e2fd04" name="voltage:primary">
+      <segment>
+        <source>voltage:primary</source>
+        <target>voltage:primary</target>
+      </segment>
+    </unit>
+    <unit id="k_30618461f5ff" name="government">
+      <segment>
+        <source>government</source>
+        <target>government</target>
+      </segment>
+    </unit>
+    <unit id="k_7cc3725cdbca" name="community_centre">
+      <segment>
+        <source>community_centre</source>
+        <target>community centre</target>
+      </segment>
+    </unit>
+    <unit id="k_572d4e421e5e" name="url">
+      <segment>
+        <source>url</source>
+        <target>url</target>
+      </segment>
+    </unit>
+    <unit id="k_41a2e03f8686" name="charge">
+      <segment>
+        <source>charge</source>
+        <target>charge</target>
+      </segment>
+    </unit>
+    <unit id="k_bcd219302f8d" name="socket:type2_combo:output">
+      <segment>
+        <source>socket:type2_combo:output</source>
+        <target>socket:type2 combo:output</target>
+      </segment>
+    </unit>
+    <unit id="k_eda0e452d97e" name="check_date:recycling">
+      <segment>
+        <source>check_date:recycling</source>
+        <target>check date:recycling</target>
+      </segment>
+    </unit>
+    <unit id="k_95b49cbc5253" name="railway:signal:distant:repeated">
+      <segment>
+        <source>railway:signal:distant:repeated</source>
+        <target>railway:signal:distant:repeated</target>
+      </segment>
+    </unit>
+    <unit id="k_0be3470c0588" name="ref:bna">
+      <segment>
+        <source>ref:bna</source>
+        <target>ref:bna</target>
+      </segment>
+    </unit>
+    <unit id="k_7dbecfd51327" name="map_size">
+      <segment>
+        <source>map_size</source>
+        <target>map size</target>
+      </segment>
+    </unit>
+    <unit id="k_7d7f15b67a53" name="recycling:waste">
+      <segment>
+        <source>recycling:waste</source>
+        <target>recycling:waste</target>
+      </segment>
+    </unit>
+    <unit id="k_981579445358" name="recycling:plastic_packaging">
+      <segment>
+        <source>recycling:plastic_packaging</source>
+        <target>recycling:plastic packaging</target>
+      </segment>
+    </unit>
+    <unit id="k_74fc89ee078a" name="recycling:cardboard">
+      <segment>
+        <source>recycling:cardboard</source>
+        <target>recycling:cardboard</target>
+      </segment>
+    </unit>
+    <unit id="k_12a055bf01a3" name="depth">
+      <segment>
+        <source>depth</source>
+        <target>depth</target>
+      </segment>
+    </unit>
+    <unit id="k_5c1e9ad00716" name="bike_ride">
+      <segment>
+        <source>bike_ride</source>
+        <target>bike ride</target>
+      </segment>
+    </unit>
+    <unit id="k_d5189de02792" name="location">
+      <segment>
+        <source>location</source>
+        <target>location</target>
+      </segment>
+    </unit>
+    <unit id="k_20023cf0a2e9" name="ref:shop:num">
+      <segment>
+        <source>ref:shop:num</source>
+        <target>ref:shop:num</target>
+      </segment>
+    </unit>
+    <unit id="k_0bd9831461ac" name="seamark:topmark:colour">
+      <segment>
+        <source>seamark:topmark:colour</source>
+        <target>seamark:topmark:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_970e798077a8" name="seamark:topmark:shape">
+      <segment>
+        <source>seamark:topmark:shape</source>
+        <target>seamark:topmark:shape</target>
+      </segment>
+    </unit>
+    <unit id="k_63238b15fb33" name="unisex">
+      <segment>
+        <source>unisex</source>
+        <target>unisex</target>
+      </segment>
+    </unit>
+    <unit id="k_73b0603fdce9" name="toilets:position">
+      <segment>
+        <source>toilets:position</source>
+        <target>toilets:position</target>
+      </segment>
+    </unit>
+    <unit id="k_5527459add32" name="designation">
+      <segment>
+        <source>designation</source>
+        <target>designation</target>
+      </segment>
+    </unit>
+    <unit id="k_e1156bdf7d99" name="canoe">
+      <segment>
+        <source>canoe</source>
+        <target>canoe</target>
+      </segment>
+    </unit>
+    <unit id="k_a434f46aa79b" name="automated">
+      <segment>
+        <source>automated</source>
+        <target>automated</target>
+      </segment>
+    </unit>
+    <unit id="k_3ef1fc8ffc2e" name="male:signed">
+      <segment>
+        <source>male:signed</source>
+        <target>male:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_eb35c16c67e0" name="female:signed">
+      <segment>
+        <source>female:signed</source>
+        <target>female:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_fad6c43b6288" name="frequency">
+      <segment>
+        <source>frequency</source>
+        <target>frequency</target>
+      </segment>
+    </unit>
+    <unit id="k_d4192d77ea0e" name="denomination">
+      <segment>
+        <source>denomination</source>
+        <target>denomination</target>
+      </segment>
+    </unit>
+    <unit id="k_c44fe8b8ff25" name="railway:signal:electricity:form">
+      <segment>
+        <source>railway:signal:electricity:form</source>
+        <target>railway:signal:electricity:form</target>
+      </segment>
+    </unit>
+    <unit id="k_723a10886f9b" name="railway:signal:electricity">
+      <segment>
+        <source>railway:signal:electricity</source>
+        <target>railway:signal:electricity</target>
+      </segment>
+    </unit>
+    <unit id="k_7c9ad85548d6" name="railway:signal:electricity:type">
+      <segment>
+        <source>railway:signal:electricity:type</source>
+        <target>railway:signal:electricity:type</target>
+      </segment>
+    </unit>
+    <unit id="k_a05e71e5bc56" name="railway:signal:electricity:height">
+      <segment>
+        <source>railway:signal:electricity:height</source>
+        <target>railway:signal:electricity:height</target>
+      </segment>
+    </unit>
+    <unit id="k_89cf9beeb9ea" name="maxspeed">
+      <segment>
+        <source>maxspeed</source>
+        <target>maxspeed</target>
+      </segment>
+    </unit>
+    <unit id="k_2f6c9529f879" name="subject:wikidata">
+      <segment>
+        <source>subject:wikidata</source>
+        <target>subject:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_185760d12d6b" name="generator:output:electricity">
+      <segment>
+        <source>generator:output:electricity</source>
+        <target>generator:output:electricity</target>
+      </segment>
+    </unit>
+    <unit id="k_7afe55d23b95" name="camera:direction">
+      <segment>
+        <source>camera:direction</source>
+        <target>camera:direction</target>
+      </segment>
+    </unit>
+    <unit id="k_67b732dc42aa" name="utility">
+      <segment>
+        <source>utility</source>
+        <target>utility</target>
+      </segment>
+    </unit>
+    <unit id="k_3390998d78ce" name="seamark:seabed_area:surface">
+      <segment>
+        <source>seamark:seabed_area:surface</source>
+        <target>seamark:seabed area:surface</target>
+      </segment>
+    </unit>
+    <unit id="k_61b3a8faa9c1" name="train">
+      <segment>
+        <source>train</source>
+        <target>train</target>
+      </segment>
+    </unit>
+    <unit id="k_1b00efd4eda1" name="fuel:HGV_diesel">
+      <segment>
+        <source>fuel:HGV_diesel</source>
+        <target>fuel:HGV diesel</target>
+      </segment>
+    </unit>
+    <unit id="k_10ebe23f3111" name="toilets:handwashing">
+      <segment>
+        <source>toilets:handwashing</source>
+        <target>toilets:handwashing</target>
+      </segment>
+    </unit>
+    <unit id="k_2175234144ea" name="disused:railway">
+      <segment>
+        <source>disused:railway</source>
+        <target>disused:railway</target>
+      </segment>
+    </unit>
+    <unit id="k_06d80eb0c50b" name="dog">
+      <segment>
+        <source>dog</source>
+        <target>dog</target>
+      </segment>
+    </unit>
+    <unit id="k_8f499c761ec6" name="brand:short">
+      <segment>
+        <source>brand:short</source>
+        <target>brand:short</target>
+      </segment>
+    </unit>
+    <unit id="k_23d4bd806753" name="service:bicycle:repair">
+      <segment>
+        <source>service:bicycle:repair</source>
+        <target>service:bicycle:repair</target>
+      </segment>
+    </unit>
+    <unit id="k_72607f642749" name="fuel:lpg">
+      <segment>
+        <source>fuel:lpg</source>
+        <target>fuel:lpg</target>
+      </segment>
+    </unit>
+    <unit id="k_2c3fc2a55195" name="seamark:light:period">
+      <segment>
+        <source>seamark:light:period</source>
+        <target>seamark:light:period</target>
+      </segment>
+    </unit>
+    <unit id="k_905e90ea4af9" name="changing_table:location">
+      <segment>
+        <source>changing_table:location</source>
+        <target>changing table:location</target>
+      </segment>
+    </unit>
+    <unit id="k_53d953c0c36f" name="payment:electronic_purses">
+      <segment>
+        <source>payment:electronic_purses</source>
+        <target>payment:electronic purses</target>
+      </segment>
+    </unit>
+    <unit id="k_b2dbe1adf6f3" name="payment:account_cards">
+      <segment>
+        <source>payment:account_cards</source>
+        <target>payment:account cards</target>
+      </segment>
+    </unit>
+    <unit id="k_b26e41fa98b4" name="payment:american_express">
+      <segment>
+        <source>payment:american_express</source>
+        <target>payment:american express</target>
+      </segment>
+    </unit>
+    <unit id="k_bfe4bf9d4dcd" name="maxheight">
+      <segment>
+        <source>maxheight</source>
+        <target>maxheight</target>
+      </segment>
+    </unit>
+    <unit id="k_c9a5b842f61f" name="seamark:light:reference">
+      <segment>
+        <source>seamark:light:reference</source>
+        <target>seamark:light:reference</target>
+      </segment>
+    </unit>
+    <unit id="k_86c0de42ead4" name="kerb:approach_aid">
+      <segment>
+        <source>kerb:approach_aid</source>
+        <target>kerb:approach aid</target>
+      </segment>
+    </unit>
+    <unit id="k_bb60ac569ef8" name="authentication:membership_card">
+      <segment>
+        <source>authentication:membership_card</source>
+        <target>authentication:membership card</target>
+      </segment>
+    </unit>
+    <unit id="k_5a76e813d6a0" name="vehicle">
+      <segment>
+        <source>vehicle</source>
+        <target>vehicle</target>
+      </segment>
+    </unit>
+    <unit id="k_7c4e4db5ec9a" name="fuel">
+      <segment>
+        <source>fuel</source>
+        <target>fuel</target>
+      </segment>
+    </unit>
+    <unit id="k_1b20e9021b3a" name="building">
+      <segment>
+        <source>building</source>
+        <target>building</target>
+      </segment>
+    </unit>
+    <unit id="k_31806595cb87" name="railway:switch:electric">
+      <segment>
+        <source>railway:switch:electric</source>
+        <target>railway:switch:electric</target>
+      </segment>
+    </unit>
+    <unit id="k_45810c7534ad" name="railway:signal:electricity:turn_direction">
+      <segment>
+        <source>railway:signal:electricity:turn_direction</source>
+        <target>railway:signal:electricity:turn direction</target>
+      </segment>
+    </unit>
+    <unit id="k_225e3c041804" name="railway:signal:speed_limit_distant:height">
+      <segment>
+        <source>railway:signal:speed_limit_distant:height</source>
+        <target>railway:signal:speed limit distant:height</target>
+      </segment>
+    </unit>
+    <unit id="k_ff80888a740b" name="railway:signal:speed_limit_distant">
+      <segment>
+        <source>railway:signal:speed_limit_distant</source>
+        <target>railway:signal:speed limit distant</target>
+      </segment>
+    </unit>
+    <unit id="k_99db865fa0ef" name="railway:signal:speed_limit_distant:speed">
+      <segment>
+        <source>railway:signal:speed_limit_distant:speed</source>
+        <target>railway:signal:speed limit distant:speed</target>
+      </segment>
+    </unit>
+    <unit id="k_cf67e9a4da6c" name="railway:signal:speed_limit_distant:form">
+      <segment>
+        <source>railway:signal:speed_limit_distant:form</source>
+        <target>railway:signal:speed limit distant:form</target>
+      </segment>
+    </unit>
+    <unit id="k_f79b1d64a8d8" name="visibility">
+      <segment>
+        <source>visibility</source>
+        <target>visibility</target>
+      </segment>
+    </unit>
+    <unit id="k_03a35c036257" name="communication:lte">
+      <segment>
+        <source>communication:lte</source>
+        <target>communication:lte</target>
+      </segment>
+    </unit>
+    <unit id="k_06e53dc7c634" name="railway:ref">
+      <segment>
+        <source>railway:ref</source>
+        <target>railway:ref</target>
+      </segment>
+    </unit>
+    <unit id="k_b20f73ebf435" name="payment:dkv">
+      <segment>
+        <source>payment:dkv</source>
+        <target>payment:dkv</target>
+      </segment>
+    </unit>
+    <unit id="k_036c614a9ea2" name="check_date:shelter">
+      <segment>
+        <source>check_date:shelter</source>
+        <target>check date:shelter</target>
+      </segment>
+    </unit>
+    <unit id="k_aaabf0d39951" name="service">
+      <segment>
+        <source>service</source>
+        <target>service</target>
+      </segment>
+    </unit>
+    <unit id="k_fbcf3719ccf8" name="fuel:adblue">
+      <segment>
+        <source>fuel:adblue</source>
+        <target>fuel:adblue</target>
+      </segment>
+    </unit>
+    <unit id="k_af1ab2514e98" name="contact:fax">
+      <segment>
+        <source>contact:fax</source>
+        <target>contact:fax</target>
+      </segment>
+    </unit>
+    <unit id="k_71309cb4427c" name="drink:club-mate">
+      <segment>
+        <source>drink:club-mate</source>
+        <target>drink:club-mate</target>
+      </segment>
+    </unit>
+    <unit id="k_366830e416c3" name="self_checkout">
+      <segment>
+        <source>self_checkout</source>
+        <target>self checkout</target>
+      </segment>
+    </unit>
+    <unit id="k_0c5e27758dce" name="old_website">
+      <segment>
+        <source>old_website</source>
+        <target>old website</target>
+      </segment>
+    </unit>
+    <unit id="k_731571672f16" name="brewery">
+      <segment>
+        <source>brewery</source>
+        <target>brewery</target>
+      </segment>
+    </unit>
+    <unit id="k_1b84b9b41eb6" name="drink:coffee">
+      <segment>
+        <source>drink:coffee</source>
+        <target>drink:coffee</target>
+      </segment>
+    </unit>
+    <unit id="k_583f10a85ed5" name="seamark:light:height">
+      <segment>
+        <source>seamark:light:height</source>
+        <target>seamark:light:height</target>
+      </segment>
+    </unit>
+    <unit id="k_8e0fc6778bee" name="parking_space">
+      <segment>
+        <source>parking_space</source>
+        <target>parking space</target>
+      </segment>
+    </unit>
+    <unit id="k_ebf78b512222" name="display">
+      <segment>
+        <source>display</source>
+        <target>display</target>
+      </segment>
+    </unit>
+    <unit id="k_90e8da89bb46" name="end_date">
+      <segment>
+        <source>end_date</source>
+        <target>end date</target>
+      </segment>
+    </unit>
+    <unit id="k_f0cd112e83f9" name="fireplace">
+      <segment>
+        <source>fireplace</source>
+        <target>fireplace</target>
+      </segment>
+    </unit>
+    <unit id="k_e112ce1ac9cf" name="check_date:capacity">
+      <segment>
+        <source>check_date:capacity</source>
+        <target>check date:capacity</target>
+      </segment>
+    </unit>
+    <unit id="k_f4ca5b08705a" name="contact:mastodon">
+      <segment>
+        <source>contact:mastodon</source>
+        <target>contact:mastodon</target>
+      </segment>
+    </unit>
+    <unit id="k_0c96d996a33f" name="not:brand:wikidata">
+      <segment>
+        <source>not:brand:wikidata</source>
+        <target>not:brand:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_88332df2e04b" name="reservation">
+      <segment>
+        <source>reservation</source>
+        <target>reservation</target>
+      </segment>
+    </unit>
+    <unit id="k_d8d4dfbcfda6" name="seamark:landmark:category">
+      <segment>
+        <source>seamark:landmark:category</source>
+        <target>seamark:landmark:category</target>
+      </segment>
+    </unit>
+    <unit id="k_1d7fee7b9035" name="payment:app">
+      <segment>
+        <source>payment:app</source>
+        <target>payment:app</target>
+      </segment>
+    </unit>
+    <unit id="k_6cc1da3dfa4c" name="automatic_door">
+      <segment>
+        <source>automatic_door</source>
+        <target>automatic door</target>
+      </segment>
+    </unit>
+    <unit id="k_c925943868c6" name="playground:theme">
+      <segment>
+        <source>playground:theme</source>
+        <target>playground:theme</target>
+      </segment>
+    </unit>
+    <unit id="k_d3986d926410" name="railway:signal:stop:caption">
+      <segment>
+        <source>railway:signal:stop:caption</source>
+        <target>railway:signal:stop:caption</target>
+      </segment>
+    </unit>
+    <unit id="k_d06d8245d560" name="water_source">
+      <segment>
+        <source>water_source</source>
+        <target>water source</target>
+      </segment>
+    </unit>
+    <unit id="k_31d592db431b" name="authentication:app">
+      <segment>
+        <source>authentication:app</source>
+        <target>authentication:app</target>
+      </segment>
+    </unit>
+    <unit id="k_31a97c233b57" name="generator:output:heat">
+      <segment>
+        <source>generator:output:heat</source>
+        <target>generator:output:heat</target>
+      </segment>
+    </unit>
+    <unit id="k_a342c7478874" name="garden:type">
+      <segment>
+        <source>garden:type</source>
+        <target>garden:type</target>
+      </segment>
+    </unit>
+    <unit id="k_35f16dc084a5" name="diameter">
+      <segment>
+        <source>diameter</source>
+        <target>diameter</target>
+      </segment>
+    </unit>
+    <unit id="k_04e737c46d15" name="payment:paypal">
+      <segment>
+        <source>payment:paypal</source>
+        <target>payment:paypal</target>
+      </segment>
+    </unit>
+    <unit id="k_1182af033a10" name="animated">
+      <segment>
+        <source>animated</source>
+        <target>animated</target>
+      </segment>
+    </unit>
+    <unit id="k_b5e3374e43f6" name="subject">
+      <segment>
+        <source>subject</source>
+        <target>subject</target>
+      </segment>
+    </unit>
+    <unit id="k_e909c2d7067e" name="country">
+      <segment>
+        <source>country</source>
+        <target>country</target>
+      </segment>
+    </unit>
+    <unit id="k_c60bd84ac083" name="flag:name">
+      <segment>
+        <source>flag:name</source>
+        <target>flag:name</target>
+      </segment>
+    </unit>
+    <unit id="k_31ecbd54ae73" name="flag:wikidata">
+      <segment>
+        <source>flag:wikidata</source>
+        <target>flag:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_390f9673ba05" name="communication:5g">
+      <segment>
+        <source>communication:5g</source>
+        <target>communication:5g</target>
+      </segment>
+    </unit>
+    <unit id="k_b04927d2ed6d" name="camera:mount">
+      <segment>
+        <source>camera:mount</source>
+        <target>camera:mount</target>
+      </segment>
+    </unit>
+    <unit id="k_6aa022cbf10a" name="name:en">
+      <segment>
+        <source>name:en</source>
+        <target>name:en</target>
+      </segment>
+    </unit>
+    <unit id="k_38f8b5664e52" name="fuel:octane_91">
+      <segment>
+        <source>fuel:octane_91</source>
+        <target>fuel:octane 91</target>
+      </segment>
+    </unit>
+    <unit id="k_7c0d184042ae" name="check_date:diet:vegan">
+      <segment>
+        <source>check_date:diet:vegan</source>
+        <target>check date:diet:vegan</target>
+      </segment>
+    </unit>
+    <unit id="k_9a45a510e2be" name="check_date:diet:vegetarian">
+      <segment>
+        <source>check_date:diet:vegetarian</source>
+        <target>check date:diet:vegetarian</target>
+      </segment>
+    </unit>
+    <unit id="k_46e1e6833ff1" name="payment:qr_code">
+      <segment>
+        <source>payment:qr_code</source>
+        <target>payment:qr code</target>
+      </segment>
+    </unit>
+    <unit id="k_6582d5cab497" name="tower:construction">
+      <segment>
+        <source>tower:construction</source>
+        <target>tower:construction</target>
+      </segment>
+    </unit>
+    <unit id="k_c8fe36ac238d" name="seamark:buoy_lateral:category">
+      <segment>
+        <source>seamark:buoy_lateral:category</source>
+        <target>seamark:buoy lateral:category</target>
+      </segment>
+    </unit>
+    <unit id="k_cbde3c991cde" name="seamark:buoy_lateral:colour">
+      <segment>
+        <source>seamark:buoy_lateral:colour</source>
+        <target>seamark:buoy lateral:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_5a250a755c38" name="seamark:buoy_lateral:system">
+      <segment>
+        <source>seamark:buoy_lateral:system</source>
+        <target>seamark:buoy lateral:system</target>
+      </segment>
+    </unit>
+    <unit id="k_462e8f138f90" name="seamark:buoy_lateral:shape">
+      <segment>
+        <source>seamark:buoy_lateral:shape</source>
+        <target>seamark:buoy lateral:shape</target>
+      </segment>
+    </unit>
+    <unit id="k_7365838a2a84" name="dog:fee">
+      <segment>
+        <source>dog:fee</source>
+        <target>dog:fee</target>
+      </segment>
+    </unit>
+    <unit id="k_a6150b3ca4c8" name="check_date:collection_times">
+      <segment>
+        <source>check_date:collection_times</source>
+        <target>check date:collection times</target>
+      </segment>
+    </unit>
+    <unit id="k_cc45c6981c64" name="payment:diners_club">
+      <segment>
+        <source>payment:diners_club</source>
+        <target>payment:diners club</target>
+      </segment>
+    </unit>
+    <unit id="k_1aab383a3a9b" name="payment:unionpay">
+      <segment>
+        <source>payment:unionpay</source>
+        <target>payment:unionpay</target>
+      </segment>
+    </unit>
+    <unit id="k_a70043709584" name="payment:discover_card">
+      <segment>
+        <source>payment:discover_card</source>
+        <target>payment:discover card</target>
+      </segment>
+    </unit>
+    <unit id="k_f56b53e412e8" name="layer">
+      <segment>
+        <source>layer</source>
+        <target>layer</target>
+      </segment>
+    </unit>
+    <unit id="k_e2942a04780e" name="count">
+      <segment>
+        <source>count</source>
+        <target>count</target>
+      </segment>
+    </unit>
+    <unit id="k_7dea5bf88036" name="line_management">
+      <segment>
+        <source>line_management</source>
+        <target>line management</target>
+      </segment>
+    </unit>
+    <unit id="k_fb5529d6269c" name="removed:amenity">
+      <segment>
+        <source>removed:amenity</source>
+        <target>removed:amenity</target>
+      </segment>
+    </unit>
+    <unit id="k_532c28d5412d" name="mobile">
+      <segment>
+        <source>mobile</source>
+        <target>mobile</target>
+      </segment>
+    </unit>
+    <unit id="k_afbe5099e0f5" name="hazard">
+      <segment>
+        <source>hazard</source>
+        <target>hazard</target>
+      </segment>
+    </unit>
+    <unit id="k_d0bb80aabb86" name="education">
+      <segment>
+        <source>education</source>
+        <target>education</target>
+      </segment>
+    </unit>
+    <unit id="k_c6459f4e9df7" name="location:transition">
+      <segment>
+        <source>location:transition</source>
+        <target>location:transition</target>
+      </segment>
+    </unit>
+    <unit id="k_6e80f7ac2423" name="shelter_type">
+      <segment>
+        <source>shelter_type</source>
+        <target>shelter type</target>
+      </segment>
+    </unit>
+    <unit id="k_dc7871988dc3" name="faces">
+      <segment>
+        <source>faces</source>
+        <target>faces</target>
+      </segment>
+    </unit>
+    <unit id="k_4675240f2061" name="description:de">
+      <segment>
+        <source>description:de</source>
+        <target>description:de</target>
+      </segment>
+    </unit>
+    <unit id="k_1b736f1322d9" name="maxwidth">
+      <segment>
+        <source>maxwidth</source>
+        <target>maxwidth</target>
+      </segment>
+    </unit>
+    <unit id="k_a5222b6eedda" name="voltage:secondary">
+      <segment>
+        <source>voltage:secondary</source>
+        <target>voltage:secondary</target>
+      </segment>
+    </unit>
+    <unit id="k_fee8eb259976" name="swing_gate:type">
+      <segment>
+        <source>swing_gate:type</source>
+        <target>swing gate:type</target>
+      </segment>
+    </unit>
+    <unit id="k_2dadb0571c95" name="seamark:harbour:category">
+      <segment>
+        <source>seamark:harbour:category</source>
+        <target>seamark:harbour:category</target>
+      </segment>
+    </unit>
+    <unit id="k_4c7378035ef0" name="seamark:light:category">
+      <segment>
+        <source>seamark:light:category</source>
+        <target>seamark:light:category</target>
+      </segment>
+    </unit>
+    <unit id="k_2f72d4d43684" name="disused:barrier">
+      <segment>
+        <source>disused:barrier</source>
+        <target>disused:barrier</target>
+      </segment>
+    </unit>
+    <unit id="k_e8f5f0ee177e" name="addr:floor">
+      <segment>
+        <source>addr:floor</source>
+        <target>addr:floor</target>
+      </segment>
+    </unit>
+    <unit id="k_f83c2a85d972" name="payment">
+      <segment>
+        <source>payment</source>
+        <target>payment</target>
+      </segment>
+    </unit>
+    <unit id="k_b48b79e55c74" name="seamark:landmark:function">
+      <segment>
+        <source>seamark:landmark:function</source>
+        <target>seamark:landmark:function</target>
+      </segment>
+    </unit>
+    <unit id="k_3d00803f3c6b" name="railway:milestone:catenary_mast">
+      <segment>
+        <source>railway:milestone:catenary_mast</source>
+        <target>railway:milestone:catenary mast</target>
+      </segment>
+    </unit>
+    <unit id="k_6bd1be6a989d" name="payment:coins:denominations">
+      <segment>
+        <source>payment:coins:denominations</source>
+        <target>payment:coins:denominations</target>
+      </segment>
+    </unit>
+    <unit id="k_8072d3739932" name="second_hand">
+      <segment>
+        <source>second_hand</source>
+        <target>second hand</target>
+      </segment>
+    </unit>
+    <unit id="k_f20fe3776595" name="disused:craft">
+      <segment>
+        <source>disused:craft</source>
+        <target>disused:craft</target>
+      </segment>
+    </unit>
+    <unit id="k_5fc732311905" name="date">
+      <segment>
+        <source>date</source>
+        <target>date</target>
+      </segment>
+    </unit>
+    <unit id="k_1cae8ff45646" name="service:bicycle:chain_tool">
+      <segment>
+        <source>service:bicycle:chain_tool</source>
+        <target>service:bicycle:chain tool</target>
+      </segment>
+    </unit>
+    <unit id="k_0c287927ef84" name="service:bicycle:stand">
+      <segment>
+        <source>service:bicycle:stand</source>
+        <target>service:bicycle:stand</target>
+      </segment>
+    </unit>
+    <unit id="k_99fc98b5eba5" name="service:bicycle:tools">
+      <segment>
+        <source>service:bicycle:tools</source>
+        <target>service:bicycle:tools</target>
+      </segment>
+    </unit>
+    <unit id="k_c00a62d6556c" name="socket:chademo">
+      <segment>
+        <source>socket:chademo</source>
+        <target>socket:chademo</target>
+      </segment>
+    </unit>
+    <unit id="k_a9a286cba0d8" name="step_count">
+      <segment>
+        <source>step_count</source>
+        <target>step count</target>
+      </segment>
+    </unit>
+    <unit id="k_46db08e89ac2" name="railway:signal:shunting:form">
+      <segment>
+        <source>railway:signal:shunting:form</source>
+        <target>railway:signal:shunting:form</target>
+      </segment>
+    </unit>
+    <unit id="k_f44d3b85c02c" name="railway:signal:shunting">
+      <segment>
+        <source>railway:signal:shunting</source>
+        <target>railway:signal:shunting</target>
+      </segment>
+    </unit>
+    <unit id="k_115d41950ccb" name="railway:signal:shunting:height">
+      <segment>
+        <source>railway:signal:shunting:height</source>
+        <target>railway:signal:shunting:height</target>
+      </segment>
+    </unit>
+    <unit id="k_6848d756da66" name="baby">
+      <segment>
+        <source>baby</source>
+        <target>baby</target>
+      </segment>
+    </unit>
+    <unit id="k_56f95211d397" name="lifeguard">
+      <segment>
+        <source>lifeguard</source>
+        <target>lifeguard</target>
+      </segment>
+    </unit>
+    <unit id="k_60434164da96" name="fire_hydrant:diameter:signed">
+      <segment>
+        <source>fire_hydrant:diameter:signed</source>
+        <target>fire hydrant:diameter:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_6c6e5145983f" name="substation">
+      <segment>
+        <source>substation</source>
+        <target>substation</target>
+      </segment>
+    </unit>
+    <unit id="k_dec2d14a8263" name="disused:generator:output:electricity">
+      <segment>
+        <source>disused:generator:output:electricity</source>
+        <target>disused:generator:output:electricity</target>
+      </segment>
+    </unit>
+    <unit id="k_d3e50a258a9e" name="disused:generator:output:heat">
+      <segment>
+        <source>disused:generator:output:heat</source>
+        <target>disused:generator:output:heat</target>
+      </segment>
+    </unit>
+    <unit id="k_f7bae528f847" name="disused:generator:source">
+      <segment>
+        <source>disused:generator:source</source>
+        <target>disused:generator:source</target>
+      </segment>
+    </unit>
+    <unit id="k_4dcb21edee0e" name="disused:power">
+      <segment>
+        <source>disused:power</source>
+        <target>disused:power</target>
+      </segment>
+    </unit>
+    <unit id="k_4851b1623e48" name="authentication:nfc">
+      <segment>
+        <source>authentication:nfc</source>
+        <target>authentication:nfc</target>
+      </segment>
+    </unit>
+    <unit id="k_4aea6729d47b" name="map_type">
+      <segment>
+        <source>map_type</source>
+        <target>map type</target>
+      </segment>
+    </unit>
+    <unit id="k_6c5bac3cf68c" name="fitness_station">
+      <segment>
+        <source>fitness_station</source>
+        <target>fitness station</target>
+      </segment>
+    </unit>
+    <unit id="k_ef2900f4faad" name="manhole">
+      <segment>
+        <source>manhole</source>
+        <target>manhole</target>
+      </segment>
+    </unit>
+    <unit id="k_4ee7109aceba" name="display_operated">
+      <segment>
+        <source>display_operated</source>
+        <target>display operated</target>
+      </segment>
+    </unit>
+    <unit id="k_9155a0deda12" name="app_operated">
+      <segment>
+        <source>app_operated</source>
+        <target>app operated</target>
+      </segment>
+    </unit>
+    <unit id="k_3ed2942e6b66" name="seamark:buoy_special_purpose:category">
+      <segment>
+        <source>seamark:buoy_special_purpose:category</source>
+        <target>seamark:buoy special purpose:category</target>
+      </segment>
+    </unit>
+    <unit id="k_abb6446c5e5d" name="seamark:buoy_special_purpose:period_start">
+      <segment>
+        <source>seamark:buoy_special_purpose:period_start</source>
+        <target>seamark:buoy special purpose:period start</target>
+      </segment>
+    </unit>
+    <unit id="k_5edd816d18ba" name="seamark:buoy_special_purpose:status">
+      <segment>
+        <source>seamark:buoy_special_purpose:status</source>
+        <target>seamark:buoy special purpose:status</target>
+      </segment>
+    </unit>
+    <unit id="k_b365e6124e2d" name="seamark:buoy_special_purpose:period_end">
+      <segment>
+        <source>seamark:buoy_special_purpose:period_end</source>
+        <target>seamark:buoy special purpose:period end</target>
+      </segment>
+    </unit>
+    <unit id="k_b272bda9bf0c" name="marker">
+      <segment>
+        <source>marker</source>
+        <target>marker</target>
+      </segment>
+    </unit>
+    <unit id="k_861ae1c072da" name="crane:type">
+      <segment>
+        <source>crane:type</source>
+        <target>crane:type</target>
+      </segment>
+    </unit>
+    <unit id="k_bf9132a7c3bc" name="guidepost">
+      <segment>
+        <source>guidepost</source>
+        <target>guidepost</target>
+      </segment>
+    </unit>
+    <unit id="k_80ca06abfa1a" name="ford">
+      <segment>
+        <source>ford</source>
+        <target>ford</target>
+      </segment>
+    </unit>
+    <unit id="k_5e3b216d4b44" name="capacity:motorcar">
+      <segment>
+        <source>capacity:motorcar</source>
+        <target>capacity:motorcar</target>
+      </segment>
+    </unit>
+    <unit id="k_47f7923f2f61" name="communication:mobile_phone">
+      <segment>
+        <source>communication:mobile_phone</source>
+        <target>communication:mobile phone</target>
+      </segment>
+    </unit>
+    <unit id="k_586abcce834b" name="communication:operator">
+      <segment>
+        <source>communication:operator</source>
+        <target>communication:operator</target>
+      </segment>
+    </unit>
+    <unit id="k_78e731027d8f" name="message">
+      <segment>
+        <source>message</source>
+        <target>message</target>
+      </segment>
+    </unit>
+    <unit id="k_f1cf65514c70" name="sides">
+      <segment>
+        <source>sides</source>
+        <target>sides</target>
+      </segment>
+    </unit>
+    <unit id="k_ea8d90f5d8b9" name="source:name">
+      <segment>
+        <source>source:name</source>
+        <target>source:name</target>
+      </segment>
+    </unit>
+    <unit id="k_4061fe5c578d" name="junction">
+      <segment>
+        <source>junction</source>
+        <target>junction</target>
+      </segment>
+    </unit>
+    <unit id="k_ab13bfe1d95a" name="crossing:bell">
+      <segment>
+        <source>crossing:bell</source>
+        <target>crossing:bell</target>
+      </segment>
+    </unit>
+    <unit id="k_a5df375d7c97" name="stars">
+      <segment>
+        <source>stars</source>
+        <target>stars</target>
+      </segment>
+    </unit>
+    <unit id="k_fc9eb4389d94" name="toilets:access">
+      <segment>
+        <source>toilets:access</source>
+        <target>toilets:access</target>
+      </segment>
+    </unit>
+    <unit id="k_9d8179d6eb53" name="check_date:service:bicycle:pump">
+      <segment>
+        <source>check_date:service:bicycle:pump</source>
+        <target>check date:service:bicycle:pump</target>
+      </segment>
+    </unit>
+    <unit id="k_2b71a6feb8a0" name="object:street">
+      <segment>
+        <source>object:street</source>
+        <target>object:street</target>
+      </segment>
+    </unit>
+    <unit id="k_777f8241f056" name="object:housenumber">
+      <segment>
+        <source>object:housenumber</source>
+        <target>object:housenumber</target>
+      </segment>
+    </unit>
+    <unit id="k_7c4edbcefcce" name="ele">
+      <segment>
+        <source>ele</source>
+        <target>ele</target>
+      </segment>
+    </unit>
+    <unit id="k_177796a8e8cc" name="ft_link">
+      <segment>
+        <source>ft_link</source>
+        <target>ft link</target>
+      </segment>
+    </unit>
+    <unit id="k_6e71349ef4d6" name="fuel:GTL_diesel">
+      <segment>
+        <source>fuel:GTL_diesel</source>
+        <target>fuel:GTL diesel</target>
+      </segment>
+    </unit>
+    <unit id="k_e3d024296ef1" name="fuel:cng">
+      <segment>
+        <source>fuel:cng</source>
+        <target>fuel:cng</target>
+      </segment>
+    </unit>
+    <unit id="k_a687c8435447" name="payment:uta">
+      <segment>
+        <source>payment:uta</source>
+        <target>payment:uta</target>
+      </segment>
+    </unit>
+    <unit id="k_fe7a62c79de4" name="archaeological_site">
+      <segment>
+        <source>archaeological_site</source>
+        <target>archaeological site</target>
+      </segment>
+    </unit>
+    <unit id="k_1ab73e08a28b" name="payment:jcb">
+      <segment>
+        <source>payment:jcb</source>
+        <target>payment:jcb</target>
+      </segment>
+    </unit>
+    <unit id="k_27960ec7c92f" name="xmas:feature">
+      <segment>
+        <source>xmas:feature</source>
+        <target>xmas:feature</target>
+      </segment>
+    </unit>
+    <unit id="k_ab29e231978b" name="emergency_telephone_code">
+      <segment>
+        <source>emergency_telephone_code</source>
+        <target>emergency telephone code</target>
+      </segment>
+    </unit>
+    <unit id="k_964ca57512fd" name="post_office:type">
+      <segment>
+        <source>post_office:type</source>
+        <target>post office:type</target>
+      </segment>
+    </unit>
+    <unit id="k_f3d4086e86b2" name="railway:signal:distant:shortened">
+      <segment>
+        <source>railway:signal:distant:shortened</source>
+        <target>railway:signal:distant:shortened</target>
+      </segment>
+    </unit>
+    <unit id="k_337509cbb943" name="payment:sepa">
+      <segment>
+        <source>payment:sepa</source>
+        <target>payment:sepa</target>
+      </segment>
+    </unit>
+    <unit id="k_cb91a3baaf71" name="payment:alipay">
+      <segment>
+        <source>payment:alipay</source>
+        <target>payment:alipay</target>
+      </segment>
+    </unit>
+    <unit id="k_b7627e69c85c" name="motorcycle">
+      <segment>
+        <source>motorcycle</source>
+        <target>motorcycle</target>
+      </segment>
+    </unit>
+    <unit id="k_7a7d79753ce2" name="disused:ford">
+      <segment>
+        <source>disused:ford</source>
+        <target>disused:ford</target>
+      </segment>
+    </unit>
+    <unit id="k_3cb1a6da7b75" name="informal">
+      <segment>
+        <source>informal</source>
+        <target>informal</target>
+      </segment>
+    </unit>
+    <unit id="k_b1c83947a2a0" name="not:operator:wikidata">
+      <segment>
+        <source>not:operator:wikidata</source>
+        <target>not:operator:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_55686f08bd64" name="disused:name">
+      <segment>
+        <source>disused:name</source>
+        <target>disused:name</target>
+      </segment>
+    </unit>
+    <unit id="k_9e8e75a97f07" name="payment:payback_pay">
+      <segment>
+        <source>payment:payback_pay</source>
+        <target>payment:payback pay</target>
+      </segment>
+    </unit>
+    <unit id="k_d7ff5973185a" name="disused:office">
+      <segment>
+        <source>disused:office</source>
+        <target>disused:office</target>
+      </segment>
+    </unit>
+    <unit id="k_72122ce96bfe" name="owner">
+      <segment>
+        <source>owner</source>
+        <target>owner</target>
+      </segment>
+    </unit>
+    <unit id="k_b710a36466aa" name="service:bicycle:sales">
+      <segment>
+        <source>service:bicycle:sales</source>
+        <target>service:bicycle:sales</target>
+      </segment>
+    </unit>
+    <unit id="k_fb0846a55ca5" name="service:bicycle:retail">
+      <segment>
+        <source>service:bicycle:retail</source>
+        <target>service:bicycle:retail</target>
+      </segment>
+    </unit>
+    <unit id="k_f91475b83ba8" name="seamark:light:range">
+      <segment>
+        <source>seamark:light:range</source>
+        <target>seamark:light:range</target>
+      </segment>
+    </unit>
+    <unit id="k_ec8e23780313" name="community_centre:for">
+      <segment>
+        <source>community_centre:for</source>
+        <target>community centre:for</target>
+      </segment>
+    </unit>
+    <unit id="k_31ba6d3619a6" name="military">
+      <segment>
+        <source>military</source>
+        <target>military</target>
+      </segment>
+    </unit>
+    <unit id="k_eda73c7557e0" name="bunker_type">
+      <segment>
+        <source>bunker_type</source>
+        <target>bunker type</target>
+      </segment>
+    </unit>
+    <unit id="k_8cf1e332ab6f" name="couplings:type">
+      <segment>
+        <source>couplings:type</source>
+        <target>couplings:type</target>
+      </segment>
+    </unit>
+    <unit id="k_19cdc8ddeef4" name="couplings:diameters">
+      <segment>
+        <source>couplings:diameters</source>
+        <target>couplings:diameters</target>
+      </segment>
+    </unit>
+    <unit id="k_39fa03b542e0" name="internet_access:ssid">
+      <segment>
+        <source>internet_access:ssid</source>
+        <target>internet access:ssid</target>
+      </segment>
+    </unit>
+    <unit id="k_37b51d194a75" name="bar">
+      <segment>
+        <source>bar</source>
+        <target>bar</target>
+      </segment>
+    </unit>
+    <unit id="k_795b70d736cf" name="railway:switch:movable_frog">
+      <segment>
+        <source>railway:switch:movable_frog</source>
+        <target>railway:switch:movable frog</target>
+      </segment>
+    </unit>
+    <unit id="k_984637cfa36f" name="railway:maxspeed:diverging">
+      <segment>
+        <source>railway:maxspeed:diverging</source>
+        <target>railway:maxspeed:diverging</target>
+      </segment>
+    </unit>
+    <unit id="k_02638229ef26" name="railway:switch:heated">
+      <segment>
+        <source>railway:switch:heated</source>
+        <target>railway:switch:heated</target>
+      </segment>
+    </unit>
+    <unit id="k_ffd45b765291" name="railway:local_operated">
+      <segment>
+        <source>railway:local_operated</source>
+        <target>railway:local operated</target>
+      </segment>
+    </unit>
+    <unit id="k_2401d772ef90" name="railway:maxspeed:straight">
+      <segment>
+        <source>railway:maxspeed:straight</source>
+        <target>railway:maxspeed:straight</target>
+      </segment>
+    </unit>
+    <unit id="k_352f22e828c5" name="railway:radius">
+      <segment>
+        <source>railway:radius</source>
+        <target>railway:radius</target>
+      </segment>
+    </unit>
+    <unit id="k_a7a29fa449e2" name="hairdresser">
+      <segment>
+        <source>hairdresser</source>
+        <target>hairdresser</target>
+      </segment>
+    </unit>
+    <unit id="k_d1f7e98e0f3d" name="dance:style">
+      <segment>
+        <source>dance:style</source>
+        <target>dance:style</target>
+      </segment>
+    </unit>
+    <unit id="k_9565134b56a1" name="dance:teaching">
+      <segment>
+        <source>dance:teaching</source>
+        <target>dance:teaching</target>
+      </segment>
+    </unit>
+    <unit id="k_e42d377d707a" name="toilets:gender_segregated">
+      <segment>
+        <source>toilets:gender_segregated</source>
+        <target>toilets:gender segregated</target>
+      </segment>
+    </unit>
+    <unit id="k_e70d9343a3b7" name="toilets:menstrual_products">
+      <segment>
+        <source>toilets:menstrual_products</source>
+        <target>toilets:menstrual products</target>
+      </segment>
+    </unit>
+    <unit id="k_b14a3ab1a0b3" name="laundry_service">
+      <segment>
+        <source>laundry_service</source>
+        <target>laundry service</target>
+      </segment>
+    </unit>
+    <unit id="k_45ce3c49dfed" name="payment:ec">
+      <segment>
+        <source>payment:ec</source>
+        <target>payment:ec</target>
+      </segment>
+    </unit>
+    <unit id="k_b333fdd7e70c" name="seamark:pile:category">
+      <segment>
+        <source>seamark:pile:category</source>
+        <target>seamark:pile:category</target>
+      </segment>
+    </unit>
+    <unit id="k_c944634550c6" name="studio">
+      <segment>
+        <source>studio</source>
+        <target>studio</target>
+      </segment>
+    </unit>
+    <unit id="k_b4628fe4f5f3" name="insurance">
+      <segment>
+        <source>insurance</source>
+        <target>insurance</target>
+      </segment>
+    </unit>
+    <unit id="k_b8bae68660e0" name="loc_name">
+      <segment>
+        <source>loc_name</source>
+        <target>loc name</target>
+      </segment>
+    </unit>
+    <unit id="k_5a4393ca8e5d" name="description:en">
+      <segment>
+        <source>description:en</source>
+        <target>description:en</target>
+      </segment>
+    </unit>
+    <unit id="k_5cd4d0ce4159" name="currency:DKK">
+      <segment>
+        <source>currency:DKK</source>
+        <target>currency:DKK</target>
+      </segment>
+    </unit>
+    <unit id="k_1ddcb92ade31" name="format">
+      <segment>
+        <source>format</source>
+        <target>format</target>
+      </segment>
+    </unit>
+    <unit id="k_8fba5260119e" name="public_bookcase:type">
+      <segment>
+        <source>public_bookcase:type</source>
+        <target>public bookcase:type</target>
+      </segment>
+    </unit>
+    <unit id="k_2d733e9b87c5" name="ref:operator_inventory">
+      <segment>
+        <source>ref:operator_inventory</source>
+        <target>ref:operator inventory</target>
+      </segment>
+    </unit>
+    <unit id="k_fd1b1aaa073b" name="massage">
+      <segment>
+        <source>massage</source>
+        <target>massage</target>
+      </segment>
+    </unit>
+    <unit id="k_d2626f412da7" name="cafe">
+      <segment>
+        <source>cafe</source>
+        <target>cafe</target>
+      </segment>
+    </unit>
+    <unit id="k_c8de277b14c2" name="socket:chademo:output">
+      <segment>
+        <source>socket:chademo:output</source>
+        <target>socket:chademo:output</target>
+      </segment>
+    </unit>
+    <unit id="k_8192347f2085" name="service:vehicle:car_repair">
+      <segment>
+        <source>service:vehicle:car_repair</source>
+        <target>service:vehicle:car repair</target>
+      </segment>
+    </unit>
+    <unit id="k_e437ba437f41" name="voltage">
+      <segment>
+        <source>voltage</source>
+        <target>voltage</target>
+      </segment>
+    </unit>
+    <unit id="k_93c731f1c3a8" name="company">
+      <segment>
+        <source>company</source>
+        <target>company</target>
+      </segment>
+    </unit>
+    <unit id="k_ae0b6971f1ed" name="disused:generator:method">
+      <segment>
+        <source>disused:generator:method</source>
+        <target>disused:generator:method</target>
+      </segment>
+    </unit>
+    <unit id="k_82428c160ccd" name="payment:direktpay">
+      <segment>
+        <source>payment:direktpay</source>
+        <target>payment:direktpay</target>
+      </segment>
+    </unit>
+    <unit id="k_a7414ea5f1e9" name="generator:type">
+      <segment>
+        <source>generator:type</source>
+        <target>generator:type</target>
+      </segment>
+    </unit>
+    <unit id="k_6816c49c111c" name="parking:fee">
+      <segment>
+        <source>parking:fee</source>
+        <target>parking:fee</target>
+      </segment>
+    </unit>
+    <unit id="k_062e52dd9c25" name="recycling:glass_bottles:colour">
+      <segment>
+        <source>recycling:glass_bottles:colour</source>
+        <target>recycling:glass bottles:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_01ba7e1205c7" name="service_times">
+      <segment>
+        <source>service_times</source>
+        <target>service times</target>
+      </segment>
+    </unit>
+    <unit id="k_91cfd710818a" name="railway:derail">
+      <segment>
+        <source>railway:derail</source>
+        <target>railway:derail</target>
+      </segment>
+    </unit>
+    <unit id="k_f8856eb7fd52" name="seamark:beacon_special_purpose:category">
+      <segment>
+        <source>seamark:beacon_special_purpose:category</source>
+        <target>seamark:beacon special purpose:category</target>
+      </segment>
+    </unit>
+    <unit id="k_5c3bfce039b7" name="seamark:beacon_special_purpose:colour">
+      <segment>
+        <source>seamark:beacon_special_purpose:colour</source>
+        <target>seamark:beacon special purpose:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_e83f032f8062" name="flag:wikipedia">
+      <segment>
+        <source>flag:wikipedia</source>
+        <target>flag:wikipedia</target>
+      </segment>
+    </unit>
+    <unit id="k_68bca484d461" name="communication:bos">
+      <segment>
+        <source>communication:bos</source>
+        <target>communication:bos</target>
+      </segment>
+    </unit>
+    <unit id="k_1c9eaa2d781e" name="crane:mobile">
+      <segment>
+        <source>crane:mobile</source>
+        <target>crane:mobile</target>
+      </segment>
+    </unit>
+    <unit id="k_975cf87a5cf4" name="diameter_crown">
+      <segment>
+        <source>diameter_crown</source>
+        <target>diameter crown</target>
+      </segment>
+    </unit>
+    <unit id="k_ea71960af5d1" name="operator:2">
+      <segment>
+        <source>operator:2</source>
+        <target>operator:2</target>
+      </segment>
+    </unit>
+    <unit id="k_36c4536996ca" name="node">
+      <segment>
+        <source>node</source>
+        <target>node</target>
+      </segment>
+    </unit>
+    <unit id="k_837a317dd961" name="light:count">
+      <segment>
+        <source>light:count</source>
+        <target>light:count</target>
+      </segment>
+    </unit>
+    <unit id="k_eb9da167565e" name="name:he">
+      <segment>
+        <source>name:he</source>
+        <target>name:he</target>
+      </segment>
+    </unit>
+    <unit id="k_247e8068cd54" name="name:xmf">
+      <segment>
+        <source>name:xmf</source>
+        <target>name:xmf</target>
+      </segment>
+    </unit>
+    <unit id="k_a915e22ada9f" name="name:tr">
+      <segment>
+        <source>name:tr</source>
+        <target>name:tr</target>
+      </segment>
+    </unit>
+    <unit id="k_1ed7ad407cb6" name="name:war">
+      <segment>
+        <source>name:war</source>
+        <target>name:war</target>
+      </segment>
+    </unit>
+    <unit id="k_362ebc379b4b" name="int_name">
+      <segment>
+        <source>int_name</source>
+        <target>int name</target>
+      </segment>
+    </unit>
+    <unit id="k_6b816034c56c" name="name:eu">
+      <segment>
+        <source>name:eu</source>
+        <target>name:eu</target>
+      </segment>
+    </unit>
+    <unit id="k_7b617ce242af" name="name:az">
+      <segment>
+        <source>name:az</source>
+        <target>name:az</target>
+      </segment>
+    </unit>
+    <unit id="k_5a4084013b1c" name="name:tok">
+      <segment>
+        <source>name:tok</source>
+        <target>name:tok</target>
+      </segment>
+    </unit>
+    <unit id="k_5c5d3bc96d20" name="name:th">
+      <segment>
+        <source>name:th</source>
+        <target>name:th</target>
+      </segment>
+    </unit>
+    <unit id="k_b7a0826365c8" name="name:ia">
+      <segment>
+        <source>name:ia</source>
+        <target>name:ia</target>
+      </segment>
+    </unit>
+    <unit id="k_6a8700d3fd7e" name="ref:LOCODE">
+      <segment>
+        <source>ref:LOCODE</source>
+        <target>ref:LOCODE</target>
+      </segment>
+    </unit>
+    <unit id="k_ad7174b292e5" name="name:cs">
+      <segment>
+        <source>name:cs</source>
+        <target>name:cs</target>
+      </segment>
+    </unit>
+    <unit id="k_2e79f9d43d4a" name="name:ml">
+      <segment>
+        <source>name:ml</source>
+        <target>name:ml</target>
+      </segment>
+    </unit>
+    <unit id="k_7aabb66840de" name="name:vo">
+      <segment>
+        <source>name:vo</source>
+        <target>name:vo</target>
+      </segment>
+    </unit>
+    <unit id="k_ab3383c2eace" name="name:lt">
+      <segment>
+        <source>name:lt</source>
+        <target>name:lt</target>
+      </segment>
+    </unit>
+    <unit id="k_4622b67ada80" name="name:frr">
+      <segment>
+        <source>name:frr</source>
+        <target>name:frr</target>
+      </segment>
+    </unit>
+    <unit id="k_58c9d41528c2" name="de:amtlicher_gemeindeschluessel">
+      <segment>
+        <source>de:amtlicher_gemeindeschluessel</source>
+        <target>de:amtlicher gemeindeschluessel</target>
+      </segment>
+    </unit>
+    <unit id="k_7f073dbd7340" name="name:eo">
+      <segment>
+        <source>name:eo</source>
+        <target>name:eo</target>
+      </segment>
+    </unit>
+    <unit id="k_fe4ce37428e4" name="name:ms">
+      <segment>
+        <source>name:ms</source>
+        <target>name:ms</target>
+      </segment>
+    </unit>
+    <unit id="k_14b0bbf1daba" name="name:fi">
+      <segment>
+        <source>name:fi</source>
+        <target>name:fi</target>
+      </segment>
+    </unit>
+    <unit id="k_cd48de03ecd7" name="name:ca">
+      <segment>
+        <source>name:ca</source>
+        <target>name:ca</target>
+      </segment>
+    </unit>
+    <unit id="k_cfe11caa567c" name="name:hu">
+      <segment>
+        <source>name:hu</source>
+        <target>name:hu</target>
+      </segment>
+    </unit>
+    <unit id="k_146043b96dc1" name="name:ce">
+      <segment>
+        <source>name:ce</source>
+        <target>name:ce</target>
+      </segment>
+    </unit>
+    <unit id="k_d345f569adab" name="name:hr">
+      <segment>
+        <source>name:hr</source>
+        <target>name:hr</target>
+      </segment>
+    </unit>
+    <unit id="k_e1cb40b577ca" name="name:yue">
+      <segment>
+        <source>name:yue</source>
+        <target>name:yue</target>
+      </segment>
+    </unit>
+    <unit id="k_b55cd40e5bb5" name="name:pnb">
+      <segment>
+        <source>name:pnb</source>
+        <target>name:pnb</target>
+      </segment>
+    </unit>
+    <unit id="k_ab7dc9aec15b" name="name:no">
+      <segment>
+        <source>name:no</source>
+        <target>name:no</target>
+      </segment>
+    </unit>
+    <unit id="k_353903d18941" name="name:stq">
+      <segment>
+        <source>name:stq</source>
+        <target>name:stq</target>
+      </segment>
+    </unit>
+    <unit id="k_0180e9c825b1" name="name:ko">
+      <segment>
+        <source>name:ko</source>
+        <target>name:ko</target>
+      </segment>
+    </unit>
+    <unit id="k_5e3436ad43f5" name="name:ro">
+      <segment>
+        <source>name:ro</source>
+        <target>name:ro</target>
+      </segment>
+    </unit>
+    <unit id="k_43b00156f2be" name="name:id">
+      <segment>
+        <source>name:id</source>
+        <target>name:id</target>
+      </segment>
+    </unit>
+    <unit id="k_08eca3acd020" name="name:es">
+      <segment>
+        <source>name:es</source>
+        <target>name:es</target>
+      </segment>
+    </unit>
+    <unit id="k_e166aa89312f" name="name:sq">
+      <segment>
+        <source>name:sq</source>
+        <target>name:sq</target>
+      </segment>
+    </unit>
+    <unit id="k_673ab1b3a048" name="name:pt">
+      <segment>
+        <source>name:pt</source>
+        <target>name:pt</target>
+      </segment>
+    </unit>
+    <unit id="k_3265048ebf1d" name="name:ka">
+      <segment>
+        <source>name:ka</source>
+        <target>name:ka</target>
+      </segment>
+    </unit>
+    <unit id="k_e1a5afa40e91" name="name:ar">
+      <segment>
+        <source>name:ar</source>
+        <target>name:ar</target>
+      </segment>
+    </unit>
+    <unit id="k_48a93756bd74" name="name:tt">
+      <segment>
+        <source>name:tt</source>
+        <target>name:tt</target>
+      </segment>
+    </unit>
+    <unit id="k_572606c7eb36" name="name:sw">
+      <segment>
+        <source>name:sw</source>
+        <target>name:sw</target>
+      </segment>
+    </unit>
+    <unit id="k_a3bd4e1fd073" name="name:ace">
+      <segment>
+        <source>name:ace</source>
+        <target>name:ace</target>
+      </segment>
+    </unit>
+    <unit id="k_5cbe36c3ffb5" name="name:lld">
+      <segment>
+        <source>name:lld</source>
+        <target>name:lld</target>
+      </segment>
+    </unit>
+    <unit id="k_dc00f921fefa" name="name:et">
+      <segment>
+        <source>name:et</source>
+        <target>name:et</target>
+      </segment>
+    </unit>
+    <unit id="k_30210506b50b" name="name:vi">
+      <segment>
+        <source>name:vi</source>
+        <target>name:vi</target>
+      </segment>
+    </unit>
+    <unit id="k_3b1bbac03124" name="name:sv">
+      <segment>
+        <source>name:sv</source>
+        <target>name:sv</target>
+      </segment>
+    </unit>
+    <unit id="k_1d8c48e3b86b" name="name:hsb">
+      <segment>
+        <source>name:hsb</source>
+        <target>name:hsb</target>
+      </segment>
+    </unit>
+    <unit id="k_b4c5b819684d" name="name:mk">
+      <segment>
+        <source>name:mk</source>
+        <target>name:mk</target>
+      </segment>
+    </unit>
+    <unit id="k_2814ae0671d1" name="name:ie">
+      <segment>
+        <source>name:ie</source>
+        <target>name:ie</target>
+      </segment>
+    </unit>
+    <unit id="k_c5c4537e7022" name="name:an">
+      <segment>
+        <source>name:an</source>
+        <target>name:an</target>
+      </segment>
+    </unit>
+    <unit id="k_ddef4eba6a2c" name="name:nds">
+      <segment>
+        <source>name:nds</source>
+        <target>name:nds</target>
+      </segment>
+    </unit>
+    <unit id="k_7314901aa3e3" name="name:nn">
+      <segment>
+        <source>name:nn</source>
+        <target>name:nn</target>
+      </segment>
+    </unit>
+    <unit id="k_55c95d5b96f3" name="name:zh">
+      <segment>
+        <source>name:zh</source>
+        <target>name:zh</target>
+      </segment>
+    </unit>
+    <unit id="k_e596332e4e66" name="name:br">
+      <segment>
+        <source>name:br</source>
+        <target>name:br</target>
+      </segment>
+    </unit>
+    <unit id="k_73a65044c751" name="name:wuu">
+      <segment>
+        <source>name:wuu</source>
+        <target>name:wuu</target>
+      </segment>
+    </unit>
+    <unit id="k_b5c4b4a2a579" name="name:el">
+      <segment>
+        <source>name:el</source>
+        <target>name:el</target>
+      </segment>
+    </unit>
+    <unit id="k_d9bb706afc26" name="name:fo">
+      <segment>
+        <source>name:fo</source>
+        <target>name:fo</target>
+      </segment>
+    </unit>
+    <unit id="k_85cd961e5483" name="name:azb">
+      <segment>
+        <source>name:azb</source>
+        <target>name:azb</target>
+      </segment>
+    </unit>
+    <unit id="k_172748b31d74" name="name:pl">
+      <segment>
+        <source>name:pl</source>
+        <target>name:pl</target>
+      </segment>
+    </unit>
+    <unit id="k_be9f64d31fd7" name="name:ja">
+      <segment>
+        <source>name:ja</source>
+        <target>name:ja</target>
+      </segment>
+    </unit>
+    <unit id="k_4fdc2e953352" name="name:lb">
+      <segment>
+        <source>name:lb</source>
+        <target>name:lb</target>
+      </segment>
+    </unit>
+    <unit id="k_1987aebca197" name="name:nl">
+      <segment>
+        <source>name:nl</source>
+        <target>name:nl</target>
+      </segment>
+    </unit>
+    <unit id="k_2ffb34b2865a" name="name:be">
+      <segment>
+        <source>name:be</source>
+        <target>name:be</target>
+      </segment>
+    </unit>
+    <unit id="k_e50d0b820877" name="name:kk">
+      <segment>
+        <source>name:kk</source>
+        <target>name:kk</target>
+      </segment>
+    </unit>
+    <unit id="k_0c62fd7eb809" name="name:uz">
+      <segment>
+        <source>name:uz</source>
+        <target>name:uz</target>
+      </segment>
+    </unit>
+    <unit id="k_f78d8d396067" name="name:af">
+      <segment>
+        <source>name:af</source>
+        <target>name:af</target>
+      </segment>
+    </unit>
+    <unit id="k_87df57c9b46f" name="name:ru">
+      <segment>
+        <source>name:ru</source>
+        <target>name:ru</target>
+      </segment>
+    </unit>
+    <unit id="k_fcea8bfa58b9" name="name:lv">
+      <segment>
+        <source>name:lv</source>
+        <target>name:lv</target>
+      </segment>
+    </unit>
+    <unit id="k_611ecdaec61f" name="name:ceb">
+      <segment>
+        <source>name:ceb</source>
+        <target>name:ceb</target>
+      </segment>
+    </unit>
+    <unit id="k_2f9fe876d983" name="name:bn">
+      <segment>
+        <source>name:bn</source>
+        <target>name:bn</target>
+      </segment>
+    </unit>
+    <unit id="k_b43fdc6b147d" name="name:sh">
+      <segment>
+        <source>name:sh</source>
+        <target>name:sh</target>
+      </segment>
+    </unit>
+    <unit id="k_a41b2d0d691c" name="name:fr">
+      <segment>
+        <source>name:fr</source>
+        <target>name:fr</target>
+      </segment>
+    </unit>
+    <unit id="k_6f2123e1b15c" name="name:tum">
+      <segment>
+        <source>name:tum</source>
+        <target>name:tum</target>
+      </segment>
+    </unit>
+    <unit id="k_1ff0fa8a5d26" name="name:la">
+      <segment>
+        <source>name:la</source>
+        <target>name:la</target>
+      </segment>
+    </unit>
+    <unit id="k_2582764ee984" name="name:it">
+      <segment>
+        <source>name:it</source>
+        <target>name:it</target>
+      </segment>
+    </unit>
+    <unit id="k_93a5cf8ade1d" name="name:arc">
+      <segment>
+        <source>name:arc</source>
+        <target>name:arc</target>
+      </segment>
+    </unit>
+    <unit id="k_2aac60e78673" name="name:ky">
+      <segment>
+        <source>name:ky</source>
+        <target>name:ky</target>
+      </segment>
+    </unit>
+    <unit id="k_1da49baba6c4" name="name:nds-nl">
+      <segment>
+        <source>name:nds-nl</source>
+        <target>name:nds-nl</target>
+      </segment>
+    </unit>
+    <unit id="k_2b9e7d6b0dc6" name="name:fa">
+      <segment>
+        <source>name:fa</source>
+        <target>name:fa</target>
+      </segment>
+    </unit>
+    <unit id="k_721a76925da8" name="name:sr">
+      <segment>
+        <source>name:sr</source>
+        <target>name:sr</target>
+      </segment>
+    </unit>
+    <unit id="k_72942ef3515a" name="name:os">
+      <segment>
+        <source>name:os</source>
+        <target>name:os</target>
+      </segment>
+    </unit>
+    <unit id="k_b1faef92a9d3" name="name:is">
+      <segment>
+        <source>name:is</source>
+        <target>name:is</target>
+      </segment>
+    </unit>
+    <unit id="k_786ce8dcfc4e" name="name:fy">
+      <segment>
+        <source>name:fy</source>
+        <target>name:fy</target>
+      </segment>
+    </unit>
+    <unit id="k_64e84a2da9ac" name="name:gl">
+      <segment>
+        <source>name:gl</source>
+        <target>name:gl</target>
+      </segment>
+    </unit>
+    <unit id="k_21638967ab9a" name="name:oc">
+      <segment>
+        <source>name:oc</source>
+        <target>name:oc</target>
+      </segment>
+    </unit>
+    <unit id="k_7aa080636ff6" name="name:sco">
+      <segment>
+        <source>name:sco</source>
+        <target>name:sco</target>
+      </segment>
+    </unit>
+    <unit id="k_68db835c625a" name="name:bg">
+      <segment>
+        <source>name:bg</source>
+        <target>name:bg</target>
+      </segment>
+    </unit>
+    <unit id="k_76c2e6e010a3" name="name:lmo">
+      <segment>
+        <source>name:lmo</source>
+        <target>name:lmo</target>
+      </segment>
+    </unit>
+    <unit id="k_54431e470a97" name="name:uk">
+      <segment>
+        <source>name:uk</source>
+        <target>name:uk</target>
+      </segment>
+    </unit>
+    <unit id="k_ff14a98a1fac" name="name:ku">
+      <segment>
+        <source>name:ku</source>
+        <target>name:ku</target>
+      </segment>
+    </unit>
+    <unit id="k_93dd5c79613d" name="name:cy">
+      <segment>
+        <source>name:cy</source>
+        <target>name:cy</target>
+      </segment>
+    </unit>
+    <unit id="k_20f35e630daf" name="model">
+      <segment>
+        <source>model</source>
+        <target>model</target>
+      </segment>
+    </unit>
+    <unit id="k_1a8056c59b33" name="portable">
+      <segment>
+        <source>portable</source>
+        <target>portable</target>
+      </segment>
+    </unit>
+    <unit id="k_baefbbc8243b" name="old_name2">
+      <segment>
+        <source>old_name2</source>
+        <target>old name2</target>
+      </segment>
+    </unit>
+    <unit id="k_81f973384fa2" name="car_wash">
+      <segment>
+        <source>car_wash</source>
+        <target>car wash</target>
+      </segment>
+    </unit>
+    <unit id="k_4b83c256a7ee" name="kiosk">
+      <segment>
+        <source>kiosk</source>
+        <target>kiosk</target>
+      </segment>
+    </unit>
+    <unit id="k_a527e8747778" name="check_date:compressed_air">
+      <segment>
+        <source>check_date:compressed_air</source>
+        <target>check date:compressed air</target>
+      </segment>
+    </unit>
+    <unit id="k_92967e436722" name="removable">
+      <segment>
+        <source>removable</source>
+        <target>removable</target>
+      </segment>
+    </unit>
+    <unit id="k_219a2256b634" name="toilets:description">
+      <segment>
+        <source>toilets:description</source>
+        <target>toilets:description</target>
+      </segment>
+    </unit>
+    <unit id="k_d86ce93dc464" name="internet_access:operator">
+      <segment>
+        <source>internet_access:operator</source>
+        <target>internet access:operator</target>
+      </segment>
+    </unit>
+    <unit id="k_96a646ff7ff9" name="addr:pobox:postcode">
+      <segment>
+        <source>addr:pobox:postcode</source>
+        <target>addr:pobox:postcode</target>
+      </segment>
+    </unit>
+    <unit id="k_7e4656f11fde" name="ref:isil">
+      <segment>
+        <source>ref:isil</source>
+        <target>ref:isil</target>
+      </segment>
+    </unit>
+    <unit id="k_2eb640931e56" name="addr:pobox">
+      <segment>
+        <source>addr:pobox</source>
+        <target>addr:pobox</target>
+      </segment>
+    </unit>
+    <unit id="k_bbd714746a0b" name="object:country">
+      <segment>
+        <source>object:country</source>
+        <target>object:country</target>
+      </segment>
+    </unit>
+    <unit id="k_8b63b4abb469" name="communication:radio">
+      <segment>
+        <source>communication:radio</source>
+        <target>communication:radio</target>
+      </segment>
+    </unit>
+    <unit id="k_b8dc7f8a672a" name="fuel:biodiesel">
+      <segment>
+        <source>fuel:biodiesel</source>
+        <target>fuel:biodiesel</target>
+      </segment>
+    </unit>
+    <unit id="k_2b41b1a03a36" name="fuel:1_25">
+      <segment>
+        <source>fuel:1_25</source>
+        <target>fuel:1 25</target>
+      </segment>
+    </unit>
+    <unit id="k_6a6e7d7774f7" name="fuel:e85">
+      <segment>
+        <source>fuel:e85</source>
+        <target>fuel:e85</target>
+      </segment>
+    </unit>
+    <unit id="k_373861f224d9" name="fuel:1_50">
+      <segment>
+        <source>fuel:1_50</source>
+        <target>fuel:1 50</target>
+      </segment>
+    </unit>
+    <unit id="k_3632f0c6dee3" name="fuel:octane_100">
+      <segment>
+        <source>fuel:octane_100</source>
+        <target>fuel:octane 100</target>
+      </segment>
+    </unit>
+    <unit id="k_4676def03898" name="bollard_count">
+      <segment>
+        <source>bollard_count</source>
+        <target>bollard count</target>
+      </segment>
+    </unit>
+    <unit id="k_3396301ac69c" name="changing_table:fee">
+      <segment>
+        <source>changing_table:fee</source>
+        <target>changing table:fee</target>
+      </segment>
+    </unit>
+    <unit id="k_887409a942e4" name="payment:tnd_card">
+      <segment>
+        <source>payment:tnd_card</source>
+        <target>payment:tnd card</target>
+      </segment>
+    </unit>
+    <unit id="k_f3ee2c243daa" name="payment:eurowag">
+      <segment>
+        <source>payment:eurowag</source>
+        <target>payment:eurowag</target>
+      </segment>
+    </unit>
+    <unit id="k_1f7696463eff" name="fuel:95E10">
+      <segment>
+        <source>fuel:95E10</source>
+        <target>fuel:95E10</target>
+      </segment>
+    </unit>
+    <unit id="k_f36d4ef1fca8" name="payment:tanknetz">
+      <segment>
+        <source>payment:tanknetz</source>
+        <target>payment:tanknetz</target>
+      </segment>
+    </unit>
+    <unit id="k_d84badd77f24" name="payment:novofleet">
+      <segment>
+        <source>payment:novofleet</source>
+        <target>payment:novofleet</target>
+      </segment>
+    </unit>
+    <unit id="k_e59070a9af13" name="isced:level">
+      <segment>
+        <source>isced:level</source>
+        <target>isced:level</target>
+      </segment>
+    </unit>
+    <unit id="k_0474d3bae6be" name="post_box:type">
+      <segment>
+        <source>post_box:type</source>
+        <target>post box:type</target>
+      </segment>
+    </unit>
+    <unit id="k_251d3d5c4d41" name="check_date:traffic_signals:sound">
+      <segment>
+        <source>check_date:traffic_signals:sound</source>
+        <target>check date:traffic signals:sound</target>
+      </segment>
+    </unit>
+    <unit id="k_73d9c1fd6ac6" name="toilets:hands_drying">
+      <segment>
+        <source>toilets:hands_drying</source>
+        <target>toilets:hands drying</target>
+      </segment>
+    </unit>
+    <unit id="k_1aea68e4dd83" name="seamark:buoy_safe_water:colour_pattern">
+      <segment>
+        <source>seamark:buoy_safe_water:colour_pattern</source>
+        <target>seamark:buoy safe water:colour pattern</target>
+      </segment>
+    </unit>
+    <unit id="k_cf9233cd71ba" name="seamark:buoy_safe_water:shape">
+      <segment>
+        <source>seamark:buoy_safe_water:shape</source>
+        <target>seamark:buoy safe water:shape</target>
+      </segment>
+    </unit>
+    <unit id="k_733f2bdb7b31" name="seamark:buoy_safe_water:colour">
+      <segment>
+        <source>seamark:buoy_safe_water:colour</source>
+        <target>seamark:buoy safe water:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_85fad0082ac3" name="removed:emergency">
+      <segment>
+        <source>removed:emergency</source>
+        <target>removed:emergency</target>
+      </segment>
+    </unit>
+    <unit id="k_74d792bb8f6e" name="service:bicycle:rental">
+      <segment>
+        <source>service:bicycle:rental</source>
+        <target>service:bicycle:rental</target>
+      </segment>
+    </unit>
+    <unit id="k_4cebfebbdab7" name="motorcycle:clothes">
+      <segment>
+        <source>motorcycle:clothes</source>
+        <target>motorcycle:clothes</target>
+      </segment>
+    </unit>
+    <unit id="k_27fa21b48ef7" name="motorcycle:parts">
+      <segment>
+        <source>motorcycle:parts</source>
+        <target>motorcycle:parts</target>
+      </segment>
+    </unit>
+    <unit id="k_caf9b6b99962" name="info">
+      <segment>
+        <source>info</source>
+        <target>info</target>
+      </segment>
+    </unit>
+    <unit id="k_6ff6ffba3f67" name="xmas:url">
+      <segment>
+        <source>xmas:url</source>
+        <target>xmas:url</target>
+      </segment>
+    </unit>
+    <unit id="k_19b3c5dd6787" name="xmas:opening_hours">
+      <segment>
+        <source>xmas:opening_hours</source>
+        <target>xmas:opening hours</target>
+      </segment>
+    </unit>
+    <unit id="k_569cf94f9f71" name="xmas:day_date">
+      <segment>
+        <source>xmas:day_date</source>
+        <target>xmas:day date</target>
+      </segment>
+    </unit>
+    <unit id="k_81f19db5f9c7" name="xmas:name">
+      <segment>
+        <source>xmas:name</source>
+        <target>xmas:name</target>
+      </segment>
+    </unit>
+    <unit id="k_94baa6f78576" name="xmas:location">
+      <segment>
+        <source>xmas:location</source>
+        <target>xmas:location</target>
+      </segment>
+    </unit>
+    <unit id="k_dc8ac2b753a3" name="holding_position:type">
+      <segment>
+        <source>holding_position:type</source>
+        <target>holding position:type</target>
+      </segment>
+    </unit>
+    <unit id="k_83fdd7172cc4" name="payment:wechat">
+      <segment>
+        <source>payment:wechat</source>
+        <target>payment:wechat</target>
+      </segment>
+    </unit>
+    <unit id="k_cc88fdf957b7" name="payment:bluecode">
+      <segment>
+        <source>payment:bluecode</source>
+        <target>payment:bluecode</target>
+      </segment>
+    </unit>
+    <unit id="k_4f4bdf94ca6a" name="toilets:fee:conditional">
+      <segment>
+        <source>toilets:fee:conditional</source>
+        <target>toilets:fee:conditional</target>
+      </segment>
+    </unit>
+    <unit id="k_d8c2ab73ffbc" name="toilets:fee">
+      <segment>
+        <source>toilets:fee</source>
+        <target>toilets:fee</target>
+      </segment>
+    </unit>
+    <unit id="k_7ac96fb35d9e" name="toilets:charge">
+      <segment>
+        <source>toilets:charge</source>
+        <target>toilets:charge</target>
+      </segment>
+    </unit>
+    <unit id="k_f16a10dbe96b" name="payment:cryptocurrencies">
+      <segment>
+        <source>payment:cryptocurrencies</source>
+        <target>payment:cryptocurrencies</target>
+      </segment>
+    </unit>
+    <unit id="k_079df65c9759" name="blind:description:de">
+      <segment>
+        <source>blind:description:de</source>
+        <target>blind:description:de</target>
+      </segment>
+    </unit>
+    <unit id="k_a6f973994fca" name="seamark:light:2:period">
+      <segment>
+        <source>seamark:light:2:period</source>
+        <target>seamark:light:2:period</target>
+      </segment>
+    </unit>
+    <unit id="k_1870dac10aeb" name="seamark:light:3:colour">
+      <segment>
+        <source>seamark:light:3:colour</source>
+        <target>seamark:light:3:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_5967377aef3a" name="seamark:light:3:period">
+      <segment>
+        <source>seamark:light:3:period</source>
+        <target>seamark:light:3:period</target>
+      </segment>
+    </unit>
+    <unit id="k_e95cdf5a4d3b" name="seamark:light:3:sector_end">
+      <segment>
+        <source>seamark:light:3:sector_end</source>
+        <target>seamark:light:3:sector end</target>
+      </segment>
+    </unit>
+    <unit id="k_0110ecbaf461" name="seamark:light:3:range">
+      <segment>
+        <source>seamark:light:3:range</source>
+        <target>seamark:light:3:range</target>
+      </segment>
+    </unit>
+    <unit id="k_81f43c4f59f6" name="seamark:light:1:sequence">
+      <segment>
+        <source>seamark:light:1:sequence</source>
+        <target>seamark:light:1:sequence</target>
+      </segment>
+    </unit>
+    <unit id="k_e04950649855" name="seamark:light:2:sector_end">
+      <segment>
+        <source>seamark:light:2:sector_end</source>
+        <target>seamark:light:2:sector end</target>
+      </segment>
+    </unit>
+    <unit id="k_41682d845a89" name="seamark:light:1:character">
+      <segment>
+        <source>seamark:light:1:character</source>
+        <target>seamark:light:1:character</target>
+      </segment>
+    </unit>
+    <unit id="k_2589fbc63d9c" name="seamark:light:3:height">
+      <segment>
+        <source>seamark:light:3:height</source>
+        <target>seamark:light:3:height</target>
+      </segment>
+    </unit>
+    <unit id="k_e54a44702650" name="seamark:light:1:sector_end">
+      <segment>
+        <source>seamark:light:1:sector_end</source>
+        <target>seamark:light:1:sector end</target>
+      </segment>
+    </unit>
+    <unit id="k_61d181379ca8" name="seamark:light:3:sequence">
+      <segment>
+        <source>seamark:light:3:sequence</source>
+        <target>seamark:light:3:sequence</target>
+      </segment>
+    </unit>
+    <unit id="k_f0583861f68a" name="seamark:light:1:range">
+      <segment>
+        <source>seamark:light:1:range</source>
+        <target>seamark:light:1:range</target>
+      </segment>
+    </unit>
+    <unit id="k_8330817ac697" name="seamark:light:3:character">
+      <segment>
+        <source>seamark:light:3:character</source>
+        <target>seamark:light:3:character</target>
+      </segment>
+    </unit>
+    <unit id="k_4937dc509b04" name="seamark:light:1:height">
+      <segment>
+        <source>seamark:light:1:height</source>
+        <target>seamark:light:1:height</target>
+      </segment>
+    </unit>
+    <unit id="k_eb21fd942643" name="seamark:light:2:sector_start">
+      <segment>
+        <source>seamark:light:2:sector_start</source>
+        <target>seamark:light:2:sector start</target>
+      </segment>
+    </unit>
+    <unit id="k_e1306a30c4b2" name="seamark:light:1:sector_start">
+      <segment>
+        <source>seamark:light:1:sector_start</source>
+        <target>seamark:light:1:sector start</target>
+      </segment>
+    </unit>
+    <unit id="k_4f64e1a702a8" name="seamark:light:1:colour">
+      <segment>
+        <source>seamark:light:1:colour</source>
+        <target>seamark:light:1:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_9feb4c86ffc1" name="seamark:light:2:character">
+      <segment>
+        <source>seamark:light:2:character</source>
+        <target>seamark:light:2:character</target>
+      </segment>
+    </unit>
+    <unit id="k_a8b51c8ee301" name="seamark:light:2:height">
+      <segment>
+        <source>seamark:light:2:height</source>
+        <target>seamark:light:2:height</target>
+      </segment>
+    </unit>
+    <unit id="k_53062201c892" name="seamark:light:2:sequence">
+      <segment>
+        <source>seamark:light:2:sequence</source>
+        <target>seamark:light:2:sequence</target>
+      </segment>
+    </unit>
+    <unit id="k_9212d6935240" name="seamark:light:3:sector_start">
+      <segment>
+        <source>seamark:light:3:sector_start</source>
+        <target>seamark:light:3:sector start</target>
+      </segment>
+    </unit>
+    <unit id="k_d1304f8c5dda" name="seamark:light:2:range">
+      <segment>
+        <source>seamark:light:2:range</source>
+        <target>seamark:light:2:range</target>
+      </segment>
+    </unit>
+    <unit id="k_31fa46be2f4a" name="seamark:light:2:colour">
+      <segment>
+        <source>seamark:light:2:colour</source>
+        <target>seamark:light:2:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_fd434c0c8f90" name="seamark:light:1:period">
+      <segment>
+        <source>seamark:light:1:period</source>
+        <target>seamark:light:1:period</target>
+      </segment>
+    </unit>
+    <unit id="k_2fcfb0126ac4" name="capacity:disabled">
+      <segment>
+        <source>capacity:disabled</source>
+        <target>capacity:disabled</target>
+      </segment>
+    </unit>
+    <unit id="k_4b1bf91a74d9" name="access:disabled">
+      <segment>
+        <source>access:disabled</source>
+        <target>access:disabled</target>
+      </segment>
+    </unit>
+    <unit id="k_a7465f4a784b" name="wheelchair:description:de">
+      <segment>
+        <source>wheelchair:description:de</source>
+        <target>wheelchair:description:de</target>
+      </segment>
+    </unit>
+    <unit id="k_59fe29021fe0" name="payment:telephone_cards">
+      <segment>
+        <source>payment:telephone_cards</source>
+        <target>payment:telephone cards</target>
+      </segment>
+    </unit>
+    <unit id="k_0b247ddf6b24" name="disused:phone">
+      <segment>
+        <source>disused:phone</source>
+        <target>disused:phone</target>
+      </segment>
+    </unit>
+    <unit id="k_cef9633ee36f" name="disused:tourism">
+      <segment>
+        <source>disused:tourism</source>
+        <target>disused:tourism</target>
+      </segment>
+    </unit>
+    <unit id="k_326451b0b6e8" name="passenger_information_display:speech_output">
+      <segment>
+        <source>passenger_information_display:speech_output</source>
+        <target>passenger information display:speech output</target>
+      </segment>
+    </unit>
+    <unit id="k_bca51b4c4a43" name="demolished:barrier">
+      <segment>
+        <source>demolished:barrier</source>
+        <target>demolished:barrier</target>
+      </segment>
+    </unit>
+    <unit id="k_072d5206d03f" name="consulting">
+      <segment>
+        <source>consulting</source>
+        <target>consulting</target>
+      </segment>
+    </unit>
+    <unit id="k_3029031ba4ad" name="contact:mobile">
+      <segment>
+        <source>contact:mobile</source>
+        <target>contact:mobile</target>
+      </segment>
+    </unit>
+    <unit id="k_bf492e1721e1" name="fair_trade">
+      <segment>
+        <source>fair_trade</source>
+        <target>fair trade</target>
+      </segment>
+    </unit>
+    <unit id="k_192d99068481" name="payment:payback_app">
+      <segment>
+        <source>payment:payback_app</source>
+        <target>payment:payback app</target>
+      </segment>
+    </unit>
+    <unit id="k_d6b922342964" name="proposed:amenity">
+      <segment>
+        <source>proposed:amenity</source>
+        <target>proposed:amenity</target>
+      </segment>
+    </unit>
+    <unit id="k_52e2ecac57f7" name="proposed:name">
+      <segment>
+        <source>proposed:name</source>
+        <target>proposed:name</target>
+      </segment>
+    </unit>
+    <unit id="k_d561c1dc32fe" name="zero_waste">
+      <segment>
+        <source>zero_waste</source>
+        <target>zero waste</target>
+      </segment>
+    </unit>
+    <unit id="k_49bb5ab83b30" name="name:etymology:wikidata">
+      <segment>
+        <source>name:etymology:wikidata</source>
+        <target>name:etymology:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_5c9124e08154" name="max_age">
+      <segment>
+        <source>max_age</source>
+        <target>max age</target>
+      </segment>
+    </unit>
+    <unit id="k_0fac17275350" name="drink:fritz-kola">
+      <segment>
+        <source>drink:fritz-kola</source>
+        <target>drink:fritz-kola</target>
+      </segment>
+    </unit>
+    <unit id="k_8023b052bd88" name="was:military">
+      <segment>
+        <source>was:military</source>
+        <target>was:military</target>
+      </segment>
+    </unit>
+    <unit id="k_6d0b0e7c75cc" name="razed:building">
+      <segment>
+        <source>razed:building</source>
+        <target>razed:building</target>
+      </segment>
+    </unit>
+    <unit id="k_2e4ec95b273d" name="was:bunker_type">
+      <segment>
+        <source>was:bunker_type</source>
+        <target>was:bunker type</target>
+      </segment>
+    </unit>
+    <unit id="k_9786e74b4df2" name="addr:place">
+      <segment>
+        <source>addr:place</source>
+        <target>addr:place</target>
+      </segment>
+    </unit>
+    <unit id="k_b31a87d357f1" name="red_turn:right">
+      <segment>
+        <source>red_turn:right</source>
+        <target>red turn:right</target>
+      </segment>
+    </unit>
+    <unit id="k_7168c799ca2c" name="shower">
+      <segment>
+        <source>shower</source>
+        <target>shower</target>
+      </segment>
+    </unit>
+    <unit id="k_eaf9c6b06a90" name="source:opening_hours">
+      <segment>
+        <source>source:opening_hours</source>
+        <target>source:opening hours</target>
+      </segment>
+    </unit>
+    <unit id="k_94a088054876" name="panoramax:0">
+      <segment>
+        <source>panoramax:0</source>
+        <target>panoramax:0</target>
+      </segment>
+    </unit>
+    <unit id="k_1193f908240c" name="recycling:cans">
+      <segment>
+        <source>recycling:cans</source>
+        <target>recycling:cans</target>
+      </segment>
+    </unit>
+    <unit id="k_1931eedd89e1" name="check_date:internet_access">
+      <segment>
+        <source>check_date:internet_access</source>
+        <target>check date:internet access</target>
+      </segment>
+    </unit>
+    <unit id="k_e4246a100fcc" name="toilets:unisex">
+      <segment>
+        <source>toilets:unisex</source>
+        <target>toilets:unisex</target>
+      </segment>
+    </unit>
+    <unit id="k_8526bb48a50f" name="seamark:beacon_cardinal:colour">
+      <segment>
+        <source>seamark:beacon_cardinal:colour</source>
+        <target>seamark:beacon cardinal:colour</target>
+      </segment>
+    </unit>
+    <unit id="k_eb2ff4b8e943" name="seamark:beacon_cardinal:category">
+      <segment>
+        <source>seamark:beacon_cardinal:category</source>
+        <target>seamark:beacon cardinal:category</target>
+      </segment>
+    </unit>
+    <unit id="k_ad47be93fe04" name="seamark:beacon_cardinal:colour_pattern">
+      <segment>
+        <source>seamark:beacon_cardinal:colour_pattern</source>
+        <target>seamark:beacon cardinal:colour pattern</target>
+      </segment>
+    </unit>
+    <unit id="k_4ae4ae183586" name="seamark:obstruction:water_level">
+      <segment>
+        <source>seamark:obstruction:water_level</source>
+        <target>seamark:obstruction:water level</target>
+      </segment>
+    </unit>
+    <unit id="k_9733483acdd3" name="seamark:obstruction:category">
+      <segment>
+        <source>seamark:obstruction:category</source>
+        <target>seamark:obstruction:category</target>
+      </segment>
+    </unit>
+    <unit id="k_2e99d35730a6" name="opening_hours:atm">
+      <segment>
+        <source>opening_hours:atm</source>
+        <target>opening hours:atm</target>
+      </segment>
+    </unit>
+    <unit id="k_eb0ea0bc6c91" name="museum">
+      <segment>
+        <source>museum</source>
+        <target>museum</target>
+      </segment>
+    </unit>
+    <unit id="k_b0a8b6f82047" name="shoes">
+      <segment>
+        <source>shoes</source>
+        <target>shoes</target>
+      </segment>
+    </unit>
+    <unit id="k_bf3d5281b281" name="coin:design_count">
+      <segment>
+        <source>coin:design_count</source>
+        <target>coin:design count</target>
+      </segment>
+    </unit>
+    <unit id="k_cb286661fd23" name="coin:type">
+      <segment>
+        <source>coin:type</source>
+        <target>coin:type</target>
+      </segment>
+    </unit>
+    <unit id="k_576772bc2595" name="inscription:language">
+      <segment>
+        <source>inscription:language</source>
+        <target>inscription:language</target>
+      </segment>
+    </unit>
+    <unit id="k_bc804441ca2c" name="tomb">
+      <segment>
+        <source>tomb</source>
+        <target>tomb</target>
+      </segment>
+    </unit>
+    <unit id="k_b7f0a730f390" name="memorial:conflict">
+      <segment>
+        <source>memorial:conflict</source>
+        <target>memorial:conflict</target>
+      </segment>
+    </unit>
+    <unit id="k_484b2e35acd0" name="lawyer">
+      <segment>
+        <source>lawyer</source>
+        <target>lawyer</target>
+      </segment>
+    </unit>
+    <unit id="k_26cae7718c32" name="facebook">
+      <segment>
+        <source>facebook</source>
+        <target>facebook</target>
+      </segment>
+    </unit>
+    <unit id="k_daa87d0ced26" name="ref:station">
+      <segment>
+        <source>ref:station</source>
+        <target>ref:station</target>
+      </segment>
+    </unit>
+    <unit id="k_94f42cdedb93" name="uic_name">
+      <segment>
+        <source>uic_name</source>
+        <target>uic name</target>
+      </segment>
+    </unit>
+    <unit id="k_6d655ac588a4" name="uic_ref">
+      <segment>
+        <source>uic_ref</source>
+        <target>uic ref</target>
+      </segment>
+    </unit>
+    <unit id="k_276a0eeff004" name="ref:ibnr">
+      <segment>
+        <source>ref:ibnr</source>
+        <target>ref:ibnr</target>
+      </segment>
+    </unit>
+    <unit id="k_d8cac7eee4e2" name="railway:station_category">
+      <segment>
+        <source>railway:station_category</source>
+        <target>railway:station category</target>
+      </segment>
+    </unit>
+    <unit id="k_33085bee2107" name="disused:cuisine">
+      <segment>
+        <source>disused:cuisine</source>
+        <target>disused:cuisine</target>
+      </segment>
+    </unit>
+    <unit id="k_3f9b661da3ea" name="maxstay">
+      <segment>
+        <source>maxstay</source>
+        <target>maxstay</target>
+      </segment>
+    </unit>
+    <unit id="k_dbfb02c48b52" name="admin_level">
+      <segment>
+        <source>admin_level</source>
+        <target>admin level</target>
+      </segment>
+    </unit>
+    <unit id="k_7603e909bbee" name="ref:bufa">
+      <segment>
+        <source>ref:bufa</source>
+        <target>ref:bufa</target>
+      </segment>
+    </unit>
+    <unit id="k_68986bfc4957" name="format:top">
+      <segment>
+        <source>format:top</source>
+        <target>format:top</target>
+      </segment>
+    </unit>
+    <unit id="k_fa8f409fd183" name="opening_hours:kitchen">
+      <segment>
+        <source>opening_hours:kitchen</source>
+        <target>opening hours:kitchen</target>
+      </segment>
+    </unit>
+    <unit id="k_1fe02fdb4adf" name="razed:amenity">
+      <segment>
+        <source>razed:amenity</source>
+        <target>razed:amenity</target>
+      </segment>
+    </unit>
+    <unit id="k_67068f83115e" name="razed:vending">
+      <segment>
+        <source>razed:vending</source>
+        <target>razed:vending</target>
+      </segment>
+    </unit>
+    <unit id="k_cdad07029dcf" name="service:bicycle:dealer">
+      <segment>
+        <source>service:bicycle:dealer</source>
+        <target>service:bicycle:dealer</target>
+      </segment>
+    </unit>
+    <unit id="k_ba758d70c299" name="service:bicycle:ebike">
+      <segment>
+        <source>service:bicycle:ebike</source>
+        <target>service:bicycle:ebike</target>
+      </segment>
+    </unit>
+    <unit id="k_d20ad56eb086" name="booth">
+      <segment>
+        <source>booth</source>
+        <target>booth</target>
+      </segment>
+    </unit>
+    <unit id="k_87091193e6be" name="check_date:fee">
+      <segment>
+        <source>check_date:fee</source>
+        <target>check date:fee</target>
+      </segment>
+    </unit>
+    <unit id="k_72a333dcdcf0" name="note:route_ref">
+      <segment>
+        <source>note:route_ref</source>
+        <target>note:route ref</target>
+      </segment>
+    </unit>
+    <unit id="k_eafcc4d48945" name="health_specialty:physiotherapy">
+      <segment>
+        <source>health_specialty:physiotherapy</source>
+        <target>health specialty:physiotherapy</target>
+      </segment>
+    </unit>
+    <unit id="k_de3b9665161f" name="payment:sodexo">
+      <segment>
+        <source>payment:sodexo</source>
+        <target>payment:sodexo</target>
+      </segment>
+    </unit>
+    <unit id="k_87ce0274ec9d" name="health_specialty:occupational_therapy">
+      <segment>
+        <source>health_specialty:occupational_therapy</source>
+        <target>health specialty:occupational therapy</target>
+      </segment>
+    </unit>
+    <unit id="k_c3290b68687b" name="health_facility:type">
+      <segment>
+        <source>health_facility:type</source>
+        <target>health facility:type</target>
+      </segment>
+    </unit>
+    <unit id="k_7d8cc2f88393" name="abandoned:emergency">
+      <segment>
+        <source>abandoned:emergency</source>
+        <target>abandoned:emergency</target>
+      </segment>
+    </unit>
+    <unit id="k_ff30f18bc7c9" name="disused:microbrewery">
+      <segment>
+        <source>disused:microbrewery</source>
+        <target>disused:microbrewery</target>
+      </segment>
+    </unit>
+    <unit id="k_173a059d9dd9" name="tobacco">
+      <segment>
+        <source>tobacco</source>
+        <target>tobacco</target>
+      </segment>
+    </unit>
+    <unit id="k_3db0e01f42f5" name="stairs">
+      <segment>
+        <source>stairs</source>
+        <target>stairs</target>
+      </segment>
+    </unit>
+    <unit id="k_3a97771ff81a" name="url:spaceapi">
+      <segment>
+        <source>url:spaceapi</source>
+        <target>url:spaceapi</target>
+      </segment>
+    </unit>
+    <unit id="k_ab063a090871" name="service:vehicle:wheels">
+      <segment>
+        <source>service:vehicle:wheels</source>
+        <target>service:vehicle:wheels</target>
+      </segment>
+    </unit>
+    <unit id="k_e88229f954e8" name="service:vehicle:repairs">
+      <segment>
+        <source>service:vehicle:repairs</source>
+        <target>service:vehicle:repairs</target>
+      </segment>
+    </unit>
+    <unit id="k_4acf7822a595" name="service:vehicle:diagnostics">
+      <segment>
+        <source>service:vehicle:diagnostics</source>
+        <target>service:vehicle:diagnostics</target>
+      </segment>
+    </unit>
+    <unit id="k_688aa7944dc2" name="service:vehicle:inspection">
+      <segment>
+        <source>service:vehicle:inspection</source>
+        <target>service:vehicle:inspection</target>
+      </segment>
+    </unit>
+    <unit id="k_5996bf50c3d6" name="bakehouse">
+      <segment>
+        <source>bakehouse</source>
+        <target>bakehouse</target>
+      </segment>
+    </unit>
+    <unit id="k_79de7a615c87" name="fountain">
+      <segment>
+        <source>fountain</source>
+        <target>fountain</target>
+      </segment>
+    </unit>
+    <unit id="k_f356c739b879" name="diet:kosher">
+      <segment>
+        <source>diet:kosher</source>
+        <target>diet:kosher</target>
+      </segment>
+    </unit>
+    <unit id="k_1aa942aa4689" name="payment:visa_contactless">
+      <segment>
+        <source>payment:visa_contactless</source>
+        <target>payment:visa contactless</target>
+      </segment>
+    </unit>
+    <unit id="k_6eef2822b612" name="building:levels">
+      <segment>
+        <source>building:levels</source>
+        <target>building:levels</target>
+      </segment>
+    </unit>
+    <unit id="k_549f20f51b43" name="collection_times:signed">
+      <segment>
+        <source>collection_times:signed</source>
+        <target>collection times:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_cc4453be5f87" name="socket:schuko">
+      <segment>
+        <source>socket:schuko</source>
+        <target>socket:schuko</target>
+      </segment>
+    </unit>
+    <unit id="k_a9cb430b8b1d" name="truck">
+      <segment>
+        <source>truck</source>
+        <target>truck</target>
+      </segment>
+    </unit>
+    <unit id="k_e5eb16359c4c" name="railway:signal:main_repeated:form">
+      <segment>
+        <source>railway:signal:main_repeated:form</source>
+        <target>railway:signal:main repeated:form</target>
+      </segment>
+    </unit>
+    <unit id="k_d8d316363d9a" name="railway:signal:main_repeated">
+      <segment>
+        <source>railway:signal:main_repeated</source>
+        <target>railway:signal:main repeated</target>
+      </segment>
+    </unit>
+    <unit id="k_768d8241abac" name="railway:signal:speed_limit:turn_direction">
+      <segment>
+        <source>railway:signal:speed_limit:turn_direction</source>
+        <target>railway:signal:speed limit:turn direction</target>
+      </segment>
+    </unit>
+    <unit id="k_2301cb443afd" name="opening_hours:office">
+      <segment>
+        <source>opening_hours:office</source>
+        <target>opening hours:office</target>
+      </segment>
+    </unit>
+    <unit id="k_ff4f702de67a" name="webshop">
+      <segment>
+        <source>webshop</source>
+        <target>webshop</target>
+      </segment>
+    </unit>
+    <unit id="k_c3a59f2cb9b5" name="showroom">
+      <segment>
+        <source>showroom</source>
+        <target>showroom</target>
+      </segment>
+    </unit>
+    <unit id="k_e17044700315" name="mast:type">
+      <segment>
+        <source>mast:type</source>
+        <target>mast:type</target>
+      </segment>
+    </unit>
+    <unit id="k_5e4216b8a1bd" name="disused:hairdresser">
+      <segment>
+        <source>disused:hairdresser</source>
+        <target>disused:hairdresser</target>
+      </segment>
+    </unit>
+    <unit id="k_c57c66084109" name="diet:halal">
+      <segment>
+        <source>diet:halal</source>
+        <target>diet:halal</target>
+      </segment>
+    </unit>
+    <unit id="k_28b3407d9c8d" name="traffic_signals:arrow">
+      <segment>
+        <source>traffic_signals:arrow</source>
+        <target>traffic signals:arrow</target>
+      </segment>
+    </unit>
+    <unit id="k_5fe05153b777" name="transformer">
+      <segment>
+        <source>transformer</source>
+        <target>transformer</target>
+      </segment>
+    </unit>
+    <unit id="k_2b092dc92fbf" name="service:vehicle:oil_change">
+      <segment>
+        <source>service:vehicle:oil_change</source>
+        <target>service:vehicle:oil change</target>
+      </segment>
+    </unit>
+    <unit id="k_4fbf0df9152d" name="ladder">
+      <segment>
+        <source>ladder</source>
+        <target>ladder</target>
+      </segment>
+    </unit>
+    <unit id="k_81b69a202561" name="phases">
+      <segment>
+        <source>phases</source>
+        <target>phases</target>
+      </segment>
+    </unit>
+    <unit id="k_a380ced74a15" name="payment:none">
+      <segment>
+        <source>payment:none</source>
+        <target>payment:none</target>
+      </segment>
+    </unit>
+    <unit id="k_1f66f94a517a" name="hackerspace">
+      <segment>
+        <source>hackerspace</source>
+        <target>hackerspace</target>
+      </segment>
+    </unit>
+    <unit id="k_7d8949bcbf85" name="books">
+      <segment>
+        <source>books</source>
+        <target>books</target>
+      </segment>
+    </unit>
+    <unit id="k_dfcd97a6a5cd" name="subject:wikipedia">
+      <segment>
+        <source>subject:wikipedia</source>
+        <target>subject:wikipedia</target>
+      </segment>
+    </unit>
+    <unit id="k_d5a4d25b0d7f" name="payment:paydirekt">
+      <segment>
+        <source>payment:paydirekt</source>
+        <target>payment:paydirekt</target>
+      </segment>
+    </unit>
+    <unit id="k_1df3f90cfcec" name="contact:webcam">
+      <segment>
+        <source>contact:webcam</source>
+        <target>contact:webcam</target>
+      </segment>
+    </unit>
+    <unit id="k_814989b983fd" name="police">
+      <segment>
+        <source>police</source>
+        <target>police</target>
+      </segment>
+    </unit>
+    <unit id="k_814b9c2ee0ac" name="hgv">
+      <segment>
+        <source>hgv</source>
+        <target>hgv</target>
+      </segment>
+    </unit>
+    <unit id="k_e8fbc1f03504" name="scooter">
+      <segment>
+        <source>scooter</source>
+        <target>scooter</target>
+      </segment>
+    </unit>
+    <unit id="k_adb34edfda3c" name="socket:type2_cable">
+      <segment>
+        <source>socket:type2_cable</source>
+        <target>socket:type2 cable</target>
+      </segment>
+    </unit>
+    <unit id="k_075ae3d2fc31" name="disabled">
+      <segment>
+        <source>disabled</source>
+        <target>disabled</target>
+      </segment>
+    </unit>
+    <unit id="k_5ebbbe7c05ba" name="proposed:shop">
+      <segment>
+        <source>proposed:shop</source>
+        <target>proposed:shop</target>
+      </segment>
+    </unit>
+    <unit id="k_46171b077997" name="ferry">
+      <segment>
+        <source>ferry</source>
+        <target>ferry</target>
+      </segment>
+    </unit>
+    <unit id="k_f91cd5d61e1e" name="cargo">
+      <segment>
+        <source>cargo</source>
+        <target>cargo</target>
+      </segment>
+    </unit>
+    <unit id="k_67ba25b8bc78" name="diet:fish">
+      <segment>
+        <source>diet:fish</source>
+        <target>diet:fish</target>
+      </segment>
+    </unit>
+    <unit id="k_7e3956e7752d" name="water_point">
+      <segment>
+        <source>water_point</source>
+        <target>water point</target>
+      </segment>
+    </unit>
+    <unit id="k_fef2576d54db" name="room">
+      <segment>
+        <source>room</source>
+        <target>room</target>
+      </segment>
+    </unit>
+    <unit id="k_b22968b6ee3b" name="name:signed">
+      <segment>
+        <source>name:signed</source>
+        <target>name:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_543b6d9f0725" name="diet:local">
+      <segment>
+        <source>diet:local</source>
+        <target>diet:local</target>
+      </segment>
+    </unit>
+    <unit id="k_16d91f800ba2" name="socket:type2_combo:voltage">
+      <segment>
+        <source>socket:type2_combo:voltage</source>
+        <target>socket:type2 combo:voltage</target>
+      </segment>
+    </unit>
+    <unit id="k_1cd45f3d3a9f" name="maxstay:conditional">
+      <segment>
+        <source>maxstay:conditional</source>
+        <target>maxstay:conditional</target>
+      </segment>
+    </unit>
+    <unit id="k_3b34aae43a0c" name="luminous">
+      <segment>
+        <source>luminous</source>
+        <target>luminous</target>
+      </segment>
+    </unit>
+    <unit id="k_405c4593d4c7" name="communication:bos:pocsag">
+      <segment>
+        <source>communication:bos:pocsag</source>
+        <target>communication:bos:pocsag</target>
+      </segment>
+    </unit>
+    <unit id="k_8805f803902b" name="diet:raw">
+      <segment>
+        <source>diet:raw</source>
+        <target>diet:raw</target>
+      </segment>
+    </unit>
+    <unit id="k_240532b9ce32" name="payment:samsung_pay">
+      <segment>
+        <source>payment:samsung_pay</source>
+        <target>payment:samsung pay</target>
+      </segment>
+    </unit>
+    <unit id="k_f74accf38e6c" name="bicycle_bypass">
+      <segment>
+        <source>bicycle_bypass</source>
+        <target>bicycle bypass</target>
+      </segment>
+    </unit>
+    <unit id="k_e0a8e9ab2a89" name="recycling:bottles">
+      <segment>
+        <source>recycling:bottles</source>
+        <target>recycling:bottles</target>
+      </segment>
+    </unit>
+    <unit id="k_d508e7494fb2" name="two_sided">
+      <segment>
+        <source>two_sided</source>
+        <target>two sided</target>
+      </segment>
+    </unit>
+    <unit id="k_2c11a749d00e" name="memorial:text">
+      <segment>
+        <source>memorial:text</source>
+        <target>memorial:text</target>
+      </segment>
+    </unit>
+    <unit id="k_71d8ed093cd3" name="species:wikidata">
+      <segment>
+        <source>species:wikidata</source>
+        <target>species:wikidata</target>
+      </segment>
+    </unit>
+    <unit id="k_ef399b2d446b" name="stop">
+      <segment>
+        <source>stop</source>
+        <target>stop</target>
+      </segment>
+    </unit>
+    <unit id="k_c865db6fcd71" name="payment:mastercard_contactless">
+      <segment>
+        <source>payment:mastercard_contactless</source>
+        <target>payment:mastercard contactless</target>
+      </segment>
+    </unit>
+    <unit id="k_446ce238d30d" name="payment:girocard_contactless">
+      <segment>
+        <source>payment:girocard_contactless</source>
+        <target>payment:girocard contactless</target>
+      </segment>
+    </unit>
+    <unit id="k_17b9bcb712a8" name="maxweight">
+      <segment>
+        <source>maxweight</source>
+        <target>maxweight</target>
+      </segment>
+    </unit>
+    <unit id="k_114bfcaa2f20" name="payment:union_card">
+      <segment>
+        <source>payment:union_card</source>
+        <target>payment:union card</target>
+      </segment>
+    </unit>
+    <unit id="k_62506be34d57" name="food">
+      <segment>
+        <source>food</source>
+        <target>food</target>
+      </segment>
+    </unit>
+    <unit id="k_ae8ef1b6651e" name="payment:wire_transfer">
+      <segment>
+        <source>payment:wire_transfer</source>
+        <target>payment:wire transfer</target>
+      </segment>
+    </unit>
+    <unit id="k_40ae1769c861" name="bicycle_rental">
+      <segment>
+        <source>bicycle_rental</source>
+        <target>bicycle rental</target>
+      </segment>
+    </unit>
+    <unit id="k_b1a86376a97a" name="disused:highway">
+      <segment>
+        <source>disused:highway</source>
+        <target>disused:highway</target>
+      </segment>
+    </unit>
+    <unit id="k_227f9b5160d9" name="disused:public_transport">
+      <segment>
+        <source>disused:public_transport</source>
+        <target>disused:public transport</target>
+      </segment>
+    </unit>
+    <unit id="k_65ac6cdfeff7" name="fire_hydrant:diameter:note">
+      <segment>
+        <source>fire_hydrant:diameter:note</source>
+        <target>fire hydrant:diameter:note</target>
+      </segment>
+    </unit>
+    <unit id="k_8defcaa086b4" name="hot_water">
+      <segment>
+        <source>hot_water</source>
+        <target>hot water</target>
+      </segment>
+    </unit>
+    <unit id="k_9a0364b9e99b" name="content">
+      <segment>
+        <source>content</source>
+        <target>content</target>
+      </segment>
+    </unit>
+    <unit id="k_499ddaad9df1" name="noname">
+      <segment>
+        <source>noname</source>
+        <target>noname</target>
+      </segment>
+    </unit>
+    <unit id="k_b56b4bee9909" name="pillar:type">
+      <segment>
+        <source>pillar:type</source>
+        <target>pillar:type</target>
+      </segment>
+    </unit>
+    <unit id="k_55fd528f18e7" name="tactile_writing:braille:de">
+      <segment>
+        <source>tactile_writing:braille:de</source>
+        <target>tactile writing:braille:de</target>
+      </segment>
+    </unit>
+    <unit id="k_d552d69bf942" name="guest_house">
+      <segment>
+        <source>guest_house</source>
+        <target>guest house</target>
+      </segment>
+    </unit>
+    <unit id="k_686f2244b01d" name="highchair">
+      <segment>
+        <source>highchair</source>
+        <target>highchair</target>
+      </segment>
+    </unit>
+    <unit id="k_e4f130096c67" name="smoothness">
+      <segment>
+        <source>smoothness</source>
+        <target>smoothness</target>
+      </segment>
+    </unit>
+    <unit id="k_82847e6de5bc" name="circumference">
+      <segment>
+        <source>circumference</source>
+        <target>circumference</target>
+      </segment>
+    </unit>
+    <unit id="k_bccef7839059" name="incline">
+      <segment>
+        <source>incline</source>
+        <target>incline</target>
+      </segment>
+    </unit>
+    <unit id="k_5a7346eacf1d" name="handrail">
+      <segment>
+        <source>handrail</source>
+        <target>handrail</target>
+      </segment>
+    </unit>
+    <unit id="k_da1639422ad8" name="orientation">
+      <segment>
+        <source>orientation</source>
+        <target>orientation</target>
+      </segment>
+    </unit>
+    <unit id="k_8c84d2a5388d" name="payment:notes:denominations">
+      <segment>
+        <source>payment:notes:denominations</source>
+        <target>payment:notes:denominations</target>
+      </segment>
+    </unit>
+    <unit id="k_f448644c75cc" name="drinking_water:signed">
+      <segment>
+        <source>drinking_water:signed</source>
+        <target>drinking water:signed</target>
+      </segment>
+    </unit>
+    <unit id="k_2da14efd7d85" name="check_date:socket">
+      <segment>
+        <source>check_date:socket</source>
+        <target>check date:socket</target>
+      </segment>
+    </unit>
+    <unit id="k_486e33f628fd" name="landuse">
+      <segment>
+        <source>landuse</source>
+        <target>landuse</target>
+      </segment>
+    </unit>
+    <unit id="k_322a9e61ace5" name="recycling:metal">
+      <segment>
+        <source>recycling:metal</source>
+        <target>recycling:metal</target>
+      </segment>
+    </unit>
+    <unit id="k_eb2a269fe925" name="industrial">
+      <segment>
+        <source>industrial</source>
+        <target>industrial</target>
+      </segment>
+    </unit>
+    <unit id="k_fd6d439965c5" name="street_cabinet">
+      <segment>
+        <source>street_cabinet</source>
+        <target>street cabinet</target>
+      </segment>
+    </unit>
+    <unit id="k_409a39bfb9bf" name="sells:hookah">
+      <segment>
+        <source>sells:hookah</source>
+        <target>sells:hookah</target>
+      </segment>
+    </unit>
+    <unit id="k_b9b2ba1fee88" name="sells:tobacco">
+      <segment>
+        <source>sells:tobacco</source>
+        <target>sells:tobacco</target>
+      </segment>
+    </unit>
+    <unit id="k_bab067fe7a01" name="sells:e-cigarettes">
+      <segment>
+        <source>sells:e-cigarettes</source>
+        <target>sells:e-cigarettes</target>
+      </segment>
+    </unit>
+    <unit id="k_7c49b153d4b5" name="origin">
+      <segment>
+        <source>origin</source>
+        <target>origin</target>
+      </segment>
+    </unit>
+    <unit id="k_b6674efdc21b" name="monitoring:groundwater">
+      <segment>
+        <source>monitoring:groundwater</source>
+        <target>monitoring:groundwater</target>
+      </segment>
+    </unit>
+    <unit id="k_6696c4795859" name="repeat_on">
+      <segment>
+        <source>repeat_on</source>
+        <target>repeat on</target>
+      </segment>
+    </unit>
+    <unit id="k_99867a042f36" name="not:barrier">
+      <segment>
+        <source>not:barrier</source>
+        <target>not:barrier</target>
+      </segment>
+    </unit>
+  </file>
+</xliff>

@@ -1,5 +1,6 @@
 import 'primeicons/primeicons.css'
 import { createApp } from 'vue'
+import { watch } from 'vue'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
@@ -8,6 +9,7 @@ import router from './router'
 import i18n from './i18n'
 import { useAuthStore } from './stores/auth'
 import { useSettingsStore } from './stores/settings'
+import { useTagKeyLabelsStore } from './stores/tagKeyLabels'
 
 const app = createApp(App)
 
@@ -27,6 +29,11 @@ void auth.load().then(() => {
     void settings.loadTagPriorities()
   }
 })
+// Tag key labels come from the backend per locale and reload when the user
+// switches the app language on the profile page.
+const tagKeyLabels = useTagKeyLabelsStore()
+void tagKeyLabels.load(settings.locale)
+watch(() => settings.locale, (locale) => void tagKeyLabels.load(locale))
 // Applying the persisted locale before mounting keeps the first render in
 // the language chosen on the profile page.
 settings

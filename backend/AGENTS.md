@@ -78,6 +78,36 @@ Three specifics worth spelling out, because they are easy to get wrong:
   (git-ignored) or the secrets vault (`bin/console secrets:set`), read via
   `%env(...)%`.
 
+## Tag key translations
+
+Tag keys (OSM keys like `fire_hydrant:type` and user-created ones) display as
+readable labels in the Vue app and EasyAdmin. The full design lives in the
+root `README.md` ("Tag key translations"); what matters when changing code:
+
+- Lookup chain, in order: `tag_key_labels` table (admin-managed, per key and
+  locale) → `translations/tag_keys.{en,de}.xlf` catalogue (domain `tag_keys`,
+  message ids are the raw keys) → prettified key (underscores → spaces).
+  Never leave a lookup that can return a raw underscored key.
+- Resolve through `App\Service\TagKeyLabeler` — do not call the translator
+  or repository for tag keys directly. The frontend gets the merged map from
+  `GET /api/i18n/tag-keys/{locale}` (`TagKeyLabeler::SUPPORTED_LOCALES` are
+  the only allowed values; unknown ones 404).
+- The catalogues are generated, not hand-written: `node
+  scripts/generate-tag-key-catalog.mjs` regenerates them from
+  `scripts/data/flensburg-node-tag-keys.tsv`. It merges, so existing targets
+  in the `.xlf` survive; common German labels live in a dictionary inside the
+  script. After adding or editing translations, re-run it and check the diff.
+- The `.xlf` files are XLIFF 2.0: the key comes from the `unit` element's
+  `name` attribute, and there is no `<body>` element (units sit directly
+  under `<file>`) — invalid files fail loudly when the translator loads them.
+- Do not put tag keys into the `messages` domain or the frontend's vue-i18n
+  locales: keys like `fire_hydrant:type` collide with vue-i18n's message-path
+  syntax. The Vue app resolves them through the `tagKeyLabels` Pinia store
+  (`src/stores/tagKeyLabels.ts`), which applies the same fallback chain.
+- `TagKeyLabeler::prettify()` (backend) and `prettifyTagKey()` (frontend) must
+  stay identical; adding a locale means updating `SUPPORTED_LOCALES`,
+  `AppLocale` in `src/stores/settings.ts`, and the generator's `LOCALES`.
+
 ## Testing
 
 Install `symfony/test-pack` if it isn't already. Functional/HTTP tests extend

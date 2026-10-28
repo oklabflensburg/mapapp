@@ -6,6 +6,7 @@ import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
+import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 
 interface TagRow {
   key: string
@@ -25,6 +26,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
+const tagKeyLabels = useTagKeyLabelsStore()
 
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
@@ -114,7 +116,7 @@ async function save(): Promise<void> {
       <div v-if="rows.length > 0" class="tag-table-scroll">
         <table class="tag-table">
           <tr v-for="row in rows" :key="row.key">
-            <th>{{ row.key }}</th>
+            <th>{{ tagKeyLabels.label(row.key) }}</th>
             <td>{{ row.value }}</td>
           </tr>
         </table>
@@ -150,7 +152,7 @@ async function save(): Promise<void> {
         <div class="tag-table-scroll">
           <table class="tag-table">
             <tr v-for="row in observationRows" :key="row.key">
-              <th>{{ row.key }}</th>
+              <th>{{ tagKeyLabels.label(row.key) }}</th>
               <td>{{ row.value }}</td>
             </tr>
           </table>

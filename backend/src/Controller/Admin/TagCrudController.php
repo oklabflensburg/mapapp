@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\NodeGroupTag;
 use App\Entity\NodeTag;
 use App\Entity\Tag;
+use App\Service\TagKeyLabeler;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -22,6 +23,7 @@ final class TagCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly TagKeyLabeler $tagKeyLabeler,
     ) {
     }
     public static function getEntityFqcn(): string
@@ -39,7 +41,10 @@ final class TagCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        yield TextField::new('key');
+        // The list shows the translated label, the form keeps the raw key
+        // because that is what is stored and searched.
+        yield TextField::new('key')
+            ->formatValue(fn ($value) => $this->tagKeyLabeler->label((string) $value));
         yield TextField::new('value');
         // Shows where the tag was added and by which user.
         yield AssociationField::new('nodeTags')
