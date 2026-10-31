@@ -159,11 +159,11 @@ brew install osmium-tool   # once
 scripts/prepare-flensburg.sh
 ```
 
-The script downloads the Geofabrik Schleswig-Holstein extract and the
-Flensburg city boundary (Nominatim), clips to the boundary, keeps tagged
-features only (`building, leisure, amenity, shop, tourism, landuse, natural,
-highway, name`), and exports GeoJSON (~32 MB, ~100k features). Downloads are
-cached in `scripts/data/`.
+The script downloads the Geofabrik Schleswig-Holstein extract, selects a
+bounding box around Flensburg (`9.35,54.75,9.51,54.84` in west, south, east,
+north order), keeps tagged features only (`building, leisure, amenity, shop,
+tourism, natural, highway, name`), and exports GeoJSON. The download is cached
+in `scripts/data/`.
 
 A quick render check (needs the dev server on port 5199):
 
