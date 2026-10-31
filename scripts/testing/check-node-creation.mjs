@@ -30,6 +30,9 @@ function pixel(lat, lng) {
   return { x: 640 + point[0] - origin[0], y: 400 + point[1] - origin[1] }
 }
 
+const labels = { name: 'Name' }
+const values = {}
+await page.route('**/api/i18n/tag-keys/*', route => route.fulfill({ json: { labels, values } }))
 const nodes = []
 const nodeRequests = []
 const groups = []
@@ -55,6 +58,13 @@ await page.route('**/api/nodes', async route => {
   if (!node) {
     node = { id: nextNodeId++, provider: 'local', parentIds: [], childIds: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...input }
     nodes.push(node)
+  }
+  node.observationTranslations ??= {}
+  for (const translation of input.translations ?? []) {
+    node.observationTranslations[translation.key] ??= {}
+    node.observationTranslations[translation.key][input.translationLocale] = {
+      keyTranslation: translation.keyTranslation, valueTranslation: translation.valueTranslation,
+    }
   }
   node.tags = input.tags ?? {}
   node.observations = input.tags ?? {}
@@ -160,6 +170,30 @@ try {
   const projected = pixel(single.latitude, single.longitude)
   assert.ok(Math.abs(projected.x - singlePoint.x) < 1 && Math.abs(projected.y - singlePoint.y) < 1, 'marker clicks retain actual click coordinates')
   await expect(page.getByPlaceholder('Value', { exact: true })).toHaveValue('Solo test node')
+  await expect(page.getByLabel('Key translation', { exact: true })).toHaveValue('Name')
+  await page.getByRole('button', { name: 'Add observation', exact: true }).click()
+  const observation = page.locator('.tag-row').last()
+  await observation.getByLabel('Key translation', { exact: true }).fill('Surface')
+  await observation.getByLabel('Value translation', { exact: true }).fill('Rough surface')
+  await observation.getByRole('textbox', { name: 'Key', exact: true }).fill('test_surface')
+  await observation.getByRole('textbox', { name: 'Value', exact: true }).fill('rough')
+  await expect(observation.getByLabel('Key translation', { exact: true })).toHaveValue('Surface')
+  await expect(observation.getByLabel('Value translation', { exact: true })).toHaveValue('Rough surface')
+  const layout = await observation.evaluate(row => {
+    const inputs = row.querySelectorAll('input')
+    return [...inputs].map(input => ({ y: input.getBoundingClientRect().y, font: parseFloat(getComputedStyle(input).fontSize) }))
+  })
+  assert.ok(layout[1].y > layout[0].y && layout[3].y > layout[2].y, 'raw fields sit below translations')
+  assert.ok(layout[1].font < layout[0].font && layout[3].font < layout[2].font, 'raw fields use smaller type')
+  await page.screenshot({ path: '/tmp/map-observation-translations.png' })
+  await page.locator('.p-drawer').getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(observation.getByLabel('Value translation', { exact: true })).toHaveValue('Rough surface')
+  assert.equal(nodeRequests.at(-1).translationLocale, 'en')
+  assert.deepEqual(nodeRequests.at(-1).tags, { name: 'Solo test node', test_surface: 'rough' })
+  assert.deepEqual(nodeRequests.at(-1).translations, [{
+    key: 'test_surface', value: 'rough', keyTranslation: 'Surface', valueTranslation: 'Rough surface',
+    previousKeyTranslation: '', previousValueTranslation: '',
+  }])
   await closeEditor()
 
   // Clicking a feature places a child of that feature.
@@ -174,8 +208,9 @@ try {
   // A failed save keeps the placed nodes; retry re-sends without duplicating.
   failNext = true
   await add.click()
-  await page.mouse.click(400, 700)
-  await page.mouse.click(430, 700)
+  await page.mouse.click(400, 610)
+  await page.mouse.click(430, 610)
+  await expect(dialog).toContainText('2 nodes placed')
   await save.click()
   await expect(page.getByRole('alert')).toContainText('Could not save')
   const failed = nodeRequests.at(-1)
@@ -183,13 +218,13 @@ try {
   await expect(add).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'Retry', exact: true }).click()
   await expect(page.locator('.p-drawer')).toBeVisible()
-  assert.equal(nodeRequests.length, failedCount + 2, 'retry re-sends the failed node and saves the remaining one')
+  await expect.poll(() => nodeRequests.length, { message: 'retry re-sends the failed node and saves the remaining one' }).toBe(failedCount + 2)
   assert.deepEqual(nodeRequests[failedCount], failed, 'retry sends the same node')
   assert.equal(nodes.length, 6, 'retry does not duplicate the committed creation')
   assert.equal(groupRequests.length, 2, 'the relation is created once on retry')
   await closeEditor()
   await page.screenshot({ path: '/tmp/map-edit-mode.png' })
-  console.log('PASS: edit mode placement, pending dialog, relation save, single node save, abort, escape, feature parents, retry')
+  console.log('PASS: edit mode placement, pending dialog, relation save, single node save, observation translations and layout, abort, escape, feature parents, retry')
 } finally {
   await browser.close()
 }

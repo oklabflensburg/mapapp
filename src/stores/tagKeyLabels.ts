@@ -9,36 +9,46 @@ export function prettifyTagKey(key: string): string {
   return key.replaceAll('_', ' ')
 }
 
-// Tag key display labels, fetched once per locale from
-// /api/i18n/tag-keys/{locale} (the backend merges the OSM key catalogue
-// with admin-managed overrides). Not part of the vue-i18n message tree:
-// keys like "fire_hydrant:type" collide with vue-i18n's path syntax.
+// File-backed key and contextual value labels, shared with EasyAdmin.
+// Raw tag identifiers stay outside vue-i18n's message path syntax.
 export const useTagKeyLabelsStore = defineStore('tagKeyLabels', () => {
   const labels = ref<Record<string, string>>({})
+  const values = ref<Record<string, string>>({})
   let loadedFor: AppLocale | null = null
   let requestSeq = 0
 
   // Replaces the map with the backend labels for the locale; a failed
-  // request keeps the current map, and every lookup falls back to the
+  // request leaves fallback labels, and every lookup falls back to the
   // prettified key anyway. A newer call (locale switch) supersedes an
   // in-flight one, so a slow old response never overwrites fresh labels.
-  async function load(locale: AppLocale): Promise<void> {
-    if (loadedFor === locale) {
+  async function load(locale: AppLocale, force = false): Promise<void> {
+    if (!force && loadedFor === locale) {
       return
     }
     const seq = ++requestSeq
+    loadedFor = null
+    labels.value = {}
+    values.value = {}
     try {
       const response = await fetch(`/api/i18n/tag-keys/${locale}`)
       if (!response.ok || seq !== requestSeq) {
         return
       }
-      const data = (await response.json()) as { labels?: unknown }
+      const data = (await response.json()) as { labels?: unknown; values?: unknown }
+      if (seq !== requestSeq) return
       if (typeof data.labels === 'object' && data.labels !== null) {
         labels.value = Object.fromEntries(
           Object.entries(data.labels).filter(
-            (entry): entry is [string, string] => typeof entry[1] === 'string',
+            (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '',
           ),
         )
+        if (typeof data.values === 'object' && data.values !== null) {
+          values.value = Object.fromEntries(
+            Object.entries(data.values).filter(
+              (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '',
+            ),
+          )
+        }
         loadedFor = locale
       }
     } catch (error) {
@@ -47,8 +57,13 @@ export const useTagKeyLabelsStore = defineStore('tagKeyLabels', () => {
   }
 
   function label(key: string): string {
-    return labels.value[key] ?? prettifyTagKey(key)
+    return Object.hasOwn(labels.value, key) ? labels.value[key]! : prettifyTagKey(key)
   }
 
-  return { labels, load, label }
+  function valueLabel(key: string, value: string): string {
+    const id = JSON.stringify([key, value])
+    return Object.hasOwn(values.value, id) ? values.value[id]! : value
+  }
+
+  return { labels, values, load, label, valueLabel }
 })

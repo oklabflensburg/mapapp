@@ -6,10 +6,15 @@ Starting point: Vue 3 + Vite frontend with a PHP 8.5.12 / Symfony 8.1 backend (F
 
 ```
 ├── index.html, vite.config.ts, src/   # Vue frontend (root)
+├── scripts/
+│   ├── testing/                      # Browser checks and frontend translation tests
+│   ├── production/                   # Production map and translation data generators
+│   └── data/                         # Cached downloads and intermediate data (git-ignored)
 └── backend/                           # Symfony backend (Docker Compose)
     ├── compose.yaml                   # php (FrankenPHP) + database (PostGIS)
     ├── Dockerfile                     # frankenphp_dev / frankenphp_prod targets
     ├── frankenphp/                    # Caddyfile + PHP config
+    ├── tag-translations/              # Shared XLIFF tag key/value catalogs
     └── src/, config/, public/         # Symfony app
 ```
 
@@ -49,6 +54,58 @@ npm run dev
 
 Production build: `npm run build` (type-checks with `vue-tsc`, then Vite build incl. PWA assets).
 
+## Scripts
+
+Run the commands in this section from the repository root.
+`scripts/production/` prepares map data and collects tag translation entries.
+`scripts/testing/` contains browser checks and frontend translation tests; Symfony
+tests stay in `backend/tests/`. See [Tag translations](#tag-translations) for the
+complete extraction, translation and validation workflow.
+
+Update translation files from both OSM node data and the backend with one
+command in your **host terminal**, from the repository root:
+
+```bash
+npm run translations:sync
+```
+
+It prepares the Flensburg OSM source if missing, extracts node tag keys and
+values, and syncs those together with stored backend tags and configured choices
+into both language catalogs. Existing translations are preserved. The backend
+Docker PHP service must be running. The command handles container file copies,
+PHP execution and cleanup automatically.
+
+| Production command | Purpose |
+| --- | --- |
+| `npm run translations:sync` | Refresh translation entries from OSM nodes and backend tags in one run. Uses host Node.js, Python 3 and Osmium, plus the Docker PHP service. First-time OSM preparation also needs `curl`. |
+| `bash scripts/production/update-map-and-translations.sh` | Rebuild map GeoJSON, then run the same combined translation sync. |
+| `bash scripts/production/prepare-flensburg.sh` | Download and process OSM data into `public/data/flensburg.geojson`. Requires `curl` and `osmium-tool`. |
+| `bash scripts/production/extract-node-tags.sh [input.pbf]` | Extract node tag frequency TSVs into `scripts/data/`. Requires `osmium-tool` and Python 3. |
+| `node scripts/production/generate-tag-key-catalog.mjs [keys.tsv] [options]` | The translation sync entry point used by npm; explicit inputs and options allow collecting selected sources. |
+
+Use `npm run translations:sync -- --local` to run PHP on the host instead of
+Docker. Source PBFs, generated TSVs and map GeoJSON are git-ignored; the XLIFF
+catalogs are committed to Git. Sync collects entries for translators and does not
+automatically translate them.
+
+For browser checks, install dependencies with `npm install` and Chromium with
+`npx playwright install chromium`, then start the dev server.
+
+| Testing scripts (under `scripts/testing/`) | Requirements |
+| --- | --- |
+| `check-deep-link.mjs`, `check-node-creation.mjs`, `check-node-relation.mjs`, `check-node-selection.mjs`, `check-routing.mjs` | Dev server at `http://localhost:5173` (override with `APP_URL`); use intercepted fixtures. |
+| `check-osm-render.mjs`, `check-square-selection.mjs` | Dev server on port 5199 and generated `public/data/flensburg.geojson`. |
+| `check-node-editing.mjs` | Dev server on port 5199, backend on port 8080, and generated GeoJSON. Writes test tags to the configured backend; use a development instance. Supports `APP_URL` and `API_URL`. |
+
+Example: `node scripts/testing/check-node-creation.mjs`.
+
+Frontend translation tests need Node.js and `npm install`, without a running
+browser, backend or dev server:
+
+```bash
+node --test scripts/testing/tag-translations.test.mjs
+```
+
 ## Adding nodes
 
 Press the map's **Add node** (+) button to enter edit mode, then click the map
@@ -87,8 +144,8 @@ and areas; unavailable OSM data is distinguished from a parent with no tags.
 Run the deterministic creation browser check with the dev server running:
 
 ```bash
-node scripts/check-node-creation.mjs
-node scripts/check-node-selection.mjs
+node scripts/testing/check-node-creation.mjs
+node scripts/testing/check-node-selection.mjs
 ```
 
 It uses intercepted API/OSM fixtures and does not change the development database.
@@ -145,18 +202,18 @@ request `tags` replace the current user's own tags, as with nodes.
 Run the deterministic relation browser check with the dev server running:
 
 ```bash
-node scripts/check-node-relation.mjs
+node scripts/testing/check-node-relation.mjs
 ```
 
 ## OSM map data (Flensburg)
 
 The map renders a read-only OSM feature layer (buildings, parks, streets, POIs
 with their tags) from `public/data/flensburg.geojson`. The file is generated by
-`scripts/prepare-flensburg.sh` and git-ignored; rebuild it with:
+`scripts/production/prepare-flensburg.sh` and git-ignored; rebuild it with:
 
 ```bash
 brew install osmium-tool   # once
-scripts/prepare-flensburg.sh
+scripts/production/prepare-flensburg.sh
 ```
 
 The script downloads the Geofabrik Schleswig-Holstein extract, selects a
@@ -169,60 +226,391 @@ A quick render check (needs the dev server on port 5199):
 
 ```bash
 npm run dev -- --port 5199 &
-node scripts/check-osm-render.mjs
+node scripts/testing/check-osm-render.mjs
 ```
 
-## Tag key translations
+## Tag translations
 
-Raw tag keys — OSM keys like `fire_hydrant:type` as well as keys users type
-into tag editors — are shown as readable labels in the node/relation panels
-and in the admin UI. Every lookup walks the same chain, and a key without any
-entry still renders readably, so nothing blocks on translation coverage:
+Tag labels have one source of truth: the XLIFF 2.0 files in
+`backend/tag-translations/`, one per language:
 
-1. an **admin-managed label** from the `tag_key_labels` table (per key and
-   locale, edited in the admin UI under "Tag key labels"); it overrides the
-   catalogue and is how user-created keys get proper names without a deploy;
-2. the **`tag_keys` translation catalogue**
-   (`backend/translations/tag_keys.{en,de}.xlf`), generated from the OSM key
-   import `scripts/data/flensburg-node-tag-keys.tsv`;
-3. the **prettified key** as fallback (`tactile_paving` → `tactile paving`).
+| File | Language |
+| --- | --- |
+| `tags.en.xlf` | English |
+| `tags.de.xlf` | German |
 
-Regenerate the catalogues with:
+OSM tags and tags created by users use the same catalogs. They supply labels for
+node and relation tag tables, suggested observation keys and values, profile tag
+priorities, and the admin tag list. General interface text, such as buttons and
+validation messages, remains in `src/i18n/locales/`.
+
+Translations affect display labels. Raw keys and values stay unchanged in the
+database and tag APIs, and dropdown choices submit their raw values. Unknown or
+untranslated keys replace underscores with spaces (`tactile_paving` becomes
+`tactile paving`). Untranslated values remain verbatim, including names, URLs,
+numbers and free text. There is no database override for translated labels.
+
+### How catalog entries work
+
+Each `<unit>` represents either a key or a value in the context of its key:
+
+| Unit `name` | Meaning |
+| --- | --- |
+| `key:wheelchair` | Label for the key `wheelchair` |
+| `value:["wheelchair","yes"]` | Label for the value `yes` under `wheelchair` |
+| `value:["name","yes"]` | Separate label for the value `yes` under `name` |
+
+Generation also writes reciprocal references using the namespace
+`xmlns:tag="urn:accessapp:tag-references:1"` on the XLIFF root:
+
+| Attribute | Meaning |
+| --- | --- |
+| `tag:valueRefs` on a key unit | Space-separated IDs of its contextual value units. |
+| `tag:keyRef` on a value unit | ID of its key unit. |
+| `tag:category` on key and value units | `osm` for OSM inputs; `custom` for database inputs. |
+| `tag:ignore` on key and value units | `true` or `false`; an admin review flag, defaulting to `false`. |
+
+For example, a key unit with `id="key_house"` can have
+`tag:valueRefs="value_house_marktwache"`, and that value unit has
+`tag:keyRef="key_house"`. These refer to actual unit IDs in the same file.
+Given a key, follow its `tag:valueRefs`; given a raw value, find its contextual
+value units and follow their `tag:keyRef`. A value such as `yes` can belong to
+several keys, so reverse lookup can return several keys. These links include
+untranslated entries too.
+
+OSM key/pair TSV inputs are categorized as `osm`. Tags stored in the database,
+admin-configured observation choices and route preference keys are categorized
+as `custom` unless that same unit is also known from OSM. OSM takes precedence
+for overlapping entries, and a database-only sync preserves an existing `osm`
+category. Categories apply per key or contextual value: a custom value can belong
+to an OSM key. Entries absent from the inputs retain their existing category.
+
+`npm run translations:sync` rebuilds the references from all retained catalog
+pairs, including entries absent from the current inputs. Existing unit IDs,
+translations, translator notes and review states are preserved. Redundant
+generated `Tag value: …` notes are removed; their context is already stored in
+the unit name and key/value references. New values are linked in
+both directions, and repeated generation does not duplicate references. Target
+edits in the admin preserve these attributes; newly approved pairs receive their
+references on the next generation run. Preserve `tag:keyRef`, `tag:valueRefs`
+and `tag:category`, plus `tag:ignore`, when editing catalogs in translation software.
+
+Context prevents a translation for one tag from changing the same value under
+another tag. The contextual unit name and references identify its key without a
+repeated value note. For example, a German value entry looks like this:
+
+```xml
+<unit id="value_wheelchair_yes" name="value:[&quot;wheelchair&quot;,&quot;yes&quot;]"
+      tag:category="osm" tag:ignore="false" tag:keyRef="key_wheelchair">
+  <segment state="translated">
+    <source>Yes</source>
+    <target>Ja</target>
+  </segment>
+</unit>
+```
+
+Open the `.xlf` files in translation software that supports XLIFF 2.0, or edit
+`<target>` text directly. Preserve unit `id` and `name` attributes, source text,
+and context notes. When editing XML by hand, escape characters such as `&` as
+`&amp;` and `<` as `&lt;`.
+
+New entries have empty targets and `state="initial"`. Complete targets in each
+language file, including English where a raw identifier needs a friendlier label.
+The sync script discovers entries; it does **not** perform machine translation.
+Setting a review state alone does not activate or hide a translation: the app uses
+nonempty targets and falls back for empty ones.
+
+### Edit translations in the admin
+
+Open **Translations → Tag translations** in the backend admin (or visit
+`http://localhost:8080/admin/translations`). Only admins can access this page.
+
+The editor groups each key and its contextual values in a bordered block, with
+a shaded key row and indented value rows. Spacing separates different keys. Each row
+has four columns: the raw **Key / value**, **Translation German**,
+**Translation English**, and the **Ignore** checkbox. Search matches tag keys, values, source text, notes and
+translations in either language. **Untranslated only** includes tags missing a
+translation in either language. Results show 25 matching tags per page, with a
+shared key row shown once above its values. Context notes are under **Notes**.
+
+Use **Category** to select all entries, OSM, or Custom. **Ignore** selects all,
+ignored, or not ignored entries. **Not ignored** is the default. Both filters combine with search and
+**Untranslated only**, and stay selected across pagination and saves. A parent
+key can remain visible as **context** for a matching value even if that key does
+not match the metadata filters itself. Entries without a category appear as
+**Uncategorized** and are included under all categories.
+
+Each key/value row has an **Ignore** checkbox. **Save all changes** writes its
+`tag:ignore` flag to both German and English catalogs alongside translation
+edits. Ignoring a key also hides all of its values from **Not ignored**, without
+changing their own saved flags. **All entries** and **Ignored** show these values
+with an **Ignored via key** marker, so the group can be reviewed and restored.
+Unchecking the key restores values whose own flags are not ignored. Missing flags
+mean `false`.
+Generation adds `tag:ignore="false"` where missing and preserves existing flags,
+including `true`. Ignore marks translation work for filtering; it does not
+remove published labels from the app. Stale ignore edits reject the entire
+batch and preserve the checkbox and text drafts.
+
+Edit any fields on the displayed page and click **Save all changes** once to
+save both languages together. Save before changing filters or moving to another
+page. Clearing a field returns that label to its normal fallback. Untouched
+fields are not rewritten, and entries present in only one catalog can be
+translated into the other language from the same form.
+
+Saving updates `tags.de.xlf` and `tags.en.xlf` directly and sets changed entries
+to `translated` (or `initial` for empty targets). Source text, unit identities,
+notes and generated key/value references are preserved. Both files are locked
+and all edits are validated and staged before either file is replaced. A stale
+edit rejects the entire save, preserving both catalogs and showing all submitted
+drafts in the form. There is no separate translation database. The app uses the
+changed labels after reloading the frontend page. Admin saves and generation
+share the same file locks.
+
+In development, changes are written to `backend/tag-translations/` in your
+checkout. Review and commit them as usual. The production Docker image makes
+this directory writable by PHP, and Compose stores it in the persistent
+`tag_translation_data` volume so edits survive container recreation. This volume
+is initially seeded from the image's catalogs; later image deployments do not
+overwrite its edited files. The production override explicitly mounts that
+volume at `/app/tag-translations`, including when the development override is
+also present. Its explicit Docker volume name defaults to
+`api_tag_translation_data`, preserving the existing volume and remaining stable
+when the deployment project name changes. Set `TAG_TRANSLATION_VOLUME_NAME` for
+a separate installation and keep that value stable across its deployments.
+
+Use the production Compose files explicitly when deploying, from `backend/`:
 
 ```bash
-node scripts/generate-tag-key-catalog.mjs
+docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait
 ```
 
-The script writes one `<unit>` per key (906 at the moment), prefills the
-common keys from a German dictionary kept in the script, and uses the
-prettified key for the rest. It merges: targets already in the `.xlf` files
-are kept, so hand-edited translations survive a regeneration. Add real
-translations by editing the `.xlf` files (or the dictionary) — only the
-common keys need them, the tail stays on the prettified fallback.
+This recreates the application container while reusing the existing catalog
+volume. The development bind mount stays in `compose.override.yaml` for editing
+catalogs in the checkout. No startup script copies image files over an existing
+catalog volume. If adopting the volume on an existing installation that stored
+catalogs elsewhere, copy its current XLIFF files into the volume before directing
+traffic to the new container.
 
-The backend resolves labels in `App\Service\TagKeyLabeler` (used by the Tag
-admin list) and serves the frontend a merged map (catalogue plus database
-overrides) via the public endpoint:
+Back up or export the volume's catalogs separately
+from the database, and copy reviewed catalog updates into the volume explicitly
+when deploying changes made elsewhere. For example, from `backend/`:
 
+```bash
+# Export a production catalog for review or backup.
+docker compose -f compose.yaml -f compose.prod.yaml cp \
+  php:/app/tag-translations/tags.de.xlf /path/to/backup/tags.de.xlf
 ```
-GET /api/i18n/tag-keys/{locale}   # en | de → { "locale": ..., "labels": { "<key>": "<label>" } }
+
+Custom deployments need a persistent, writable catalog directory. If multiple
+PHP instances share it, configure `LOCK_DSN` to use a shared Symfony Lock store;
+the default `flock` store coordinates processes in one container.
+
+### Review observation translations
+
+Under **Map data → Pending observations**, open a node's edit/review page.
+Each pending tag shows three rows: raw **Key**, **Value** and **Observations**;
+German **Key (DE)** and **Value (DE)**; then English **Key (EN)** and
+**Value (EN)**. Key, value and translation fields are editable, prefilled with
+the proposed tag properties (or existing published labels). **Save changes** saves the admin's changes on the tag
+without approving it or changing a catalog. **Approve** saves the reviewed
+key, value and translations, and writes their targets to `tags.<locale>.xlf`, then approves the
+observation. The relation review screen offers the same controls. Clearing a
+translation removes its published label when approved. Other language catalogs
+stay unchanged unless their translations are edited.
+
+Key/value edits update the shared tag wherever it is referenced. A key/value
+pair that already belongs to another tag is rejected. Approval writes translations
+under the edited identifiers; existing catalog entries for old identifiers are
+preserved. Saving key/value changes alone does not publish translations.
+
+Proposals are stored in the shared tag's `translations` JSON property, indexed
+by language, with `keyTranslation` and `valueTranslation` fields. They are not
+used as public labels before approval. Stale review forms and changed catalog
+targets are rejected; the submitted draft remains visible. Already-published
+labels can still be edited under **Translations → Tag translations**. Existing
+catalog translations remain published after this update; the migration starts
+existing tags with empty proposals and does not infer their authorship.
+
+Apply the new migration before using these fields:
+
+```bash
+cd backend
+docker compose exec php php bin/console doctrine:migrations:migrate --no-interaction
 ```
 
-The response carries an ETag derived from the label table, so unchanged maps
-revalidate as `304`.
+### Update translations with one command
 
-The frontend keeps this map in the `tagKeyLabels` Pinia store
-(`src/stores/tagKeyLabels.ts`), fetched once per locale in `main.ts` and
-reloaded when the user switches the app language. It deliberately lives
-**outside** vue-i18n: keys like `fire_hydrant:type` collide with vue-i18n's
-message-path syntax. The store applies the same fallback chain client-side,
-and the tag tables in `NodeTagPanel`, `RelationTagPanel` and `ParentNodeTags`
-render `tagKeyLabels.label(key)` (editors still type raw keys). Keep
-`TagKeyLabeler::prettify()` and `prettifyTagKey()` in sync when changing the
-fallback.
+Run this in your **host terminal**, from the repository root:
 
-Supported locales are `en` and `de`, defined by `TagKeyLabeler::SUPPORTED_LOCALES`
-and the frontend's `AppLocale`.
+```bash
+npm run translations:sync
+```
+
+The command performs the complete translation sync:
+
+1. If `scripts/data/flensburg.osm.pbf` is missing, prepare the Flensburg OSM
+   source using `prepare-flensburg.sh`. This first-time step also builds map GeoJSON.
+2. Extract current node tag keys and key/value pairs from that PBF, replacing
+   the intermediate frequency TSVs in `scripts/data/`.
+3. Collect all stored backend tag key/value pairs, default observation keys and
+   their configured values, and route preference keys.
+4. Merge OSM and backend entries into `backend/tag-translations/tags.en.xlf`
+   and `tags.de.xlf` in the same sync operation.
+
+Existing targets, custom entries, notes and review states are preserved. Missing
+entries are appended with empty targets. Entries remain in the catalogs even if
+a tag disappears from a source. Output such as `de: 12 new translation units`
+counts new entries, not completed translations. Repeated syncs with unchanged
+source tags report zero new units.
+
+Saving a user tag without translation edits does not edit a catalog automatically. Rerun this command when
+you want to collect new tags for translation. It reads backend data without
+changing database tags.
+
+### Setup and Docker
+
+The host needs Node.js, Python 3 and `osmium-tool` (`brew install osmium-tool` on
+macOS). First-time OSM preparation also uses `curl`. Start the backend once:
+
+```bash
+# From the repository root, in your host terminal:
+cd backend
+docker compose up -d --wait
+cd ..
+npm run translations:sync
+```
+
+The command runs extraction on the host and PHP catalog sync inside the Docker
+`php` service automatically. There is no need to enter a container shell or copy
+TSV files yourself. In development, the container's `/app/tag-translations/`
+is bind-mounted from `backend/tag-translations/`, so file changes appear in your
+checkout immediately. The backend image mounts only `backend/` and does not
+include the full workflow's Node.js, Python and Osmium tools; run the npm command
+on the host.
+
+For a configured host PHP runtime with the backend's required version, extensions
+and Composer dependencies, use:
+
+```bash
+npm run translations:sync -- --local
+```
+
+This still collects both OSM node tags and backend tags. `--local` selects where
+PHP runs; it does not change which sources are included.
+
+### Refresh the map and OSM source
+
+Normal translation sync reads the existing Flensburg PBF and always re-extracts
+its node tags. It downloads and prepares OSM data only when that PBF is missing.
+To rebuild the map GeoJSON as well, run:
+
+```bash
+bash scripts/production/update-map-and-translations.sh
+```
+
+This prepares the map, then calls the same combined OSM/backend translation
+sync. It reuses the cached Schleswig-Holstein download when present. To fetch a
+newer extract, remove `scripts/data/schleswig-holstein-latest.osm.pbf` before
+running this map update command. The workflow updates map data files and
+translation catalogs; it does not import map features as database nodes.
+
+The extractor collects tags on **nodes**, not ways or relations. Its generated
+inputs are `scripts/data/flensburg-node-tag-keys.tsv` (count, key) and
+`flensburg-node-tag-pairs.tsv` (count, key, value). They use tab-separated fields
+with CSV quoting for quotes, tabs and line breaks. They are intermediate data;
+edit translations in XLIFF, not these TSVs.
+
+### Advanced: sync selected sources
+
+The npm command and the direct Node.js entry point have the same behavior.
+Without arguments, or with only `--local`, they refresh OSM inputs and include
+backend tags automatically. Explicit input arguments or collection options select
+only the sources you request:
+
+| Argument or option | Effect |
+| --- | --- |
+| First positional argument | Collect keys from the supplied frequency TSV. |
+| `--pairs path/to/pairs.tsv` | Collect contextual values and their keys from a pairs TSV. |
+| `--database` | Collect stored backend tags and configured choices. |
+| `--local` | Run PHP on the host instead of Docker; can be combined with source options. |
+| `--import-legacy-labels` | Copy old database labels into the files, replacing conflicting targets; see migration below. |
+
+To collect only backend tags, without extracting OSM data:
+
+```bash
+npm run translations:sync -- --database
+```
+
+To use another PBF instead of Flensburg and include backend tags:
+
+```bash
+bash scripts/production/extract-node-tags.sh /path/to/town.osm.pbf
+npm run translations:sync -- scripts/data/town-node-tag-keys.tsv \
+  --pairs scripts/data/town-node-tag-pairs.tsv --database
+```
+
+Explicitly supplied missing or invalid TSV inputs fail before catalog edits. The
+Node.js entry point delegates catalog editing to `app:tags:sync-translations`.
+For example, the backend-only equivalent inside a container shell at `/app` is:
+
+```bash
+php bin/console app:tags:sync-translations --database
+```
+
+### Translate, validate and publish catalog changes
+
+After syncing, complete the new targets in translation software and save the
+returned XLIFF files to their original paths. Validate the catalogs:
+
+```bash
+cd backend
+docker compose exec php php bin/console lint:xliff tag-translations
+cd ..
+```
+
+Review and commit the changes in `backend/tag-translations/`, then deploy those
+files with the backend. Generated PBF, TSV and GeoJSON files are git-ignored and
+are not the source of truth for translated labels. To check the result in the
+app, choose the language on the profile page and reload the page after changing
+a catalog, because the frontend caches the loaded language for the session.
+
+The backend reads the files directly, so catalog target edits do not require a
+frontend build or a Symfony translation-cache clear. The public
+`GET /api/i18n/tag-keys/{locale}` endpoint (`en` or `de`) returns `locale`, `labels`
+(raw key to label), and `values` (JSON-encoded key/value pair to label). Its ETag
+hashes the complete response and changes when the returned translations change.
+
+`App\Service\TagKeyLabeler` supplies both the admin UI and that endpoint. The
+Vue `tagKeyLabels` store loads the maps at startup and on language changes,
+keeping raw tag identifiers outside vue-i18n's message-path syntax. Catalogs live
+outside Symfony's general translation directory; runtime lookups stream the XML
+and keep only nonempty targets, and worker processes reset their maps between
+requests.
+
+### Migrate old database labels
+
+For an existing installation, copy any old admin-managed labels into XLIFF once,
+before deploying the new label resolution:
+
+```bash
+node scripts/production/generate-tag-key-catalog.mjs --import-legacy-labels
+```
+
+Unlike normal sync, this explicit import **replaces conflicting file targets**
+with the old database labels. Review and commit the result. The old
+`tag_key_labels` table remains for data recovery, but runtime lookups do not read
+it and the admin no longer offers a label editor. Future translation changes go
+into XLIFF.
+
+### Add a language
+
+Create `backend/tag-translations/tags.<locale>.xlf` using the same unit identities,
+with the matching XLIFF target language. Update
+`TagKeyLabeler::SUPPORTED_LOCALES`, the frontend's `AppLocale`, and the profile
+language choices; add the general UI messages for that language separately.
+When changing fallback formatting, keep backend `TagKeyLabeler::prettify()` and
+frontend `prettifyTagKey()` identical.
 
 ## Default observation tags
 
@@ -235,13 +623,25 @@ label, the raw key is stored. The keys and values are served by
 `defaultObservationTags` Pinia store. The node and relation editors offer
 them in a searchable dropdown above the observation rows (options show the
 readable label through `tagKeyLabels`; the search matches label and raw
-key). Picking one adds a prefilled observation row whose key shows as a
-read-only translated label (raw key in the tooltip); when the key carries
+key). Picking one adds a prefilled observation row whose raw key is fixed
+(the relation editor shows its translated label with the raw key in a tooltip); when the key carries
 default values, its value cell is a dropdown of those choices (clearable,
 and editable so users can propose an own value) instead of the free-form
 input. Keys already present on the node or relation are not offered. The
 "Add observation" button for free-form keys stays, and its rows keep the
 editable key and value inputs.
+
+In the node editor, observation rows show **Key translation** and **Value
+translation**, with the smaller raw key and value fields underneath. Translation
+fields prefill from saved proposals or the current language catalog. Saving a
+node stores translation edits as tag properties in the selected language, pending
+admin review; the catalog changes only on approval. Raw tag identifiers stay
+unchanged. Clearing a translation proposes returning to the normal label fallback. A language switch uses separate drafts, and
+stale translations are rejected without discarding the form. The node response includes `observationTranslations`, keyed by raw tag key and
+language, so saved proposals survive reopening the editor. The node save API
+accepts optional `translationLocale` (`en` or `de`) and `translations` entries
+with `key`, `value`, `keyTranslation`, `valueTranslation`, and the corresponding
+`previousKeyTranslation` / `previousValueTranslation` for conflict checking.
 
 ## Routing stack
 

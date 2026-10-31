@@ -155,7 +155,7 @@ async function save(): Promise<void> {
         <table class="tag-table">
           <tr v-for="row in rows" :key="row.key">
             <th>{{ tagKeyLabels.label(row.key) }}</th>
-            <td>{{ row.value }}</td>
+            <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
           </tr>
         </table>
       </div>
@@ -200,7 +200,9 @@ async function save(): Promise<void> {
           <Select
             v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
             :model-value="row.value === '' ? null : row.value"
-            :options="defaultValuesFor(row.key)"
+            :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
+            option-label="label"
+            option-value="value"
             :placeholder="t('nodeEditor.value')"
             :editable="true"
             show-clear
@@ -229,7 +231,7 @@ async function save(): Promise<void> {
           <table class="tag-table">
             <tr v-for="row in observationRows" :key="row.key">
               <th>{{ tagKeyLabels.label(row.key) }}</th>
-              <td>{{ row.value }}</td>
+              <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
             </tr>
           </table>
         </div>

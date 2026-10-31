@@ -22,6 +22,7 @@ export interface UserNode {
   tags: Record<string, string>
   // Tag key/value pairs not yet approved by an admin.
   observations: Record<string, string>
+  observationTranslations?: Record<string, Partial<Record<'en' | 'de', { keyTranslation?: string; valueTranslation?: string }>>>
   createdAt: string
   updatedAt: string
 }
@@ -37,6 +38,15 @@ export interface NodeEditTarget {
 }
 
 export interface SaveUserNodeInput {
+  translationLocale?: 'en' | 'de'
+  translations?: {
+    key: string
+    value: string
+    keyTranslation?: string
+    valueTranslation?: string
+    previousKeyTranslation?: string
+    previousValueTranslation?: string
+  }[]
   provider: 'OSM' | 'local'
   parent?: { id: number } | { providerNodeId: string; latitude: number; longitude: number }
   providerNodeId: string
@@ -51,6 +61,7 @@ export const useUserNodesStore = defineStore('userNodes', () => {
   const saving = ref(false)
   const loadFailed = ref(false)
   const saveFailed = ref(false)
+  const saveConflict = ref(false)
 
   const byIdentity = computed(() => {
     const map = new Map<string, UserNode>()
@@ -77,6 +88,7 @@ export const useUserNodesStore = defineStore('userNodes', () => {
   async function save(input: SaveUserNodeInput): Promise<UserNode | null> {
     saving.value = true
     saveFailed.value = false
+    saveConflict.value = false
     try {
       const response = await fetch('/api/nodes', {
         method: 'POST',
@@ -84,6 +96,7 @@ export const useUserNodesStore = defineStore('userNodes', () => {
         body: JSON.stringify(input),
       })
       if (!response.ok) {
+        saveConflict.value = response.status === 409
         throw new Error(`HTTP ${response.status}`)
       }
       const saved = (await response.json()) as UserNode
@@ -118,7 +131,7 @@ export const useUserNodesStore = defineStore('userNodes', () => {
     }
   }
 
-  return { nodes, byIdentity, saving, loadFailed, saveFailed, load, save }
+  return { nodes, byIdentity, saving, loadFailed, saveFailed, saveConflict, load, save }
 })
 
 export function nodeKey(node: Pick<NodeEditTarget, 'provider' | 'providerNodeId'>): string {

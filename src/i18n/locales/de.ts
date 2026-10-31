@@ -59,12 +59,15 @@ export default {
     addObservation: 'Beobachtung hinzufügen',
     key: 'Schlüssel',
     value: 'Wert',
+    keyTranslation: 'Schlüsselübersetzung',
+    valueTranslation: 'Wertübersetzung',
     addTag: 'Tag hinzufügen',
     removeTag: 'Tag entfernen',
     empty: 'Noch keine Tags. Füge den ersten hinzu.',
     save: 'Speichern',
     cancel: 'Abbrechen',
     saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.',
+    translationConflict: 'Eine Übersetzung wurde inzwischen geändert. Kopiere deinen Entwurf und lade die Seite neu, um die aktuelle Übersetzung zu sehen.',
     loginRequired: 'Melde dich als Editor an, um Knoten hinzuzufügen oder zu bearbeiten.',
   },
   relationEditor: {
@@ -93,10 +96,6 @@ export default {
     tagPriorities: {
       title: 'Tag-Prioritäten',
       hint: 'Lege fest, wie stark du bestimmte Tags bevorzugst oder meidest. Wird beim Routenplanen angewendet und auf diesem Gerät gespeichert.',
-      tags: {
-        stairs: 'Treppen',
-        toilets: 'Toiletten',
-      },
       levels: {
         neutral: 'Keine Präferenz',
         avoid: 'Meiden',

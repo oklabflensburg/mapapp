@@ -26,6 +26,8 @@ final readonly class UserNodeResponse
         public array $parents,
         /** @var list<RelatedNodeResponse> */
         public array $children,
+        /** @var array<string, array<string, array<string, string>>> */
+        public array $observationTranslations = [],
     ) {
     }
 }

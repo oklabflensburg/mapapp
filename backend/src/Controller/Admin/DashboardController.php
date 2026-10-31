@@ -37,12 +37,14 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::section('User settings', 'fa fa-user-gear');
         yield MenuItem::linkTo(RoutePreferenceTagCrudController::class, 'Route preference tags', 'fa fa-sliders');
 
+        yield MenuItem::section('Translations', 'fa fa-language');
+        yield MenuItem::linkToRoute('Tag translations', 'fa fa-language', 'app_admin_tag_translations');
+
         yield MenuItem::section('Map data', 'fa fa-map');
         yield MenuItem::linkTo(NodeCrudController::class, 'Nodes', 'fa fa-location-dot');
         // Nodes and areas with unapproved tags share one review queue.
         yield MenuItem::linkToRoute('Pending observations', 'fa fa-clock', 'app_admin_pending_observations');
         yield MenuItem::linkTo(TagCrudController::class, 'Tags', 'fa fa-tags');
-        yield MenuItem::linkTo(TagKeyLabelCrudController::class, 'Tag key labels', 'fa fa-language');
         yield MenuItem::linkTo(DefaultObservationTagCrudController::class, 'Default observation tags', 'fa fa-list-check');
         yield MenuItem::linkTo(NodeTagCrudController::class, 'Node tags', 'fa fa-user-tag');
         yield MenuItem::linkTo(NodeTypeCrudController::class, 'Node types', 'fa fa-shapes');

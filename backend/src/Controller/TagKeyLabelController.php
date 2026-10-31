@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Repository\TagKeyLabelRepository;
 use App\Service\TagKeyLabeler;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -10,17 +9,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Serves the tag key label map the Vue app displays instead of raw keys
- * (OSM keys like "fire_hydrant:type" and user-created ones alike). Public so
- * anonymous visitors get labels too; an ETag derived from the admin-managed
- * label table keeps re-fetches cheap.
- */
+/** Serves the shared file-backed tag translations to all visitors. */
 final class TagKeyLabelController extends AbstractController
 {
     public function __construct(
         private readonly TagKeyLabeler $labeler,
-        private readonly TagKeyLabelRepository $labels,
     ) {
     }
 
@@ -33,10 +26,10 @@ final class TagKeyLabelController extends AbstractController
 
         $response = $this->json([
             'locale' => $locale,
-            'labels' => $this->labeler->labelsForLocale($locale),
+            ...$this->labeler->translationsForLocale($locale),
         ]);
         $response->setPublic();
-        $response->setEtag('"'.hash('xxh128', $locale.':'.$this->labels->cacheSignature()).'"');
+        $response->setEtag(hash('sha256', (string) $response->getContent()));
 
         // Answers 304 without a body when the client still has the current
         // version; otherwise falls through to the full map.

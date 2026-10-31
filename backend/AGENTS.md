@@ -78,35 +78,50 @@ Three specifics worth spelling out, because they are easy to get wrong:
   (git-ignored) or the secrets vault (`bin/console secrets:set`), read via
   `%env(...)%`.
 
-## Tag key translations
+## Tag translations
 
-Tag keys (OSM keys like `fire_hydrant:type` and user-created ones) display as
-readable labels in the Vue app and EasyAdmin. The full design lives in the
-root `README.md` ("Tag key translations"); what matters when changing code:
-
-- Lookup chain, in order: `tag_key_labels` table (admin-managed, per key and
-  locale) → `translations/tag_keys.{en,de}.xlf` catalogue (domain `tag_keys`,
-  message ids are the raw keys) → prettified key (underscores → spaces).
-  Never leave a lookup that can return a raw underscored key.
-- Resolve through `App\Service\TagKeyLabeler` — do not call the translator
-  or repository for tag keys directly. The frontend gets the merged map from
-  `GET /api/i18n/tag-keys/{locale}` (`TagKeyLabeler::SUPPORTED_LOCALES` are
-  the only allowed values; unknown ones 404).
-- The catalogues are generated, not hand-written: `node
-  scripts/generate-tag-key-catalog.mjs` regenerates them from
-  `scripts/data/flensburg-node-tag-keys.tsv`. It merges, so existing targets
-  in the `.xlf` survive; common German labels live in a dictionary inside the
-  script. After adding or editing translations, re-run it and check the diff.
-- The `.xlf` files are XLIFF 2.0: the key comes from the `unit` element's
-  `name` attribute, and there is no `<body>` element (units sit directly
-  under `<file>`) — invalid files fail loudly when the translator loads them.
-- Do not put tag keys into the `messages` domain or the frontend's vue-i18n
-  locales: keys like `fire_hydrant:type` collide with vue-i18n's message-path
-  syntax. The Vue app resolves them through the `tagKeyLabels` Pinia store
-  (`src/stores/tagKeyLabels.ts`), which applies the same fallback chain.
-- `TagKeyLabeler::prettify()` (backend) and `prettifyTagKey()` (frontend) must
-  stay identical; adding a locale means updating `SUPPORTED_LOCALES`,
-  `AppLocale` in `src/stores/settings.ts`, and the generator's `LOCALES`.
+- `tag-translations/tags.{en,de}.xlf` are the source of published OSM and user
+  tag key/value labels. The format is XLIFF 2.0. Proposed translations are stored
+  on `Tag.translations`, indexed by language, and published only on admin approval.
+  Pending review forms can save proposals without changing catalog targets.
+  Never use pending proposals as runtime label overrides.
+- The EasyAdmin Translations page edits German and English targets together,
+  with one save for all fields on the displayed page. Keep CSRF protection,
+  per-entry conflict checks, and shared Symfony file locking for both admin saves
+  and sync. Validate and stage both catalogs before publishing a batch. Never
+  permit admin forms to change unit identities.
+- Resolve through `App\Service\TagKeyLabeler` (`label` and `valueLabel`).
+  Unknown keys replace underscores with spaces; unknown values stay verbatim.
+  Raw identifiers must stay unchanged in storage, APIs and edit inputs.
+- Unit names are `key:<raw key>` or `value:<JSON array of raw key and value>`.
+  Use `TagTranslationCatalog::valueId()` to build value identifiers.
+- Generation writes `tag:keyRef` on contextual value units and `tag:valueRefs`
+  (space-separated unit IDs) on key units, using `urn:accessapp:tag-references:1`.
+  Sync rebuilds both directions from all retained pairs; target edits preserve
+  the references. IDs, names and translation text must not be changed by linking.
+- Generation adds `tag:category="osm"` for OSM TSV sources or `"custom"` for
+  database sources, with OSM taking precedence for a unit found in both. Keep
+  established OSM categories on database-only syncs. Remove generated `Tag value:`
+  notes during generation, preserving other translator notes and targets.
+- `tag:ignore` is a per-unit admin review flag (`true`/`false`), shared across
+  the German and English editor rows. Generation defaults missing flags to false
+  and preserves existing flags. It does not disable runtime label lookup. Keep
+  metadata conflict checks in the bilingual batch save and preserve filter
+  choices across pagination. Default to `not_ignored`; an ignored key makes its
+  values effectively ignored without changing their own stored flags. Parent keys
+  may appear as context for matching values.
+- Sync with `npm run translations:sync` at repository root to extract OSM node
+  tags and collect backend tags together. Explicit `-- --database` collects
+  only backend tags and configured choices.
+  Existing targets, metadata and units must survive sync; new targets are empty.
+- The old `tag_key_labels` entity/table exists only for the explicit one-time
+  `--import-legacy-labels` import. Never use it for runtime lookup or new edits.
+- `GET /api/i18n/tag-keys/{locale}` serves both maps. Its content ETag must
+  change when either map changes. Only supported locales are accepted.
+- The frontend's `tagKeyLabels` store is separate from vue-i18n. All tag labels,
+  including profile priority keys and selectable values, use this store.
+- Keep PHP `prettify()` and frontend `prettifyTagKey()` identical. A new locale
+  needs a file, `SUPPORTED_LOCALES`, `AppLocale`, and profile language options.
 
 ## Testing
 

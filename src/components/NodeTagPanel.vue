@@ -11,10 +11,12 @@ import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 import { useDefaultObservationTagsStore } from '../stores/defaultObservationTags'
+import { useSettingsStore } from '../stores/settings'
 
 interface TagRow {
   key: string
   value: string
+  translations?: Record<string, { text: string; previous: string }>
 }
 
 const props = defineProps<{
@@ -31,6 +33,7 @@ const { t } = useI18n()
 const userNodes = useUserNodesStore()
 const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
+const settings = useSettingsStore()
 const tagKeyLabels = useTagKeyLabelsStore()
 const defaultObservationTags = useDefaultObservationTagsStore()
 
@@ -65,7 +68,17 @@ function splitRows(node: NonNullable<typeof savedNode.value>): void {
   observationRows.value = []
   for (const [key, value] of Object.entries(node.tags)) {
     if (key in node.observations) {
-      observationRows.value.push({ key, value: node.observations[key] })
+      const row: TagRow = { key, value: node.observations[key], translations: {} }
+      for (const [locale, proposal] of Object.entries(node.observationTranslations?.[key] ?? {})) {
+        for (const kind of ['key', 'value'] as const) {
+          const text = proposal[`${kind}Translation`]
+          if (text !== undefined) {
+            const id = JSON.stringify([locale, kind, key, ...(kind === 'value' ? [row.value] : [])])
+            row.translations![id] = { text, previous: text }
+          }
+        }
+      }
+      observationRows.value.push(row)
     } else {
       rows.value.push({ key, value })
     }
@@ -114,16 +127,49 @@ function addSuggestedObservation(key: unknown): void {
   }
 }
 
-// Rows for admin-exposed default tags show the translated label as a
-// read-only field instead of the raw key input, and their value comes from
-// the admin-configured choices. Derived from the key (not a row flag) so it
-// also holds after the rows are re-split from the saved response.
+// Suggested keys keep their raw key fixed and offer configured value choices.
+// Derive this from the key so it also holds after reloading saved rows.
 function isDefaultObservationTag(key: string): boolean {
   return defaultObservationTags.keys.includes(key.trim())
 }
 
 function defaultValuesFor(key: string): string[] {
   return defaultObservationTags.valuesFor(key.trim())
+}
+
+// Keep language drafts separate and use raw identifiers for catalog lookups.
+function translationId(row: TagRow, kind: 'key' | 'value'): string {
+  return JSON.stringify([settings.locale, kind, row.key.trim(), ...(kind === 'value' ? [row.value] : [])])
+}
+
+function catalogTranslation(row: TagRow, kind: 'key' | 'value'): string {
+  return kind === 'key'
+    ? tagKeyLabels.labels[row.key.trim()] ?? ''
+    : tagKeyLabels.values[JSON.stringify([row.key.trim(), row.value])] ?? ''
+}
+
+function translationText(row: TagRow, kind: 'key' | 'value'): string {
+  return row.translations?.[translationId(row, kind)]?.text ?? catalogTranslation(row, kind)
+}
+
+function editTranslation(row: TagRow, kind: 'key' | 'value', text: string | undefined): void {
+  const id = translationId(row, kind)
+  row.translations ??= {}
+  row.translations[id] = { text: text ?? '', previous: row.translations[id]?.previous ?? catalogTranslation(row, kind) }
+}
+
+function editRawTag(row: TagRow, kind: 'key' | 'value', text: string | null | undefined): void {
+  const keyDraft = row.translations?.[translationId(row, 'key')]
+  const valueDraft = row.translations?.[translationId(row, 'value')]
+  row[kind] = text ?? ''
+  // Keep text the user entered even when they fill the smaller raw field last.
+  // Conflict checking now compares against the newly selected identifiers.
+  if (kind === 'key' && keyDraft) {
+    row.translations![translationId(row, 'key')] = { text: keyDraft.text, previous: catalogTranslation(row, 'key') }
+  }
+  if (valueDraft) {
+    row.translations![translationId(row, 'value')] = { text: valueDraft.text, previous: catalogTranslation(row, 'value') }
+  }
 }
 
 function removeObservationRow(index: number): void {
@@ -154,6 +200,21 @@ async function save(): Promise<void> {
     latitude: props.node.latitude,
     longitude: props.node.longitude,
     tags,
+    translationLocale: settings.locale,
+    translations: observationRows.value.flatMap((row) => {
+      const key = row.key.trim()
+      if (!key) return []
+      const keyDraft = row.translations?.[translationId(row, 'key')]
+      const valueDraft = row.translations?.[translationId(row, 'value')]
+      return keyDraft || valueDraft ? [{
+        key,
+        value: row.value,
+        keyTranslation: keyDraft?.text,
+        valueTranslation: valueDraft?.text,
+        previousKeyTranslation: keyDraft?.previous,
+        previousValueTranslation: valueDraft?.previous,
+      }] : []
+    }),
   })
   if (saved) {
     splitRows(saved)
@@ -211,7 +272,7 @@ async function save(): Promise<void> {
           <table class="tag-table">
             <tr v-for="[key, value] in Object.entries(group.tags)" :key="key">
               <th>{{ tagKeyLabels.label(key) }}</th>
-              <td>{{ value }}</td>
+              <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
             </tr>
           </table>
         </div>
@@ -224,7 +285,7 @@ async function save(): Promise<void> {
         <table class="tag-table">
           <tr v-for="[key, value] in osmTagEntries" :key="key">
             <th>{{ tagKeyLabels.label(key) }}</th>
-            <td>{{ value }}</td>
+            <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
           </tr>
         </table>
       </div>
@@ -240,12 +301,12 @@ async function save(): Promise<void> {
         <table class="tag-table">
           <tr v-for="row in rows" :key="row.key">
             <th>{{ tagKeyLabels.label(row.key) }}</th>
-            <td>{{ row.value }}</td>
+            <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
           </tr>
         </table>
       </div>
       <p v-if="userNodes.saveFailed" class="save-error" role="alert">
-        {{ t('nodeEditor.saveFailed') }}
+        {{ t(userNodes.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
       </p>
     </section>
 
@@ -268,31 +329,47 @@ async function save(): Promise<void> {
           @update:model-value="addSuggestedObservation"
         />
         <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
-          <!-- Keys picked from the suggested-tag dropdown are fixed: the
-               translated label shows read-only (raw key in the tooltip),
-               the free-form rows keep the editable key input. -->
-          <InputText
-            v-if="isDefaultObservationTag(row.key)"
-            :model-value="tagKeyLabels.label(row.key)"
-            :title="row.key"
-            readonly
-            class="tag-key"
-          />
-          <InputText v-else v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
-          <!-- Keys with admin-configured values pick from a dropdown, but a
-               user may also propose an own value by typing it (editable
-               input); clearing it empties the value again. -->
-          <Select
-            v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
-            :model-value="row.value === '' ? null : row.value"
-            :options="defaultValuesFor(row.key)"
-            :placeholder="t('nodeEditor.value')"
-            :editable="true"
-            show-clear
-            class="tag-value"
-            @update:model-value="row.value = $event ?? ''"
-          />
-          <InputText v-else v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
+          <div class="observation-field">
+            <label :for="`observation-key-translation-${index}`">{{ t('nodeEditor.keyTranslation') }}</label>
+            <InputText
+              :id="`observation-key-translation-${index}`"
+              :model-value="translationText(row, 'key')"
+              :placeholder="t('nodeEditor.keyTranslation')"
+              @update:model-value="editTranslation(row, 'key', $event)"
+            />
+            <InputText
+              :model-value="row.key"
+              @update:model-value="editRawTag(row, 'key', $event)"
+              :readonly="isDefaultObservationTag(row.key)"
+              :placeholder="t('nodeEditor.key')"
+              :aria-label="t('nodeEditor.key')"
+              class="raw-tag-input"
+            />
+          </div>
+          <div class="observation-field">
+            <label :for="`observation-value-translation-${index}`">{{ t('nodeEditor.valueTranslation') }}</label>
+            <InputText
+              :id="`observation-value-translation-${index}`"
+              :model-value="translationText(row, 'value')"
+              :placeholder="t('nodeEditor.valueTranslation')"
+              @update:model-value="editTranslation(row, 'value', $event)"
+            />
+            <Select
+              v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
+              :model-value="row.value === '' ? null : row.value"
+              :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
+              option-label="label"
+              option-value="value"
+              :placeholder="t('nodeEditor.value')"
+              :aria-label="t('nodeEditor.value')"
+              :editable="true"
+              show-clear
+              size="small"
+              class="raw-tag-input"
+              @update:model-value="editRawTag(row, 'value', $event)"
+            />
+            <InputText v-else :model-value="row.value" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
+          </div>
           <Button
             :aria-label="t('nodeEditor.removeTag')"
             icon="pi pi-times"
@@ -314,7 +391,7 @@ async function save(): Promise<void> {
           <table class="tag-table">
             <tr v-for="row in observationRows" :key="row.key">
               <th>{{ tagKeyLabels.label(row.key) }}</th>
-              <td>{{ row.value }}</td>
+              <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
             </tr>
           </table>
         </div>
@@ -443,18 +520,28 @@ async function save(): Promise<void> {
   margin-bottom: 0.5rem;
 }
 
-.tag-key {
+.observation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   flex: 1;
+  min-width: 0;
 }
 
-/* The translated label of a suggested tag reads as inert, not editable. */
-.tag-key[readonly] {
+.observation-field label {
+  font-size: 0.75rem;
   color: var(--p-text-muted-color);
-  background: var(--p-content-background);
 }
 
-.tag-value {
-  flex: 1.5;
+.observation-field > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.observation-field .raw-tag-input {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.375rem;
+  color: var(--p-text-muted-color);
 }
 
 .save-error {

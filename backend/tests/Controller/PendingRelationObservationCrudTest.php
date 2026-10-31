@@ -126,7 +126,7 @@ final class PendingRelationObservationCrudTest extends WebTestCase
 
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('body', 'Unapproved tags');
-            self::assertSelectorTextContains('body', $unapprovedTag->getValue());
+            self::assertSelectorExists('input[name$="[value]"][value="'.$unapprovedTag->getValue().'"]');
             self::assertSelectorTextContains('body', $groupWithPendingTag->getName());
             self::assertSelectorExists(sprintf('a[href="/admin/node/%d/edit"]', $groupWithPendingTag->getMembers()->first()->getNode()->getId()));
             // The first key group is expanded by default, later ones are not.

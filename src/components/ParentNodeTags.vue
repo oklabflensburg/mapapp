@@ -41,7 +41,7 @@ onMounted(() => {
           <tbody>
             <tr v-for="[key, value] in group.entries" :key="key">
               <th scope="row">{{ tagKeyLabels.label(key) }}</th>
-              <td>{{ value }}</td>
+              <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
             </tr>
           </tbody>
         </table>

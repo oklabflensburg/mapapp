@@ -5,16 +5,18 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useAuthStore } from '../stores/auth'
+import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 import {
   useSettingsStore,
   type AppLocale,
   type TagPriority,
 } from '../stores/settings'
 
-const { t, te } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 const settings = useSettingsStore()
+const tagKeyLabels = useTagKeyLabelsStore()
 
 // ROLE_EDITOR -> editor, for a readable roles list on the account card.
 const roleNames = computed(() =>
@@ -31,12 +33,6 @@ const tagPriorityOptions = computed(() =>
     (value) => ({ value, label: t(`profile.tagPriorities.levels.${value}`) }),
   ),
 )
-
-// The tag list is admin-managed, so only some tags have a translated label;
-// the rest show the raw tag key.
-function tagLabel(tag: string): string {
-  return te(`profile.tagPriorities.tags.${tag}`) ? t(`profile.tagPriorities.tags.${tag}`) : tag
-}
 
 function back(): void {
   router.push({ name: 'home' })
@@ -108,7 +104,7 @@ onMounted(() => {
       <p class="hint">{{ t('profile.tagPriorities.hint') }}</p>
 
       <div v-for="tag in settings.prioritizableTags" :key="tag" class="setting">
-        <label :for="`setting-tag-priority-${tag}`">{{ tagLabel(tag) }}</label>
+        <label :for="`setting-tag-priority-${tag}`">{{ tagKeyLabels.label(tag) }}</label>
         <Select
           :id="`setting-tag-priority-${tag}`"
           :model-value="settings.tagPriorities[tag] ?? 'neutral'"

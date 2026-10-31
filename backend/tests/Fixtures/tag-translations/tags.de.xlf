@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="de">
+  <file id="tags">
+    <unit id="k_e8dca1542eb0" name="key:wheelchair">
+      <segment state="final">
+        <source>wheelchair</source>
+        <target>Rollstuhlzugänglichkeit</target>
+      </segment>
+    </unit>
+  </file>
+</xliff>

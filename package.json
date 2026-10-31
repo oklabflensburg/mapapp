@@ -10,6 +10,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
+    "translations:sync": "node scripts/production/generate-tag-key-catalog.mjs",
     "test": "playwright test",
     "test:api": "playwright test -c playwright.api.config.ts",
     "test:routing-profile": "node scripts/test-routing-profile.mjs",

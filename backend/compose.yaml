@@ -29,6 +29,8 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - photo_data:/app/var/photos
+      # Seeded from the image on first use; retained across image deployments.
+      - tag_translation_data:/app/tag-translations
     ports:
       - target: 80
         published: ${HTTP_PORT:-8080}
@@ -107,6 +109,9 @@ volumes:
   caddy_data:
   caddy_config:
   photo_data:
+  tag_translation_data:
+    # Keep the same catalogs even if the deployment project name changes.
+    name: ${TAG_TRANSLATION_VOLUME_NAME:-api_tag_translation_data}
   graphhopper_graphs:
 ###> symfony/mercure-bundle ###
 ###< symfony/mercure-bundle ###

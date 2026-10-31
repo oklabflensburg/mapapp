@@ -135,7 +135,7 @@ final class PendingObservationCrudTest extends WebTestCase
 
             self::assertResponseIsSuccessful();
             self::assertSelectorTextContains('body', 'Unapproved tags');
-            self::assertSelectorTextContains('body', $unapprovedTag->getValue());
+            self::assertSelectorExists('input[name$="[value]"][value="'.$unapprovedTag->getValue().'"]');
             $bodyText = $client->getCrawler()->filter('body')->text();
             self::assertStringNotContainsString('Latitude', $bodyText);
             // It links to the node edit view instead of embedding the form.

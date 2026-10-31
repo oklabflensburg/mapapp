@@ -28,6 +28,10 @@ class Tag
     #[ORM\Column(length: 255)]
     private string $value = '';
 
+    /** @var array<string, array{keyTranslation?: string, valueTranslation?: string}> */
+    #[ORM\Column(type: 'json')]
+    private array $translations = [];
+
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
@@ -64,6 +68,19 @@ class Tag
     public function setValue(string $value): void
     {
         $this->value = $value;
+    }
+
+    /** @return array<string, array{keyTranslation?: string, valueTranslation?: string}> */
+    public function getTranslations(): array
+    {
+        return $this->translations;
+    }
+
+    /** @param array<string, array{keyTranslation?: string, valueTranslation?: string}> $translations */
+    public function setTranslations(array $translations): void
+    {
+        $this->translations = $translations;
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getUpdatedAt(): \DateTimeImmutable

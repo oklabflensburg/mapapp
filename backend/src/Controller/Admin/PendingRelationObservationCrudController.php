@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\NodeGroup;
 use App\Entity\NodeGroupMember;
 use App\Entity\NodeGroupTag;
+use App\Service\TagTranslationReview;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
@@ -13,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
@@ -33,7 +35,25 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly TagTranslationReview $translationReview,
     ) {
+    }
+
+    public function configureResponseParameters(KeyValueStore $responseParameters): KeyValueStore
+    {
+        if ($responseParameters->get('pageName') === Crud::PAGE_EDIT) {
+            $forms = [];
+            $group = $responseParameters->get('entity')->getInstance();
+            foreach ($group->getGroupTags() as $entry) {
+                if (!$entry->isApproved()) {
+                    $id = $entry->getTag()->getId();
+                    $forms[$id] ??= $this->translationReview->form($entry->getTag(), $entry->getId(), $this->generateUrl('app_admin_node_group_tag_approve', ['id' => $entry->getId()]))->createView();
+                }
+            }
+            $responseParameters->set('observation_translation_forms', $forms);
+        }
+
+        return $responseParameters;
     }
 
     public static function getEntityFqcn(): string

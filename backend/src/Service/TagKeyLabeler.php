@@ -2,27 +2,20 @@
 
 namespace App\Service;
 
-use App\Repository\TagKeyLabelRepository;
-use Symfony\Component\Translation\LocaleSwitcher;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\Translation\LocaleSwitcher;
+use Symfony\Contracts\Service\ResetInterface;
 
-/**
- * Resolves a tag key (e.g. "fire_hydrant:type") to a display label. The
- * lookup chain is: an admin-managed label from the database, then the
- * tag_keys translation catalogue (translations/tag_keys.*.xlf, generated
- * from the OSM key import), then the prettified key itself — so an unknown
- * key is always readable. Used by EasyAdmin and by the /api/i18n/tag-keys
- * endpoint that the Vue app consumes.
- */
-final class TagKeyLabeler
+/** Resolves both OSM and user-created tags from the same XLIFF catalogs. */
+final class TagKeyLabeler implements ResetInterface
 {
-    /** The locales the frontend offers; also the endpoint's allowed values. */
     public const SUPPORTED_LOCALES = ['en', 'de'];
 
+    /** @var array<string, array{labels: array<string, string>, values: array<string, string>}> */
+    private array $catalogs = [];
+
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly TagKeyLabelRepository $labels,
+        private readonly TagTranslationCatalog $catalog,
         #[Autowire(service: 'translation.locale_switcher')]
         private readonly LocaleSwitcher $localeSwitcher,
     ) {
@@ -30,42 +23,35 @@ final class TagKeyLabeler
 
     public function label(string $key, ?string $locale = null): string
     {
-        $locale ??= $this->localeSwitcher->getLocale();
-
-        $label = $this->labels->findForLocale($locale)[$key] ?? null;
-        if ($label !== null && $label !== '') {
-            return $label;
-        }
-
-        // Keys are the message ids, so a missing catalogue entry comes back
-        // unchanged; that case falls through to the prettified key.
-        $translated = $this->translator->trans($key, domain: 'tag_keys', locale: $locale);
-        if ($translated !== $key && $translated !== '') {
-            return $translated;
-        }
-
-        return self::prettify($key);
+        return $this->translationsForLocale($locale ?? $this->localeSwitcher->getLocale())['labels'][$key] ?? self::prettify($key);
     }
 
-    /**
-     * The full resolved map for one locale (catalogue plus database
-     * overrides), served to the frontend; keys absent here fall back to the
-     * prettified key client-side.
-     *
-     * @return array<string, string>
-     */
+    public function valueLabel(string $key, string $value, ?string $locale = null): string
+    {
+        $id = substr(TagTranslationCatalog::valueId($key, $value), 6);
+
+        // Unknown values, including names, URLs and free text, stay verbatim.
+        return $this->translationsForLocale($locale ?? $this->localeSwitcher->getLocale())['values'][$id] ?? $value;
+    }
+
+    /** @return array<string, string> */
     public function labelsForLocale(string $locale): array
     {
-        $catalog = $this->translator->getCatalogue($locale)->all('tag_keys');
-
-        return array_merge($catalog, $this->labels->findForLocale($locale));
+        return $this->translationsForLocale($locale)['labels'];
     }
 
-    /**
-     * Last-resort display version of a raw key: underscores become spaces
-     * ("tactile_paving" → "tactile paving"). Keep in sync with the frontend
-     * helper in src/stores/tagKeyLabels.ts.
-     */
+    /** @return array{labels: array<string, string>, values: array<string, string>} */
+    public function translationsForLocale(string $locale): array
+    {
+        return $this->catalogs[$locale] ??= $this->catalog->labels($locale);
+    }
+
+    /** Symfony workers discard request-local maps before serving another request. */
+    public function reset(): void
+    {
+        $this->catalogs = [];
+    }
+
     public static function prettify(string $key): string
     {
         return str_replace('_', ' ', $key);

@@ -36,6 +36,7 @@ final class UserNodeManager
         private readonly NodeProviderRepository $nodeProviderRepository,
         private readonly TagRepository $tagRepository,
         private readonly UserRepository $userRepository,
+        private readonly ObservationTranslations $observationTranslations,
     ) {
     }
 
@@ -80,6 +81,7 @@ final class UserNodeManager
                     $this->entityManager->persist($relation);
                 }
             }
+            $this->observationTranslations->save($request, $node, $this->defaultUser());
             $this->entityManager->flush();
 
             return new SaveUserNodeResult($this->toResponse($node), $created);
@@ -200,6 +202,7 @@ final class UserNodeManager
     {
         $tags = [];
         $observations = [];
+        $observationTranslations = [];
         $user = $this->currentUser();
         foreach ($node->getNodeTags() as $nodeTag) {
             if (!$this->tagIsVisible($nodeTag, $user)) {
@@ -209,6 +212,7 @@ final class UserNodeManager
             $tags[$tag->getKey()] = $tag->getValue();
             if (!$nodeTag->isApproved()) {
                 $observations[$tag->getKey()] = $tag->getValue();
+                $observationTranslations[$tag->getKey()] = $tag->getTranslations();
             }
         }
 
@@ -226,6 +230,7 @@ final class UserNodeManager
             array_values($node->getChildRelations()->map(static fn (NodeRelation $relation): int => $relation->getChild()->getId())->toArray()),
             array_values($node->getParentRelations()->map(fn (NodeRelation $relation): RelatedNodeResponse => $this->relatedNodeResponse($relation->getParent()))->toArray()),
             array_values($node->getChildRelations()->map(fn (NodeRelation $relation): RelatedNodeResponse => $this->relatedNodeResponse($relation->getChild()))->toArray()),
+            $observationTranslations,
         );
     }
 

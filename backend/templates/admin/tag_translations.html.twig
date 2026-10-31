@@ -1,0 +1,142 @@
+{% extends '@EasyAdmin/layout.html.twig' %}
+
+{% block page_title %}Translations{% endblock %}
+
+{% block head_stylesheets %}
+    {{ parent() }}
+    <style>
+        .translation-filters { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin: 1.5rem 0; }
+        .translation-filters label { display: block; margin-bottom: .3rem; }
+        .translation-search { flex: 1; min-width: 12rem; }
+        .translation-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+        .translation-table th, .translation-table td { padding: .8rem; vertical-align: top; overflow-wrap: anywhere; }
+        .translation-table textarea { width: 100%; min-height: 4rem; }
+        .translation-table code { white-space: pre-wrap; }
+        .translation-group::before { content: ''; display: table-row; height: 1rem; }
+        .translation-group td { border-bottom: 1px solid var(--border-color); }
+        .translation-group td:first-child { border-left: 3px solid var(--color-primary, #5364d8); }
+        .translation-group td:last-child { border-right: 1px solid var(--border-color); }
+        .translation-group tr:first-child td { border-top: 1px solid var(--border-color); }
+        .translation-group tr:first-child td:first-child { border-top-left-radius: .5rem; }
+        .translation-group tr:first-child td:last-child { border-top-right-radius: .5rem; }
+        .translation-group tr:last-child td:first-child { border-bottom-left-radius: .5rem; }
+        .translation-group tr:last-child td:last-child { border-bottom-right-radius: .5rem; }
+        .translation-key-row td { background: var(--secondary-bg, #f5f7fc); }
+        .translation-key-row code { font-weight: 600; }
+        .translation-value-row td:first-child { padding-left: 1.8rem; position: relative; }
+        .translation-value-row td:first-child::before { content: ''; position: absolute; left: .7rem; top: 1.2rem; width: .6rem; height: .5rem; border-left: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+        .translation-notes { margin-top: .5rem; font-size: .8rem; color: var(--text-muted); white-space: pre-wrap; }
+        .translation-metadata { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .5rem; font-size: .8rem; }
+        .translation-table .translation-ignore-column { width: 5rem; text-align: center; vertical-align: middle; }
+        .translation-category { color: var(--text-muted); }
+        .translation-kind { display: block; color: var(--text-muted); font-size: .8rem; }
+        .translation-value-context { display: block; color: var(--text-muted); font-size: .8rem; }
+        .translation-pagination { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; }
+        .translation-draft { margin: 1rem 0; padding: 1rem; border: 1px solid var(--color-danger); }
+        .translation-save-bar { position: sticky; bottom: 0; padding: .75rem 0; background: var(--body-bg); }
+        .translation-table-scroll { overflow-x: auto; }
+        @media (max-width: 650px) { .translation-table { min-width: 36rem; } }
+    </style>
+{% endblock %}
+
+{% block main %}
+    <h1>Translations</h1>
+    <p>Edit German and English tag labels together. Empty translations use the original value or a readable key.</p>
+    <form method="get" action="{{ path('app_admin_tag_translations') }}" class="translation-filters">
+        <div class="translation-search">
+            <label for="translation-search">Search</label>
+            <input id="translation-search" name="q" value="{{ filter.q }}" type="search" class="form-control" placeholder="Tag key, value or translation in either language">
+        </div>
+        <div>
+            <label for="translation-category">Category</label>
+            <select id="translation-category" name="category" class="form-select">
+                {% for value, label in {'': 'All categories', osm: 'OSM', custom: 'Custom'} %}
+                    <option value="{{ value }}" {{ filter.category == value ? 'selected' : '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="translation-ignore">Ignore</label>
+            <select id="translation-ignore" name="ignore" class="form-select">
+                {% for value, label in {not_ignored: 'Not ignored', all: 'All entries', ignored: 'Ignored'} %}
+                    <option value="{{ value }}" {{ filter.ignore == value ? 'selected' : '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="translation-untranslated">
+                <input id="translation-untranslated" type="checkbox" name="untranslated" value="1" {{ filter.untranslated ? 'checked' : '' }}>
+                Untranslated only
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    <p class="translation-summary">{{ total|number_format }} matching tags · Page {{ page }} of {{ pages }}</p>
+    {{ form_start(form, {attr: {class: 'translation-edit-form'}}) }}
+        {% if failed %}
+            <section class="translation-draft" aria-label="Unsaved translations">
+                <h2>Translations not saved</h2>
+                <p>Your edits are preserved below. Copy them before <a href="{{ currentUrl }}">reloading the latest translations</a>.</p>
+                {{ form_errors(form) }}
+            </section>
+        {% endif %}
+        {{ form_errors(form.entries) }}
+        {% if form.entries|length == 0 %}
+            <p>No translations match these filters.</p>
+        {% else %}
+            <div class="translation-table-scroll">
+                <table class="datagrid translation-table">
+                    <thead><tr><th scope="col">Key / value</th><th scope="col">Translation German</th><th scope="col">Translation English</th><th scope="col" class="translation-ignore-column">Ignore</th></tr></thead>
+                    {% set groups = {} %}
+                    {% for entry in form.entries %}
+                        {% set groupId = 'key-' ~ contexts[entry.vars.name].key %}
+                        {% set groups = groups|merge({(groupId): (groups[groupId]|default([]))|merge([entry])}) %}
+                    {% endfor %}
+                    {% for entries in groups %}
+                    <tbody class="translation-group" aria-label="Tag {{ contexts[entries[0].vars.name].key }}">
+                        {% for entry in entries %}
+                            {% set context = contexts[entry.vars.name] %}
+                            <tr class="{{ context.isKey ? 'translation-key-row' : 'translation-value-row' }}" data-translation-unit="{{ entry.unit.vars.value }}">
+                                <td>
+                                    {{ form_errors(entry) }}
+                                    {{ form_widget(entry.unit) }}
+                                    {{ form_errors(entry.unit) }}
+                                    <span class="translation-kind">{{ context.isKey ? 'Key' : 'Value' }}</span>
+                                    <code>{{ context.isKey ? context.key : context.value }}</code>
+                                    {% if not context.isKey %}<span class="translation-value-context">for {{ context.key }}</span>{% endif %}
+                                    <div class="translation-metadata">
+                                        <span class="translation-category">{{ context.category == 'osm' ? 'OSM' : (context.category == 'custom' ? 'Custom' : 'Uncategorized') }}{% if context.contextOnly %} · context{% endif %}</span>
+                                        {% if context.ignoredByKey %}<span class="translation-category">Ignored via key</span>{% endif %}
+                                    </div>
+                                    {% if context.notes != '' %}<details class="translation-notes"><summary>Notes</summary>{{ context.notes }}</details>{% endif %}
+                                </td>
+                                {% for locale, language in {de: 'German', en: 'English'} %}
+                                    <td lang="{{ locale }}">
+                                        {{ form_errors(entry[locale]) }}
+                                        {{ form_widget(entry[locale].target, {attr: {class: 'form-control', 'aria-label': language ~ ' translation for ' ~ context.key ~ (context.isKey ? '' : '=' ~ context.value)}}) }}
+                                        {{ form_errors(entry[locale].target) }}
+                                        {{ form_widget(entry[locale].previousIgnore) }}
+                                        {{ form_errors(entry[locale].previousIgnore) }}
+                                        {{ form_widget(entry[locale].previous) }}
+                                        {{ form_errors(entry[locale].previous) }}
+                                    </td>
+                                {% endfor %}
+                                <td class="translation-ignore-column">
+                                    {{ form_widget(entry.ignore, {attr: {'aria-label': 'Ignore ' ~ context.key ~ (context.isKey ? '' : '=' ~ context.value)}}) }}
+                                    {{ form_errors(entry.ignore) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% endfor %}
+                </table>
+            </div>
+            <div class="translation-save-bar"><button type="submit" class="btn btn-primary">Save all changes</button></div>
+        {% endif %}
+    {{ form_end(form) }}
+    <nav class="translation-pagination" aria-label="Translation pages">
+        {% if previousUrl %}<a class="btn btn-secondary" href="{{ previousUrl }}">Previous</a>{% endif %}
+        <span>Page {{ page }} of {{ pages }}</span>
+        {% if nextUrl %}<a class="btn btn-secondary" href="{{ nextUrl }}">Next</a>{% endif %}
+    </nav>
+{% endblock %}

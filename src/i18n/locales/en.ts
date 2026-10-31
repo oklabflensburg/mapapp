@@ -59,12 +59,15 @@ export default {
     addObservation: 'Add observation',
     key: 'Key',
     value: 'Value',
+    keyTranslation: 'Key translation',
+    valueTranslation: 'Value translation',
     addTag: 'Add tag',
     removeTag: 'Remove tag',
     empty: 'No tags yet. Add your first one.',
     save: 'Save',
     cancel: 'Cancel',
     saveFailed: 'Saving failed. Please try again.',
+    translationConflict: 'A translation changed while you were editing. Copy your draft and reload to see the latest translation.',
     loginRequired: 'Log in as an editor to add or edit nodes.',
   },
   relationEditor: {
@@ -93,10 +96,6 @@ export default {
     tagPriorities: {
       title: 'Tag priorities',
       hint: 'Tell routing how strongly you prefer or avoid certain tags. Applied when planning routes and remembered on this device.',
-      tags: {
-        stairs: 'Stairs',
-        toilets: 'Toilets',
-      },
       levels: {
         neutral: 'No preference',
         avoid: 'Avoid',

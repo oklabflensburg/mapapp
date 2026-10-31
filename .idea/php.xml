@@ -133,6 +133,7 @@
       <path value="$PROJECT_DIR$/backend/vendor/twig/twig" />
       <path value="$PROJECT_DIR$/backend/vendor/twig/html-extra" />
       <path value="$PROJECT_DIR$/backend/vendor/twig/extra-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/lock" />
     </include_path>
   </component>
   <component name="PhpInterpreters">
