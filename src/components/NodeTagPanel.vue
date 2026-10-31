@@ -16,6 +16,7 @@ import { useSettingsStore } from '../stores/settings'
 interface TagRow {
   key: string
   value: string
+  generatedRaw?: Partial<Record<'key' | 'value', string>>
   translations?: Record<string, { text: string; previous: string }>
 }
 
@@ -39,6 +40,8 @@ const defaultObservationTags = useDefaultObservationTagsStore()
 
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
+const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
+  .some(row => !row.key.trim() || !row.value.trim()))
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
@@ -153,12 +156,21 @@ function translationText(row: TagRow, kind: 'key' | 'value'): string {
 }
 
 function editTranslation(row: TagRow, kind: 'key' | 'value', text: string | undefined): void {
+  const translation = text ?? ''
+  if (!row[kind].trim() || row.generatedRaw?.[kind] === row[kind]) {
+    const generated = translation.normalize('NFKD').replace(/\p{M}/gu, '')
+      .toLowerCase().replace(/ß/g, 'ss').replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '')
+    editRawTag(row, kind, generated, true)
+    row.generatedRaw ??= {}
+    row.generatedRaw[kind] = generated
+  }
   const id = translationId(row, kind)
   row.translations ??= {}
-  row.translations[id] = { text: text ?? '', previous: row.translations[id]?.previous ?? catalogTranslation(row, kind) }
+  row.translations[id] = { text: translation, previous: row.translations[id]?.previous ?? catalogTranslation(row, kind) }
 }
 
-function editRawTag(row: TagRow, kind: 'key' | 'value', text: string | null | undefined): void {
+function editRawTag(row: TagRow, kind: 'key' | 'value', text: string | null | undefined, generated = false): void {
+  if (!generated && row.generatedRaw) delete row.generatedRaw[kind]
   const keyDraft = row.translations?.[translationId(row, 'key')]
   const valueDraft = row.translations?.[translationId(row, 'value')]
   row[kind] = text ?? ''
@@ -181,7 +193,7 @@ function close(): void {
 }
 
 async function save(): Promise<void> {
-  if (!props.node) {
+  if (!props.node || hasIncompleteTags.value) {
     return
   }
   const tags: Record<string, string> = {}
@@ -340,7 +352,8 @@ async function save(): Promise<void> {
             <InputText
               :model-value="row.key"
               @update:model-value="editRawTag(row, 'key', $event)"
-              :readonly="isDefaultObservationTag(row.key)"
+              :readonly="isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined"
+              :invalid="!row.key.trim()"
               :placeholder="t('nodeEditor.key')"
               :aria-label="t('nodeEditor.key')"
               class="raw-tag-input"
@@ -357,6 +370,7 @@ async function save(): Promise<void> {
             <Select
               v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
               :model-value="row.value === '' ? null : row.value"
+              :invalid="!row.value.trim()"
               :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
               option-label="label"
               option-value="value"
@@ -368,7 +382,7 @@ async function save(): Promise<void> {
               class="raw-tag-input"
               @update:model-value="editRawTag(row, 'value', $event)"
             />
-            <InputText v-else :model-value="row.value" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
+            <InputText v-else :model-value="row.value" :invalid="!row.value.trim()" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
           </div>
           <Button
             :aria-label="t('nodeEditor.removeTag')"
@@ -399,11 +413,13 @@ async function save(): Promise<void> {
     </section>
 
     <template #footer>
+      <p v-if="auth.canEdit && hasIncompleteTags" class="save-error" role="alert">{{ t('nodeEditor.requiredTagFields') }}</p>
       <Button :label="t('nodeEditor.cancel')" text severity="secondary" @click="close" />
       <Button
         v-if="auth.canEdit"
         :label="t('nodeEditor.save')"
         :loading="userNodes.saving"
+        :disabled="hasIncompleteTags"
         icon="pi pi-check"
         @click="save"
       />

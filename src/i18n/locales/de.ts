@@ -67,6 +67,7 @@ export default {
     save: 'Speichern',
     cancel: 'Abbrechen',
     saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.',
+    requiredTagFields: 'Jeder Tag benötigt einen Schlüssel und einen Wert.',
     translationConflict: 'Eine Übersetzung wurde inzwischen geändert. Kopiere deinen Entwurf und lade die Seite neu, um die aktuelle Übersetzung zu sehen.',
     loginRequired: 'Melde dich als Editor an, um Knoten hinzuzufügen oder zu bearbeiten.',
   },

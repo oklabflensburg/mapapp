@@ -67,6 +67,7 @@ export default {
     save: 'Save',
     cancel: 'Cancel',
     saveFailed: 'Saving failed. Please try again.',
+    requiredTagFields: 'Every tag needs a key and a value.',
     translationConflict: 'A translation changed while you were editing. Copy your draft and reload to see the latest translation.',
     loginRequired: 'Log in as an editor to add or edit nodes.',
   },

@@ -33,6 +33,8 @@ const defaultObservationTags = useDefaultObservationTagsStore()
 
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
+const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
+  .some(row => !row.key.trim() || !row.value.trim()))
 
 // Mirrors the node editor: approved tags are read-only for editors, and the
 // observations map decides which entries are the current user's own pending
@@ -106,7 +108,7 @@ function close(): void {
 }
 
 async function save(): Promise<void> {
-  if (!props.group) {
+  if (!props.group || hasIncompleteTags.value) {
     return
   }
   const tags: Record<string, string> = {}
@@ -193,13 +195,14 @@ async function save(): Promise<void> {
             readonly
             class="tag-key"
           />
-          <InputText v-else v-model="row.key" :placeholder="t('nodeEditor.key')" class="tag-key" />
+          <InputText v-else v-model="row.key" :invalid="!row.key.trim()" :placeholder="t('nodeEditor.key')" class="tag-key" />
           <!-- Keys with admin-configured values pick from a dropdown, but a
                user may also propose an own value by typing it (editable
                input); clearing it empties the value again. -->
           <Select
             v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
             :model-value="row.value === '' ? null : row.value"
+            :invalid="!row.value.trim()"
             :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
             option-label="label"
             option-value="value"
@@ -209,7 +212,7 @@ async function save(): Promise<void> {
             class="tag-value"
             @update:model-value="row.value = $event ?? ''"
           />
-          <InputText v-else v-model="row.value" :placeholder="t('nodeEditor.value')" class="tag-value" />
+          <InputText v-else v-model="row.value" :invalid="!row.value.trim()" :placeholder="t('nodeEditor.value')" class="tag-value" />
           <Button
             :aria-label="t('nodeEditor.removeTag')"
             icon="pi pi-times"
@@ -239,11 +242,13 @@ async function save(): Promise<void> {
     </section>
 
     <template #footer>
+      <p v-if="auth.canEdit && hasIncompleteTags" class="save-error" role="alert">{{ t('nodeEditor.requiredTagFields') }}</p>
       <Button :label="t('nodeEditor.cancel')" text severity="secondary" @click="close" />
       <Button
         v-if="auth.canEdit"
         :label="t('nodeEditor.save')"
         :loading="nodeGroups.saving"
+        :disabled="hasIncompleteTags"
         icon="pi pi-check"
         @click="save"
       />
