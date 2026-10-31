@@ -1,7 +1,7 @@
 // End-to-end check for the node editing feature. Requires the Symfony
 // backend on port 8080 (docker compose up) and the dev server on port 5199:
 //
-//   npm run dev -- --port 5199 & node scripts/check-node-editing.mjs
+//   npm run dev -- --port 5199 & node scripts/testing/check-node-editing.mjs
 //
 // Verifies: clicking an OSM node opens the editor dialog (info and edit in
 // one window) -> adding a tag and saving persists the user node in the
@@ -74,7 +74,7 @@ function nearestBuildingCenter(collection) {
 }
 
 const geojson = JSON.parse(
-  readFileSync(new URL('../public/data/flensburg.geojson', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../public/data/flensburg.geojson', import.meta.url), 'utf8'),
 )
 const target = nearestPoint(geojson)
 if (!target) {

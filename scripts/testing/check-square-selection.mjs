@@ -1,7 +1,7 @@
 // End-to-end check for selecting nodes inside a place=square area
 // (Nordermarkt, Flensburg). Requires the dev server on port 5199:
 //
-//   npm run dev -- --port 5199 & node scripts/check-square-selection.mjs
+//   npm run dev -- --port 5199 & node scripts/testing/check-square-selection.mjs
 //
 // Verifies that clicking a node inside the square selects the node, not the
 // surrounding square way/relation, once the zoom level renders points.
@@ -32,7 +32,7 @@ function toScreen(lon, lat, zoom) {
 }
 
 const geojson = JSON.parse(
-  readFileSync(new URL('../public/data/flensburg.geojson', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../public/data/flensburg.geojson', import.meta.url), 'utf8'),
 )
 const target = geojson.features.find((f) => f.id === TARGET.id)
 if (!target) {

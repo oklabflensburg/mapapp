@@ -30,7 +30,7 @@ function toScreen(lon, lat, viewport) {
 }
 
 const geojson = JSON.parse(
-  readFileSync(new URL('../public/data/flensburg.geojson', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../public/data/flensburg.geojson', import.meta.url), 'utf8'),
 )
 
 // A click with no feature hit must deselect. Find a spot the geojson leaves

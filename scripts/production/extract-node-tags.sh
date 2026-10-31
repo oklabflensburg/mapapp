@@ -3,7 +3,7 @@
 # Extract all tags from the nodes of an OSM PBF file and write frequency
 # tables: how often each tag key and each key=value pair occurs on nodes.
 #
-# Usage: scripts/extract-node-tags.sh [input.pbf]
+# Usage: scripts/production/extract-node-tags.sh [input.pbf]
 #   input.pbf defaults to scripts/data/flensburg.osm.pbf
 #
 # Requires: osmium-tool (brew install osmium-tool), python3
@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 DATA_DIR="${ROOT_DIR}/scripts/data"
 
 PBF="${1:-${DATA_DIR}/flensburg.osm.pbf}"
@@ -33,16 +33,17 @@ mkdir -p "${DATA_DIR}"
 
 echo "Reading nodes from ${PBF}..."
 # OPL node lines start with "n"; the T field holds all tags as
-# key=value pairs separated by commas, with special characters %XX-escaped.
+# key=value pairs separated by commas, with special characters %HEX%-escaped.
 # Python reads the OPL stream from an osmium subprocess because the heredoc
 # below already occupies python3's stdin.
 python3 - "${KEYS_TSV}" "${PAIRS_TSV}" "${PBF}" <<'PY'
+import csv
 import re
 import subprocess
 import sys
 from collections import Counter
 
-ESCAPE = re.compile("%([0-9A-Fa-f]{2})")
+ESCAPE = re.compile(r"%([0-9A-Fa-f]+)%")
 
 
 def unescape(text):
@@ -89,11 +90,15 @@ if opl.returncode != 0:
 keys_sorted = key_counts.most_common()
 pairs_sorted = pair_counts.most_common()
 
-with open(keys_tsv, "w") as f:
-    f.writelines(f"{count}\t{key}\n" for key, count in keys_sorted)
+with open(keys_tsv, "w", newline="", encoding="utf-8") as f:
+    csv.writer(f, delimiter="\t", lineterminator="\n").writerows(
+        (count, key) for key, count in keys_sorted
+    )
 
-with open(pairs_tsv, "w") as f:
-    f.writelines(f"{count}\t{key}\t{value}\n" for (key, value), count in pairs_sorted)
+with open(pairs_tsv, "w", newline="", encoding="utf-8") as f:
+    csv.writer(f, delimiter="\t", lineterminator="\n").writerows(
+        (count, key, value) for (key, value), count in pairs_sorted
+    )
 
 print(f"total nodes:            {total_nodes}")
 print(f"nodes with tags:        {tagged_nodes}")
