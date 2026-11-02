@@ -2,8 +2,11 @@
 
 namespace App\Tests\Controller;
 
+use App\Command\SyncTagTranslationsCommand;
 use App\Service\TagTranslationCatalog;
 use App\Service\TagTranslationCatalogEditor;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Form;
@@ -164,6 +167,24 @@ final class TagTranslationControllerTest extends WebTestCase
             self::assertSelectorNotExists('script:not([src]):contains("draft")');
             self::assertStringContainsString('&lt;script&gt;draft&lt;/script&gt;', $client->getResponse()->getContent());
         }
+    }
+
+    public function testSyncedWayTagCanBeFoundByItsRawKey(): void
+    {
+        $client = $this->adminClient();
+        $pairs = $this->directory.'/osm-pairs.tsv';
+        file_put_contents($pairs, "2\troof:levels\t2\n");
+        $tester = new CommandTester(new SyncTagTranslationsCommand(
+            static::getContainer()->get(EntityManagerInterface::class),
+            static::getContainer()->get(TagTranslationCatalog::class),
+            static::getContainer()->get(TagTranslationCatalogEditor::class),
+        ));
+        self::assertSame(0, $tester->execute(['--pairs' => $pairs]));
+
+        $form = $this->openForm($client, '?q=roof%3Alevels&category=osm');
+        $units = array_column($form->getPhpValues()['translations']['entries'], 'unit');
+        self::assertContains('key:roof:levels', $units);
+        self::assertContains(TagTranslationCatalog::valueId('roof:levels', '2'), $units);
     }
 
     public function testSearchBothLanguagesUntranslatedFilterAndPagination(): void

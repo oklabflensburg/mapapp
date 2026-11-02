@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Translation text lives only in backend/tag-translations/tags.<locale>.xlf.
 // Uses the project's Docker PHP runtime; --local uses a host PHP instead.
-// With no input arguments, refresh OSM node tag TSVs and include backend tags.
+// With no input arguments, refresh OSM tag TSVs and include backend tags.
 // The PHP generator writes reciprocal tag:keyRef / tag:valueRefs and
 // tag:category="osm" (TSVs) or "custom" (database) on catalog units.
 // Missing tag:ignore flags default to false; admin-set flags are preserved.
@@ -28,11 +28,11 @@ try {
       console.log('Preparing the OSM source for the first sync...')
       run('bash', [join(root, 'scripts/production/prepare-flensburg.sh')])
     }
-    console.log('Collecting OSM node tag keys and values...')
-    run('bash', [join(root, 'scripts/production/extract-node-tags.sh'), pbf])
+    console.log('Collecting OSM tag keys and values...')
+    run('bash', [join(root, 'scripts/production/extract-osm-tags.sh'), pbf])
     args.push(
-      join(root, 'scripts/data/flensburg-node-tag-keys.tsv'),
-      '--pairs', join(root, 'scripts/data/flensburg-node-tag-pairs.tsv'),
+      join(root, 'scripts/data/flensburg-tag-keys.tsv'),
+      '--pairs', join(root, 'scripts/data/flensburg-tag-pairs.tsv'),
       '--database',
     )
     console.log('Syncing translation catalogs, source categories and key/value references from OSM and backend tags...')

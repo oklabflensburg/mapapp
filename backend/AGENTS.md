@@ -110,8 +110,8 @@ Three specifics worth spelling out, because they are easy to get wrong:
   choices across pagination. Default to `not_ignored`; an ignored key makes its
   values effectively ignored without changing their own stored flags. Parent keys
   may appear as context for matching values.
-- Sync with `npm run translations:sync` at repository root to extract OSM node
-  tags and collect backend tags together. Explicit `-- --database` collects
+- Sync with `npm run translations:sync` at repository root to extract tags from OSM
+  nodes, ways and relations and collect backend tags together. Explicit `-- --database` collects
   only backend tags and configured choices.
   Existing targets, metadata and units must survive sync; new targets are empty.
 - The old `tag_key_labels` entity/table exists only for the explicit one-time

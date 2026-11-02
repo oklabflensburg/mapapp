@@ -77,9 +77,10 @@ PHP execution and cleanup automatically.
 
 | Production command | Purpose |
 | --- | --- |
-| `npm run translations:sync` | Refresh translation entries from OSM nodes and backend tags in one run. Uses host Node.js, Python 3 and Osmium, plus the Docker PHP service. First-time OSM preparation also needs `curl`. |
+| `npm run translations:sync` | Refresh translation entries from OSM nodes, ways, relations and backend tags in one run. Uses host Node.js, Python 3 and Osmium, plus the Docker PHP service. First-time OSM preparation also needs `curl`. |
 | `bash scripts/production/update-map-and-translations.sh` | Rebuild map GeoJSON, then run the same combined translation sync. |
 | `bash scripts/production/prepare-flensburg.sh` | Download and process OSM data into `public/data/flensburg.geojson`. Requires `curl` and `osmium-tool`. |
+| `bash scripts/production/extract-osm-tags.sh [input.pbf]` | Extract tag frequency TSVs from nodes, ways and relations into `scripts/data/`. Requires `osmium-tool` and Python 3. |
 | `bash scripts/production/extract-node-tags.sh [input.pbf]` | Extract node tag frequency TSVs into `scripts/data/`. Requires `osmium-tool` and Python 3. |
 | `node scripts/production/generate-tag-key-catalog.mjs [keys.tsv] [options]` | The translation sync entry point used by npm; explicit inputs and options allow collecting selected sources. |
 
@@ -507,13 +508,14 @@ and Composer dependencies, use:
 npm run translations:sync -- --local
 ```
 
-This still collects both OSM node tags and backend tags. `--local` selects where
+This still collects both OSM tags and backend tags. `--local` selects where
 PHP runs; it does not change which sources are included.
 
 ### Refresh the map and OSM source
 
 Normal translation sync reads the existing Flensburg PBF and always re-extracts
-its node tags. It downloads and prepares OSM data only when that PBF is missing.
+tags from its nodes, ways and relations. It downloads and prepares OSM data only
+when that PBF is missing.
 To rebuild the map GeoJSON as well, run:
 
 ```bash
@@ -526,9 +528,10 @@ newer extract, remove `scripts/data/schleswig-holstein-latest.osm.pbf` before
 running this map update command. The workflow updates map data files and
 translation catalogs; it does not import map features as database nodes.
 
-The extractor collects tags on **nodes**, not ways or relations. Its generated
-inputs are `scripts/data/flensburg-node-tag-keys.tsv` (count, key) and
-`flensburg-node-tag-pairs.tsv` (count, key, value). They use tab-separated fields
+The extractor collects tags on **nodes, ways and relations**, including building
+keys such as `roof:levels` that may only occur on ways. Its generated
+inputs are `scripts/data/flensburg-tag-keys.tsv` (count, key) and
+`flensburg-tag-pairs.tsv` (count, key, value). They use tab-separated fields
 with CSV quoting for quotes, tabs and line breaks. They are intermediate data;
 edit translations in XLIFF, not these TSVs.
 
@@ -556,9 +559,9 @@ npm run translations:sync -- --database
 To use another PBF instead of Flensburg and include backend tags:
 
 ```bash
-bash scripts/production/extract-node-tags.sh /path/to/town.osm.pbf
-npm run translations:sync -- scripts/data/town-node-tag-keys.tsv \
-  --pairs scripts/data/town-node-tag-pairs.tsv --database
+bash scripts/production/extract-osm-tags.sh /path/to/town.osm.pbf
+npm run translations:sync -- scripts/data/town-tag-keys.tsv \
+  --pairs scripts/data/town-tag-pairs.tsv --database
 ```
 
 Explicitly supplied missing or invalid TSV inputs fail before catalog edits. The
