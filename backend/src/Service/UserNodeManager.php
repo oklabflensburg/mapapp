@@ -103,20 +103,26 @@ final class UserNodeManager
         return array_map($this->toResponse(...), array_values($nodes));
     }
 
-    /**
-     * A node without a single approved tag is still pending review, so only
-     * the user who created it sees it listed — mirroring how unapproved tags
-     * are only visible to their author.
-     */
     private function nodeIsVisible(Node $node, ?User $user): bool
     {
+        if ($user !== null && $node->getCreatedByUser() === $user) {
+            return true;
+        }
+        if (!$node->isApproved()) {
+            return false;
+        }
+        if ($node->getNodeProvider()->getName() === 'local' || $node->getNodeType()->getName() !== self::NODE_TYPE_USER) {
+            return true;
+        }
+        // OSM overlays keep their existing visibility rule: an approved tag
+        // is required before publishing an editor's additions to an OSM object.
         foreach ($node->getNodeTags() as $nodeTag) {
             if ($nodeTag->isApproved()) {
                 return true;
             }
         }
 
-        return $user !== null && $node->getCreatedByUser() === $user;
+        return false;
     }
 
     private function newNode(string $provider, string $providerNodeId, string $type): Node
@@ -126,6 +132,8 @@ final class UserNodeManager
         $node->setNodeProvider($this->nodeProviderRepository->findOrCreate($provider));
         $node->setProviderNodeId($providerNodeId);
         $node->setCreatedByUser($this->defaultUser());
+        // OSM records reference existing public objects; custom nodes need review.
+        $node->setApproved($provider !== 'local' || $this->currentUserIsAdmin());
         $this->entityManager->persist($node);
 
         return $node;
@@ -217,6 +225,12 @@ final class UserNodeManager
             }
         }
 
+        $parent = $node->getParent();
+        if ($parent !== null && !$this->nodeIsVisible($parent, $user)) {
+            $parent = null;
+        }
+        $children = $node->getChildren()->filter(fn (Node $child): bool => $this->nodeIsVisible($child, $user));
+
         return new UserNodeResponse(
             $node->getId() ?? 0,
             $node->getProviderNodeId(),
@@ -227,10 +241,10 @@ final class UserNodeManager
             $node->getCreatedAt(),
             $node->getUpdatedAt(),
             $node->getNodeProvider()->getName(),
-            $node->getParent() !== null ? [$node->getParent()->getId()] : [],
-            array_values($node->getChildren()->map(static fn (Node $child): int => $child->getId())->toArray()),
-            $node->getParent() !== null ? [$this->relatedNodeResponse($node->getParent())] : [],
-            array_values($node->getChildren()->map($this->relatedNodeResponse(...))->toArray()),
+            $parent !== null ? [$parent->getId()] : [],
+            array_values($children->map(static fn (Node $child): int => $child->getId())->toArray()),
+            $parent !== null ? [$this->relatedNodeResponse($parent)] : [],
+            array_values($children->map($this->relatedNodeResponse(...))->toArray()),
             $observationTranslations,
         );
     }

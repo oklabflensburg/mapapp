@@ -14,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -58,7 +59,7 @@ final class NodeCrudController extends AbstractCrudController
     #[IsGranted('ROLE_ADMIN')]
     public function nextPending(Request $request, int $id): Response
     {
-        // The next node with unapproved tags; after the last one, wrap
+        // The next unapproved node or node with unapproved tags; after the last one, wrap
         // around to the first so the queue can be worked through in a loop.
         $nextId = $this->findPendingNodeId(afterId: $id) ?? $this->findPendingNodeId();
 
@@ -86,14 +87,57 @@ final class NodeCrudController extends AbstractCrudController
             ->generateUrl());
     }
 
+    #[Route('/admin/node/{id}/approve', name: 'app_admin_node_approve', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function approve(Request $request, int $id): Response
+    {
+        $node = $this->entityManager->find(Node::class, $id);
+        if ($node === null) {
+            throw $this->createNotFoundException('Node not found.');
+        }
+        if (!$this->isCsrfTokenValid('approve_node'.$id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+        $node->setApproved(true);
+        $this->entityManager->flush();
+
+        return $this->redirect($this->container->get(AdminUrlGenerator::class)
+            ->setController(PendingObservationCrudController::class)
+            ->setAction(Action::EDIT)
+            ->setEntityId($id)
+            ->generateUrl());
+    }
+
+    #[Route('/admin/node/{id}/decline', name: 'app_admin_node_decline', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function decline(Request $request, int $id): Response
+    {
+        $node = $this->entityManager->find(Node::class, $id);
+        if ($node === null) {
+            throw $this->createNotFoundException('Node not found.');
+        }
+        if (!$this->isCsrfTokenValid('decline_node'.$id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+        if ($node->isApproved()) {
+            throw new ConflictHttpException('This node has already been approved.');
+        }
+        $this->entityManager->remove($node);
+        $this->entityManager->flush();
+
+        return $this->redirect($this->container->get(AdminUrlGenerator::class)
+            ->setRoute('app_admin_pending_observations')
+            ->generateUrl());
+    }
+
     private function findPendingNodeId(?int $afterId = null): ?int
     {
         $queryBuilder = $this->entityManager->createQueryBuilder()
             ->select('node.id')
             ->distinct()
             ->from(Node::class, 'node')
-            ->innerJoin('node.nodeTags', 'nodeTag')
-            ->where('nodeTag.approved = false')
+            ->leftJoin('node.nodeTags', 'nodeTag')
+            ->where('(node.approved = false OR nodeTag.approved = false)')
             ->orderBy('node.id', 'ASC')
             ->setMaxResults(1);
 

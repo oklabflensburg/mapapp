@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * The combined review queue: nodes with unapproved node tags and areas with
+ * The combined review queue: new nodes, nodes with unapproved tags and areas with
  * unapproved area tags in one list. The Review links lead to the per-kind
  * review screens (see PendingObservationCrudController and
  * PendingRelationObservationCrudController).
@@ -58,28 +58,28 @@ final class PendingObservationListController extends AbstractController
         $nodes = $this->entityManager->createQueryBuilder()
             ->select('DISTINCT node')
             ->from(Node::class, 'node')
-            ->join('node.nodeTags', 'nodeTag')
-            ->where('nodeTag.approved = false')
+            ->leftJoin('node.nodeTags', 'nodeTag')
+            ->where('node.approved = false OR nodeTag.approved = false')
             ->getQuery()
             ->getResult();
 
         foreach ($nodes as $node) {
             $unapproved = [];
-            $latest = null;
+            $latest = $node->isApproved() ? null : $node->getUpdatedAt();
             foreach ($node->getNodeTags() as $nodeTag) {
-                if ($nodeTag->isApproved()) {
+                if ($node->isApproved() && $nodeTag->isApproved()) {
                     continue;
                 }
                 $unapproved[(string) $nodeTag->getTag()] = true;
                 $latest = $latest === null ? $nodeTag->getTag()->getUpdatedAt() : max($latest, $nodeTag->getTag()->getUpdatedAt());
             }
-            if ($unapproved === []) {
+            if ($node->isApproved() && $unapproved === []) {
                 continue;
             }
             $rows[] = [
                 'type' => 'Node',
                 'label' => (string) $node,
-                'tags' => implode(', ', array_keys($unapproved)),
+                'tags' => implode(', ', [...($node->isApproved() ? [] : ['New node awaiting approval']), ...array_keys($unapproved)]),
                 'creator' => (string) $node->getCreatedByUser(),
                 'changedAt' => $latest,
                 'reviewUrl' => $this->reviewUrl(PendingObservationCrudController::class, $node->getId()),

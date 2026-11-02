@@ -19,6 +19,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -110,6 +111,52 @@ final class TagCrudController extends AbstractCrudController
         foreach ($groupTag->getGroup()->getGroupTags() as $other) {
             if ($other->getTag() === $groupTag->getTag()) {
                 $other->setApproved(true);
+            }
+        }
+        $this->entityManager->flush();
+
+        return $this->redirectAfterApproval($request);
+    }
+
+    #[Route('/admin/node-tag/{id}/decline', name: 'app_admin_node_tag_decline', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function declineNodeTag(Request $request, int $id): Response
+    {
+        $entry = $this->entityManager->find(NodeTag::class, $id);
+        if ($entry === null) {
+            throw $this->createNotFoundException('Node tag not found.');
+        }
+
+        return $this->declineTag($request, $entry, 'decline_node_tag'.$id);
+    }
+
+    #[Route('/admin/node-group-tag/{id}/decline', name: 'app_admin_node_group_tag_decline', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function declineNodeGroupTag(Request $request, int $id): Response
+    {
+        $entry = $this->entityManager->find(NodeGroupTag::class, $id);
+        if ($entry === null) {
+            throw $this->createNotFoundException('Node group tag not found.');
+        }
+
+        return $this->declineTag($request, $entry, 'decline_node_group_tag'.$id);
+    }
+
+    private function declineTag(Request $request, NodeTag|NodeGroupTag $entry, string $tokenId): Response
+    {
+        if (!$this->isCsrfTokenValid($tokenId, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+        if ($entry->isApproved()) {
+            throw new ConflictHttpException('This observation has already been approved.');
+        }
+        $entries = $entry instanceof NodeTag ? $entry->getNode()->getNodeTags() : $entry->getGroup()->getGroupTags();
+        // The UI groups identical observations from multiple authors. Decline
+        // that pending value here, preserving its uses on other nodes/areas.
+        foreach ($entries->toArray() as $other) {
+            if (!$other->isApproved() && $other->getTag() === $entry->getTag()) {
+                $entries->removeElement($other);
+                $this->entityManager->remove($other);
             }
         }
         $this->entityManager->flush();

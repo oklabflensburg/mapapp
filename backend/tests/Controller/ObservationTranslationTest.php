@@ -115,7 +115,7 @@ final class ObservationTranslationTest extends WebTestCase
         $this->value = 'reviewed/raw/ü';
         self::assertSame($german, file_get_contents($this->directory.'/tags.de.xlf'));
         $crawler = $this->review($client);
-        $form = $crawler->selectButton('Approve')->form();
+        $form = $crawler->filter('button[name$="[approve]"]')->form();
         self::assertSame($this->key, $form[$name.'[key]']->getValue());
         self::assertSame($this->value, $form[$name.'[value]']->getValue());
         self::assertSame('Rauer Belag', $form[$name.'[de][valueTranslation]']->getValue());
@@ -141,7 +141,7 @@ final class ObservationTranslationTest extends WebTestCase
     {
         $client = $this->submitObservation();
         $crawler = $this->review($client);
-        $form = $crawler->selectButton('Approve')->form();
+        $form = $crawler->filter('button[name$="[approve]"]')->form();
         $name = $form->getName();
         $german = file_get_contents($this->directory.'/tags.de.xlf');
         $form[$name.'[de][valueTranslation]'] = "Invalid\x01";
@@ -149,7 +149,7 @@ final class ObservationTranslationTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSame($german, file_get_contents($this->directory.'/tags.de.xlf'));
         $crawler = $this->review($client);
-        $stale = $crawler->selectButton('Approve')->form();
+        $stale = $crawler->filter('button[name$="[approve]"]')->form();
         $save = $crawler->selectButton('Save changes')->form();
         $save[$name.'[value]'] = $this->value.'_edited';
         $client->submit($save);
@@ -167,7 +167,7 @@ final class ObservationTranslationTest extends WebTestCase
     {
         $client = $this->submitObservation();
         $crawler = $this->review($client);
-        $form = $crawler->selectButton('Approve')->form();
+        $form = $crawler->filter('button[name$="[approve]"]')->form();
         $editor = static::getContainer()->get(TagTranslationCatalogEditor::class);
         $editor->merge($this->directory.'/tags.de.xlf', 'de', [
             'key:'.$this->key => ['source' => $this->key, 'note' => 'Test key', 'target' => 'Changed catalog'],
@@ -177,7 +177,7 @@ final class ObservationTranslationTest extends WebTestCase
         self::assertSelectorTextContains('body', 'translation changed');
         self::assertSame('Changed catalog', (new TagTranslationCatalog($this->directory))->labels('de')['labels'][$this->key]);
         $crawler = $this->review($client);
-        $form = $crawler->selectButton('Approve')->form();
+        $form = $crawler->filter('button[name$="[approve]"]')->form();
         $name = $form->getName();
         $form[$name.'[de][keyTranslation]'] = '';
         $form[$name.'[de][valueTranslation]'] = '';
@@ -195,7 +195,7 @@ final class ObservationTranslationTest extends WebTestCase
             'key:'.$this->key => ['source' => $this->key, 'note' => 'Original key', 'target' => 'Original published label'],
         ]);
         $crawler = $this->review($client);
-        $form = $crawler->selectButton('Approve')->form();
+        $form = $crawler->filter('button[name$="[approve]"]')->form();
         $name = $form->getName();
         $originalKey = $this->key;
         $editedKey = $this->key.'_approved';
@@ -231,7 +231,7 @@ final class ObservationTranslationTest extends WebTestCase
             $german = file_get_contents($this->directory.'/tags.de.xlf');
             foreach ([['key' => $duplicate->getKey(), 'value' => 'existing'], ['key' => '  '], ['value' => str_repeat('a', 256)], ['key' => "bad\x01"]] as $edits) {
                 $crawler = $this->review($client);
-                $form = $crawler->selectButton('Approve')->form();
+                $form = $crawler->filter('button[name$="[approve]"]')->form();
                 $name = $form->getName();
                 foreach ($edits as $field => $value) {
                     $form[$name.'['.$field.']'] = $value;

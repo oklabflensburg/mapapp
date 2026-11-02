@@ -57,10 +57,11 @@ final class PendingObservationCrudTest extends WebTestCase
         $otherKeyTag->setValue('pending-crud-other-'.bin2hex(random_bytes(8)));
         $entityManager->persist($otherKeyTag);
 
+        $identity = 'pending-crud-'.bin2hex(random_bytes(8));
         $nodeWithPendingTag = new Node();
         $nodeWithPendingTag->setNodeType($nodeType);
         $nodeWithPendingTag->setNodeProvider($nodeProvider);
-        $nodeWithPendingTag->setProviderNodeId('pending-crud-'.bin2hex(random_bytes(8)));
+        $nodeWithPendingTag->setProviderNodeId($identity.'-first');
         $nodeWithPendingTag->setCreatedByUser($editor);
         $nodeWithPendingTag->setLatitude(54.791);
         $nodeWithPendingTag->setLongitude(9.437);
@@ -69,7 +70,7 @@ final class PendingObservationCrudTest extends WebTestCase
         $nodeWithoutPendingTag = new Node();
         $nodeWithoutPendingTag->setNodeType($nodeType);
         $nodeWithoutPendingTag->setNodeProvider($nodeProvider);
-        $nodeWithoutPendingTag->setProviderNodeId('pending-crud-'.bin2hex(random_bytes(8)));
+        $nodeWithoutPendingTag->setProviderNodeId($identity.'-approved');
         $nodeWithoutPendingTag->setCreatedByUser($editor);
         $nodeWithoutPendingTag->setLatitude(54.792);
         $nodeWithoutPendingTag->setLongitude(9.438);
@@ -81,7 +82,7 @@ final class PendingObservationCrudTest extends WebTestCase
         $nextPendingNode = new Node();
         $nextPendingNode->setNodeType($nodeType);
         $nextPendingNode->setNodeProvider($nodeProvider);
-        $nextPendingNode->setProviderNodeId('pending-crud-'.bin2hex(random_bytes(8)));
+        $nextPendingNode->setProviderNodeId($identity.'-next');
         $nextPendingNode->setCreatedByUser($editor);
         $nextPendingNode->setLatitude(54.793);
         $nextPendingNode->setLongitude(9.439);
@@ -109,7 +110,7 @@ final class PendingObservationCrudTest extends WebTestCase
         $entityManager->clear();
 
         try {
-            $client->request('GET', '/admin/pending-observation');
+            $client->request('GET', '/admin/pending-observation', ['query' => $identity]);
 
             self::assertResponseIsSuccessful();
             // The node with an unapproved tag is listed with that tag.

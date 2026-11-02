@@ -216,6 +216,123 @@ final class NodeCreationTest extends WebTestCase
         self::assertTrue($repository->findBy(['node' => $adminNode['id']])[0]->isApproved());
     }
 
+    public function testCustomNodesRequireIndependentApprovalInTheObservationQueue(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+        $payload = $this->payload();
+        $node = $this->save($client, $payload);
+        $tagged = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => 'Pending node']]));
+        $manager = static::getContainer()->get('doctrine')->getManager();
+        self::assertFalse($manager->find(Node::class, $node['id'])->isApproved());
+        $tag = $manager->getRepository(NodeTag::class)->findOneBy(['node' => $tagged['id']]);
+        $tag->setApproved(true);
+        $manager->flush();
+
+        // Authors can see their own submissions, even without tags.
+        $client->request('GET', '/api/nodes');
+        self::assertContains($node['id'], array_column(json_decode($client->getResponse()->getContent(), true), 'id'));
+        $client->getCookieJar()->clear();
+        $client->request('GET', '/api/nodes');
+        $ids = array_column(json_decode($client->getResponse()->getContent(), true), 'id');
+        self::assertNotContains($node['id'], $ids);
+        // Approving a tag does not implicitly approve its node.
+        self::assertNotContains($tagged['id'], $ids);
+
+        $client->loginUser($this->createUser('node-review-admin@example.test', ['admin']), 'admin');
+        $client->request('GET', '/admin/pending-observations');
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('table', $payload['providerNodeId']);
+        self::assertSelectorTextContains('table', $tagged['providerNodeId']);
+        self::assertSelectorTextContains('table', 'New node awaiting approval');
+
+        $client->request('GET', '/admin/node/'.$node['id'].'/next-pending');
+        self::assertResponseRedirects('/admin/pending-observation/'.$tagged['id'].'/edit');
+
+        $client->request('GET', '/admin/pending-observation/'.$node['id'].'/edit');
+        self::assertResponseIsSuccessful();
+        $form = $client->getCrawler()->selectButton('Approve node')->form();
+        $client->request('POST', '/admin/node/'.$node['id'].'/approve', ['_token' => 'invalid']);
+        self::assertResponseStatusCodeSame(403);
+        $client->submit($form);
+        self::assertResponseRedirects('/admin/pending-observation/'.$node['id'].'/edit');
+        $client->followRedirect();
+        self::assertSelectorNotExists('.pending-node-approval');
+        $client->request('GET', '/admin/pending-observations');
+        $client->followRedirect();
+        self::assertStringNotContainsString($payload['providerNodeId'], $client->getCrawler()->filter('table')->text());
+
+        // Approval publishes a tagless node; pending tags stay independent.
+        $client->getCookieJar()->clear();
+        $client->request('GET', '/api/nodes');
+        $ids = array_column(json_decode($client->getResponse()->getContent(), true), 'id');
+        self::assertContains($node['id'], $ids);
+        self::assertNotContains($tagged['id'], $ids);
+
+        // Resaving does not reset node approval.
+        $this->loginEditor($client);
+        $this->save($client, $payload, 200);
+        self::assertTrue(static::getContainer()->get('doctrine')->getManager()->find(Node::class, $node['id'])->isApproved());
+        $client->loginUser($this->createUser(self::EDITOR_EMAIL, ['editor']), 'admin');
+        $client->request('POST', '/admin/node/'.$tagged['id'].'/approve', ['_token' => 'invalid']);
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testAdminReviewShowsAllCustomTagsOfANewNode(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+        $name = 'New place '.bin2hex(random_bytes(8));
+        $tags = ['name' => $name, 'custom_access_note' => '<step-free> & open'];
+        $node = $this->save($client, array_replace($this->payload(), ['tags' => $tags]));
+        $manager = static::getContainer()->get('doctrine')->getManager();
+        foreach ($manager->getRepository(NodeTag::class)->findBy(['node' => $node['id']]) as $nodeTag) {
+            if ($nodeTag->getTag()->getKey() === 'name') {
+                $nodeTag->setApproved(true);
+            }
+        }
+        $manager->flush();
+
+        $client->loginUser($this->createUser('custom-tags-review-admin@example.test', ['admin']), 'admin');
+        $client->request('GET', '/admin/pending-observations');
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('table', 'name='.$name);
+        self::assertSelectorTextContains('table', 'custom_access_note=<step-free> & open');
+
+        foreach (['pending-observation', 'node'] as $screen) {
+            $client->request('GET', '/admin/'.$screen.'/'.$node['id'].'/edit');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorCount(2, '.node-custom-tags tbody tr');
+            self::assertSelectorTextContains('.node-custom-tags', 'name');
+            self::assertSelectorTextContains('.node-custom-tags', $name);
+            self::assertSelectorTextContains('.node-custom-tags', 'custom_access_note');
+            self::assertSelectorTextContains('.node-custom-tags', '<step-free> & open');
+            self::assertSelectorNotExists('.node-custom-tags step-free');
+            self::assertSelectorExists('.pending-node-approval');
+            self::assertSelectorTextContains('.node-edit-unapproved-tags', 'custom_access_note');
+        }
+    }
+
+    public function testPendingChildrenAreHiddenFromPublishedParentResponses(): void
+    {
+        $client = static::createClient();
+        $admin = $this->createUser('node-parent-admin@example.test', ['admin']);
+        $client->loginUser($admin);
+        $parent = $this->save($client, $this->payload());
+        self::assertTrue(static::getContainer()->get('doctrine')->getManager()->find(Node::class, $parent['id'])->isApproved());
+        $this->loginEditor($client);
+        $child = $this->save($client, $this->payload() + ['parent' => ['id' => $parent['id']]]);
+        $client->getCookieJar()->clear();
+        $client->request('GET', '/api/nodes');
+        $nodes = json_decode($client->getResponse()->getContent(), true);
+        self::assertNotContains($child['id'], array_column($nodes, 'id'));
+        $listed = array_values(array_filter($nodes, static fn (array $node): bool => $node['id'] === $parent['id']))[0];
+        self::assertSame([], $listed['childIds']);
+        self::assertSame([], $listed['children']);
+    }
+
     public function testRejectsInvalidParentSelfRelationAndCoordinates(): void
     {
         $client = static::createClient();

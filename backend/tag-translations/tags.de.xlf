@@ -11501,9 +11501,9 @@
       </segment>
     </unit>
     <unit id="t_c37517d7cfcc03807cf6cdd13228a78635a6ce6a3159aa47f2a43181aa7d8696" name="value:[&quot;amenity&quot;,&quot;recycling&quot;]" tag:keyRef="k_43ae3b595a28" tag:category="osm" tag:ignore="false">
-      <segment state="initial">
+      <segment state="translated">
         <source>recycling</source>
-        <target/>
+        <target>Wiederverwertung</target>
       </segment>
     </unit>
     <unit id="t_94d6ed44e80d0de1193a5f5d2942f29d4cf115623e15a04fad698a92d504c06f" name="value:[&quot;amenity&quot;,&quot;restaurant&quot;]" tag:keyRef="k_43ae3b595a28" tag:category="osm" tag:ignore="false">
@@ -140221,6 +140221,24 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
       <segment state="initial">
         <source>enclosure</source>
         <target/>
+      </segment>
+    </unit>
+    <unit id="t_aa1df5501642aba9abaf6296795d59e8b959e14ff3b0bc25c0e49198b373f3d1" name="key:abcdde" tag:ignore="false">
+      <notes>
+        <note>Tag key: abcdde</note>
+      </notes>
+      <segment state="translated">
+        <source>abcdde</source>
+        <target>abcdde</target>
+      </segment>
+    </unit>
+    <unit id="t_163ac22b1c52c9e288463cd69b11734c9f8ed4a6f6f294421e52f069774f1c07" name="value:[&quot;abcdde&quot;,&quot;abcde&quot;]" tag:ignore="false">
+      <notes>
+        <note>Tag value: abcdde=abcde</note>
+      </notes>
+      <segment state="translated">
+        <source>abcde</source>
+        <target>abcde</target>
       </segment>
     </unit>
   </file>

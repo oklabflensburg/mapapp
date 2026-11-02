@@ -14,6 +14,41 @@
             {# Unapproved tags on this node, grouped by key; shared review
                section (see admin/_unapproved_tags.html.twig).
                Shown before the form so pending approvals are always visible. #}
+            {% if not node.approved %}
+                <section class="pending-node-approval">
+                    <h2>New node awaiting approval</h2>
+                    <p>Created by {{ node.createdByUser }} at {{ node.latitude }}, {{ node.longitude }}.</p>
+                    <div class="tag-review-actions">
+                        <form method="post" action="{{ path('app_admin_node_approve', {id: node.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('approve_node' ~ node.id) }}">
+                            <button class="btn btn-success" type="submit">Approve node</button>
+                        </form>
+                        <form method="post" action="{{ path('app_admin_node_decline', {id: node.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('decline_node' ~ node.id) }}">
+                            <button class="btn btn-danger" type="submit">Decline node</button>
+                        </form>
+                    </div>
+                </section>
+            {% endif %}
+            {% if node.nodeProvider.name == 'local' %}
+                <section class="node-custom-tags">
+                    <h2>Custom tags</h2>
+                    {% if node.tags is empty %}
+                        <p>No custom tags on this node.</p>
+                    {% else %}
+                        <table class="table">
+                            <thead>
+                                <tr><th scope="col">Key</th><th scope="col">Value</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for tag in node.tags %}
+                                    <tr><td>{{ tag.key }}</td><td>{{ tag.value }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </section>
+            {% endif %}
             {% block unapproved_tags %}
                 {% include 'admin/_unapproved_tags.html.twig' with { tags: node.nodeTags, next_url: path('app_admin_node_next_pending', {id: node.id}), empty_message: 'No unapproved tags on this node.' } %}
             {% endblock %}

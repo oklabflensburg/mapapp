@@ -60,6 +60,10 @@
                             {% set approve_url = grouped_entry_tags[0].node is defined
                                 ? path('app_admin_node_tag_approve', {id: grouped_entry_tags[0].id})
                                 : path('app_admin_node_group_tag_approve', {id: grouped_entry_tags[0].id}) %}
+                            {% set decline_kind = grouped_entry_tags[0].node is defined ? 'node_tag' : 'node_group_tag' %}
+                            {% set decline_id = grouped_entry_tags[0].id %}
+                            {% set decline_url = path('app_admin_' ~ decline_kind ~ '_decline', {id: decline_id}) %}
+                            {% set decline_form_id = 'decline-' ~ decline_kind ~ '-' ~ decline_id %}
                             {% if observation_translation_forms is defined %}
                                 <tr>
                                     <td colspan="3" class="observation-translations">
@@ -85,18 +89,26 @@
                                         <div class="tag-review-actions">
                                             {{ form_widget(review_form.save) }}
                                             {{ form_widget(review_form.approve) }}
+                                            <button class="btn btn-danger" type="submit" form="{{ decline_form_id }}" formnovalidate>Decline</button>
                                         </div>
                                         {{ form_end(review_form) }}
+                                        <form id="{{ decline_form_id }}" method="post" action="{{ decline_url }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('decline_' ~ decline_kind ~ decline_id) }}">
+                                        </form>
                                     </td>
                                 </tr>
                             {% else %}
                                 <tr>
                                     <td>{{ tag.value }}</td>
                                     <td>{{ grouped_entry_tags|length }}</td>
-                                    <td>
+                                    <td class="tag-review-actions">
                                         <form method="post" action="{{ approve_url }}">
                                             <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ grouped_entry_tags[0].id) }}">
                                             <button class="btn btn-primary" type="submit">Approve</button>
+                                        </form>
+                                        <form method="post" action="{{ decline_url }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('decline_' ~ decline_kind ~ decline_id) }}">
+                                            <button class="btn btn-danger" type="submit">Decline</button>
                                         </form>
                                     </td>
                                 </tr>

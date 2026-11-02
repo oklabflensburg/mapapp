@@ -45,6 +45,9 @@ class Node
     #[ORM\Column]
     private float $longitude = 0.0;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $approved = true;
+
     /** @var Collection<int, NodeTag> */
     #[ORM\OneToMany(mappedBy: 'node', targetEntity: NodeTag::class)]
     private Collection $nodeTags;
@@ -124,6 +127,16 @@ class Node
     public function touch(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approved;
+    }
+
+    public function setApproved(bool $approved): void
+    {
+        $this->approved = $approved;
     }
 
     public function getLatitude(): float

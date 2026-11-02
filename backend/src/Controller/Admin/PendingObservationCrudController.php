@@ -21,9 +21,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 /**
- * Review queue of nodes carrying unapproved tags. The edit page is a review
- * screen without the node edit form; it shows the unapproved tags with their
- * approve actions and links to the node edit view.
+ * Review queue of unapproved nodes and nodes carrying unapproved tags.
+ * The edit page shows node and tag approval actions without the node edit
+ * form, and links to the node edit view.
  */
 final class PendingObservationCrudController extends AbstractCrudController
 {
@@ -67,7 +67,7 @@ final class PendingObservationCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         // Nodes are created, edited and deleted from the Nodes CRUD; this
-        // screen is only for reviewing and approving pending tags.
+        // screen is only for reviewing and approving pending nodes and tags.
         return $actions
             ->disable(Action::NEW, Action::DELETE, Action::BATCH_DELETE)
             // The edit view has no form, so there is nothing to save.
@@ -78,10 +78,10 @@ final class PendingObservationCrudController extends AbstractCrudController
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         return parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters)
-            ->innerJoin('entity.nodeTags', 'pendingNodeTag')
-            ->andWhere('pendingNodeTag.approved = false')
+            ->leftJoin('entity.nodeTags', 'pendingNodeTag')
+            ->andWhere('(entity.approved = false OR pendingNodeTag.approved = false)')
             ->distinct()
-            // Nodes whose pending tags changed most recently come first. The
+            // Nodes without pending tags come first, then the latest pending tags. The
             // scalar subquery is HIDDEN because the DISTINCT select only
             // carries entity columns, which Postgres requires for ORDER BY.
             ->addSelect(
@@ -90,7 +90,8 @@ final class PendingObservationCrudController extends AbstractCrudController
                 .' WHERE IDENTITY(unapprovedNodeTag.node) = entity.id'
                 .' AND unapprovedNodeTag.approved = false) AS HIDDEN latestUnapprovedTagUpdatedAt'
             )
-            ->addOrderBy('latestUnapprovedTagUpdatedAt', 'DESC');
+            ->addOrderBy('latestUnapprovedTagUpdatedAt', 'DESC')
+            ->addOrderBy('entity.updatedAt', 'DESC');
     }
 
     public function configureFields(string $pageName): iterable
@@ -102,16 +103,16 @@ final class PendingObservationCrudController extends AbstractCrudController
         yield NumberField::new('latitude')->hideOnIndex();
         yield NumberField::new('longitude')->hideOnIndex();
         yield AssociationField::new('createdByUser');
-        // Only the tags that made the node show up in this queue.
+        // New nodes show all their custom tags, including already approved ones.
         yield AssociationField::new('nodeTags')
             ->hideOnForm()
-            ->setLabel('Unapproved tags')
-            ->formatValue(static function ($nodeTags): string {
+            ->setLabel('Tags')
+            ->formatValue(static function ($nodeTags, Node $node): string {
                 $nodeTags = $nodeTags instanceof Collection ? $nodeTags->toArray() : [];
 
                 $unapproved = array_filter(
                     $nodeTags,
-                    static fn (NodeTag $nodeTag): bool => !$nodeTag->isApproved(),
+                    static fn (NodeTag $nodeTag): bool => !$node->isApproved() || !$nodeTag->isApproved(),
                 );
 
                 return implode(', ', array_map(
