@@ -12,6 +12,7 @@ export interface RelatedNode {
 export interface UserNode {
   id: number
   provider: 'OSM' | 'local'
+  // Kept as arrays in the API for compatibility; each contains at most one parent.
   parentIds: number[]
   childIds: number[]
   parents: RelatedNode[]

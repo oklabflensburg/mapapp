@@ -71,7 +71,7 @@ final class NodeCreationTest extends WebTestCase
         self::assertNotSame($node['id'], $osm['id']);
     }
 
-    public function testMultipleParentsChildrenAndTagUpdates(): void
+    public function testSingleParentMultipleChildrenAndTagUpdates(): void
     {
         $client = static::createClient();
         $this->loginEditor($client);
@@ -92,8 +92,8 @@ final class NodeCreationTest extends WebTestCase
         ]], $child['parents']);
         self::assertSame($child['id'], $this->save($client, $payload, 200)['id']);
         $payload['parent'] = ['id' => $otherParent['id']];
-        $child = $this->save($client, $payload, 200);
-        self::assertEqualsCanonicalizing([$parent['id'], $otherParent['id']], $child['parentIds']);
+        $this->save($client, $payload, 422);
+        self::assertSame([$parent['id']], $child['parentIds']);
         self::assertEqualsCanonicalizing($child['parentIds'], array_column($child['parents'], 'id'));
         unset($payload['parent']);
         $payload['tags'] = ['name' => 'New node'];
@@ -146,6 +146,22 @@ final class NodeCreationTest extends WebTestCase
         $listedChild = array_values(array_filter($nodes, static fn (array $n): bool => $n['id'] === $child['id']))[0];
         self::assertSame('Edited OSM parent', $listedChild['parents'][0]['name']);
         self::assertSame(['name' => 'Edited OSM parent'], $listedChild['parents'][0]['tags']);
+    }
+
+    public function testSelectingChildAddsSiblingAndCannotNestExistingParent(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+        $parentPayload = $this->payload();
+        $parent = $this->save($client, $parentPayload);
+        $child = $this->save($client, $this->payload() + ['parent' => ['id' => $parent['id']]]);
+        $sibling = $this->save($client, $this->payload() + ['parent' => ['id' => $child['id']]]);
+        self::assertSame([$parent['id']], $sibling['parentIds']);
+        self::assertSame([], $sibling['childIds']);
+        $other = $this->save($client, $this->payload());
+        $this->save($client, $parentPayload + ['parent' => ['id' => $other['id']]], 422);
+        $this->save($client, $this->payload() + ['parent' => ['id' => $sibling['id']]]);
+        $this->save($client, array_replace($this->payload(), ['provider' => 'OSM', 'parent' => ['id' => $parent['id']]]), 422);
     }
 
     public function testMultipleUsersCanAddTheSameTagToTheSameNode(): void

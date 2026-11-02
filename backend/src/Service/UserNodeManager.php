@@ -7,7 +7,6 @@ use App\Api\SaveUserNodeRequest;
 use App\Api\SaveUserNodeResult;
 use App\Api\UserNodeResponse;
 use App\Entity\Node;
-use App\Entity\NodeRelation;
 use App\Entity\NodeTag;
 use App\Entity\User;
 use App\Repository\NodeProviderRepository;
@@ -66,6 +65,7 @@ final class UserNodeManager
                 if ($parent === $node) {
                     throw new UnprocessableEntityHttpException('A node cannot be its own parent.');
                 }
+                $parent = $parent->getParent() ?? $parent;
             }
 
             $created = $node === null;
@@ -76,9 +76,10 @@ final class UserNodeManager
             $this->assignTags($node, $request->tags);
             $node->touch();
             if ($parent !== null) {
-                $relation = $node->addParent($parent);
-                if ($relation !== null) {
-                    $this->entityManager->persist($relation);
+                try {
+                    $node->setParent($parent);
+                } catch (\InvalidArgumentException $exception) {
+                    throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
                 }
             }
             $this->observationTranslations->save($request, $node, $this->defaultUser());
@@ -226,10 +227,10 @@ final class UserNodeManager
             $node->getCreatedAt(),
             $node->getUpdatedAt(),
             $node->getNodeProvider()->getName(),
-            array_values($node->getParentRelations()->map(static fn (NodeRelation $relation): int => $relation->getParent()->getId())->toArray()),
-            array_values($node->getChildRelations()->map(static fn (NodeRelation $relation): int => $relation->getChild()->getId())->toArray()),
-            array_values($node->getParentRelations()->map(fn (NodeRelation $relation): RelatedNodeResponse => $this->relatedNodeResponse($relation->getParent()))->toArray()),
-            array_values($node->getChildRelations()->map(fn (NodeRelation $relation): RelatedNodeResponse => $this->relatedNodeResponse($relation->getChild()))->toArray()),
+            $node->getParent() !== null ? [$node->getParent()->getId()] : [],
+            array_values($node->getChildren()->map(static fn (Node $child): int => $child->getId())->toArray()),
+            $node->getParent() !== null ? [$this->relatedNodeResponse($node->getParent())] : [],
+            array_values($node->getChildren()->map($this->relatedNodeResponse(...))->toArray()),
             $observationTranslations,
         );
     }

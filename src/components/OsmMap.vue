@@ -57,7 +57,6 @@ interface PendingNode {
   latitude: number
   longitude: number
   label: string
-  parent?: SaveUserNodeInput['parent']
 }
 
 // Edit mode state: placed nodes, the nodes already saved from this batch and
@@ -65,10 +64,11 @@ interface PendingNode {
 const pendingNodes = ref<PendingNode[]>([])
 const savedBatchNodes = ref<UserNode[]>([])
 const pendingName = ref('')
+const batchParent = ref<SaveUserNodeInput['parent']>()
 
 // The anchor of the pending relation: the first placed node, shown as the
 // parent node the relation is attached to.
-const pendingAnchorLabel = computed(() => pendingNodes.value[0]?.label ?? '')
+const pendingAnchorLabel = ref('')
 
 let map: L.Map | undefined
 let locationLayers: LocationLayers = {}
@@ -160,9 +160,16 @@ function onKeydown(event: KeyboardEvent): void {
   }
 }
 
-// Places a pending node at the click position; clicking a feature keeps the
-// child-of-feature behavior for that node.
+// The first placement chooses the parent for the entire batch. Later
+// placements share it, even when they land on a different feature.
 function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
+  if (pendingNodes.value.length === 0 && savedBatchNodes.value.length === 0) {
+    batchParent.value = target
+      ? target.id !== undefined
+        ? { id: target.id }
+        : { providerNodeId: target.providerNodeId, latitude: target.latitude, longitude: target.longitude }
+      : undefined
+  }
   const node: PendingNode = {
     providerNodeId: crypto.randomUUID(),
     latitude: click.lat,
@@ -170,9 +177,9 @@ function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
     label: target
       ? target.osmTags.name || target.providerNodeId
       : t('map.create.nodeLabel', { number: pendingNodes.value.length + 1 }),
-    ...(target ? { parent: target.id !== undefined
-      ? { id: target.id }
-      : { providerNodeId: target.providerNodeId, latitude: target.latitude, longitude: target.longitude } } : {}),
+  }
+  if (pendingNodes.value.length === 0 && savedBatchNodes.value.length === 0) {
+    pendingAnchorLabel.value = node.label
   }
   pendingNodes.value = [...pendingNodes.value, node]
   pendingNodeLayer?.render(pendingNodes.value)
@@ -198,12 +205,15 @@ async function savePendingNodes(): Promise<void> {
         latitude: node.latitude,
         longitude: node.longitude,
         tags: isSingle && name !== '' ? { name } : {},
-        ...(node.parent ? { parent: node.parent } : {}),
+        ...(batchParent.value ? { parent: batchParent.value } : {}),
       })
       if (!saved) {
         createFailed.value = true
         return
       }
+      // A standalone first custom node becomes the root. Keep the reference
+      // through failures so retries and all following nodes use the same root.
+      batchParent.value ??= { id: saved.parentIds[0] ?? saved.id }
       pendingNodes.value = pendingNodes.value.slice(1)
       pendingNodeLayer?.render(pendingNodes.value)
       savedBatchNodes.value = [...savedBatchNodes.value, saved]
@@ -243,6 +253,8 @@ function finishBatch(): void {
   pendingNodes.value = []
   savedBatchNodes.value = []
   pendingName.value = ''
+  batchParent.value = undefined
+  pendingAnchorLabel.value = ''
   createFailed.value = false
   pendingNodeLayer?.render([])
 }

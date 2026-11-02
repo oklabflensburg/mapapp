@@ -141,7 +141,7 @@ try {
   await save.click()
   await expect(page.locator('.p-drawer')).toBeVisible()
   assert.equal(nodes.length, 2, 'both placed nodes are saved')
-  assert.deepEqual(nodeRequests.map(request => request.parent), [undefined, undefined])
+  assert.deepEqual(nodeRequests.map(request => request.parent), [undefined, { id: nodes[0].id }])
   assert.equal(groupRequests.length, 1)
   assert.equal(groupRequests[0].name, 'Hochallee north part')
   assert.deepEqual(groupRequests[0].members.map(member => member.id), nodes.map(node => node.id))
@@ -279,8 +279,47 @@ try {
   assert.equal(nodes.length, 6, 'retry does not duplicate the committed creation')
   assert.equal(groupRequests.length, 2, 'the relation is created once on retry')
   await closeEditor()
+  nodes.length = 0
+  groups.length = 0
+  await page.reload()
+  await ready()
+
+  // Three custom placements share the first custom node, even when a later
+  // placement hits an OSM feature.
+  await add.click()
+  await page.mouse.click(350, 500)
+  await page.mouse.click(380, 520)
+  await page.mouse.click(644, 400)
+  const customBatchStart = nodeRequests.length
+  await save.click()
+  await expect(page.locator('.p-drawer')).toBeVisible()
+  const customBatch = nodeRequests.slice(customBatchStart)
+  const customRoot = nodes.find(node => node.providerNodeId === customBatch[0].providerNodeId)
+  assert.deepEqual(customBatch.map(node => node.parent), [undefined, { id: customRoot.id }, { id: customRoot.id }])
+  await closeEditor()
+
+  nodes.length = 0
+  groups.length = 0
+  await page.reload()
+  await ready()
+
+  // An OSM first placement makes every custom node a direct child of that
+  // OSM feature, including placements on empty map space.
+  await add.click()
+  await page.mouse.click(644, 400)
+  await page.mouse.click(400, 550)
+  await page.mouse.click(430, 570)
+  const osmBatchStart = nodeRequests.length
+  await save.click()
+  await expect(page.locator('.p-drawer')).toBeVisible()
+  const osmBatch = nodeRequests.slice(osmBatchStart)
+  assert.equal(osmBatch.length, 3)
+  assert.equal(osmBatch[0].parent.providerNodeId, 'n-fixture')
+  assert.deepEqual(osmBatch[1].parent, osmBatch[0].parent)
+  assert.deepEqual(osmBatch[2].parent, osmBatch[0].parent)
+  await closeEditor()
   await page.screenshot({ path: '/tmp/map-edit-mode.png' })
-  console.log('PASS: edit mode placement, pending dialog, relation save, single node save, observation translations and layout, abort, escape, feature parents, retry')
+  console.log('PASS: edit mode placement, pending dialog, relation save, single node save, observation translations and layout, abort, escape, shared OSM/custom parents, retry')
 } finally {
   await browser.close()
 }

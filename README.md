@@ -112,7 +112,10 @@ Press the map's **Add node** (+) button to enter edit mode, then click the map
 to place nodes; each click adds another one and nothing is sent yet. A dialog
 below the controls shows the placed count, a name input, the **parent node**
 (the first placed node, the anchor of the pending relation) and Save/Abort.
-Clicking an existing node or OSM feature places a child of that feature.
+The first click chooses the parent for the batch: clicking an OSM feature attaches
+all placed custom nodes directly to it. On empty space, the first custom node
+becomes the parent and every following node is its direct child. Clicking an
+existing child uses its parent, so creation never adds another hierarchy level.
 Saving commits the batch: a single node becomes a plain node — the entered
 name becomes its `name` tag and its tag editor opens — while two or more nodes
 become members of a new node relation named with the entered name, whose tag
@@ -131,15 +134,23 @@ docker compose exec php php bin/console doctrine:migrations:migrate --no-interac
 `providerNodeId`, coordinates and tags. Local nodes use a generated UUID as their
 provider ID; reusing that identity updates the node. An optional `parent` is
 either `{ "id": 123 }` for a saved node or an OSM reference containing
-`providerNodeId`, `latitude`, and `longitude`. Parent links are additive and
-ordinary tag saves preserve them. Responses include `provider`, `parentIds`, and
-`childIds`; each node can have multiple parents and children. The `parents` and
+`providerNodeId`, `latitude`, and `longitude`. Each node stores one nullable
+`parent_id`; only custom nodes can be children. A parent can have multiple direct
+children, and children cannot have children. Ordinary tag saves preserve the
+parent; attempts to add a different parent are rejected. Responses retain
+`provider`, `parentIds`, and `childIds`; `parentIds` and `parents` contain at most
+one entry for API compatibility. The `parents` and
 `children` summaries include each related node's ID, provider, provider ID,
 nullable saved name and saved custom `tags`. The edit panel displays these
 relations above the tags, including OSM reference parents that do not appear as
 user markers. Each parent shows read-only OSM and custom tags in separate
 groups. Original OSM tags come from the shared map dataset, including buildings
 and areas; unavailable OSM data is distinguished from a parent with no tags.
+
+The hierarchy migration flattens existing descendants to their root. It stops
+for ambiguous root parents or cycles without a root, requiring those records to
+be corrected before retrying. Rolling back restores the relation table using
+the flattened links.
 
 Run the deterministic creation browser check with the dev server running:
 

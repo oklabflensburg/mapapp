@@ -18,7 +18,7 @@ final readonly class UserNodeResponse
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
         public string $provider,
-        /** @var list<int> */
+        /** @var list<int> Zero or one parent; array shape retained for API compatibility. */
         public array $parentIds,
         /** @var list<int> */
         public array $childIds,

@@ -49,19 +49,18 @@ class Node
     #[ORM\OneToMany(mappedBy: 'node', targetEntity: NodeTag::class)]
     private Collection $nodeTags;
 
-    /** @var Collection<int, NodeRelation> */
-    #[ORM\OneToMany(mappedBy: 'child', targetEntity: NodeRelation::class)]
-    private Collection $parentRelations;
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'children')]
+    #[ORM\JoinColumn(name: 'parent_id', nullable: true, onDelete: 'SET NULL')]
+    private ?Node $parent = null;
 
-    /** @var Collection<int, NodeRelation> */
-    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: NodeRelation::class)]
-    private Collection $childRelations;
+    /** @var Collection<int, Node> */
+    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class)]
+    private Collection $children;
 
     public function __construct()
     {
         $this->nodeTags = new ArrayCollection();
-        $this->parentRelations = new ArrayCollection();
-        $this->childRelations = new ArrayCollection();
+        $this->children = new ArrayCollection();
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
         $this->updatedAt = $now;
@@ -194,30 +193,36 @@ class Node
         return $provider !== '' ? $provider.' '.$this->providerNodeId : $this->providerNodeId;
     }
 
-    /** @return Collection<int, NodeRelation> */
-    public function getParentRelations(): Collection
+    public function getParent(): ?Node
     {
-        return $this->parentRelations;
+        return $this->parent;
     }
 
-    /** @return Collection<int, NodeRelation> */
-    public function getChildRelations(): Collection
+    /** @return Collection<int, Node> */
+    public function getChildren(): Collection
     {
-        return $this->childRelations;
+        return $this->children;
     }
 
-    public function addParent(Node $parent): ?NodeRelation
+    public function setParent(Node $parent): void
     {
-        foreach ($this->parentRelations as $relation) {
-            if ($relation->getParent() === $parent) {
-                return null;
-            }
+        if ($parent === $this) {
+            throw new \InvalidArgumentException('A node cannot be its own parent.');
+        }
+        if ($this->parent === $parent) {
+            return;
+        }
+        if ($this->parent !== null) {
+            throw new \InvalidArgumentException('A node can only have one parent.');
+        }
+        if ($parent->getParent() !== null || !$this->children->isEmpty()) {
+            throw new \InvalidArgumentException('Only a parent and its direct children are supported.');
+        }
+        if ($this->getNodeProvider()->getName() !== 'local') {
+            throw new \InvalidArgumentException('Only custom nodes can be children.');
         }
 
-        $relation = new NodeRelation($parent, $this);
-        $this->parentRelations->add($relation);
-        $parent->childRelations->add($relation);
-
-        return $relation;
+        $this->parent = $parent;
+        $parent->children->add($this);
     }
 }
