@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
@@ -24,6 +23,7 @@ import { OsmFeatureLayer } from '../map/osmFeatureLayer'
 import { UserNodeLayer } from '../map/userNodeLayer'
 import { NodeGroupLayer } from '../map/nodeGroupLayer'
 import { PendingNodeLayer } from '../map/pendingNodeLayer'
+import type { NodeCreationInput } from '../map/nodeCreation'
 import { RoutingLayer } from '../map/routingLayer'
 import { useRoutingStore } from '../stores/routing'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
@@ -50,25 +50,27 @@ const createMode = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
 
-// A node placed in edit mode; it only reaches the backend when Save commits
-// the batch. The label names the placed node in the dialog.
+// A node placed in edit mode keeps its own parent reference until Save
+// commits the batch.
 interface PendingNode {
   providerNodeId: string
   latitude: number
   longitude: number
-  label: string
+  parent?: SaveUserNodeInput['parent']
 }
 
-// Edit mode state: placed nodes, the nodes already saved from this batch and
-// the name from the dialog (which names the relation, or the single node).
+// Keep placed nodes and partial saves on the map; the shared editor owns
+// the name and observation drafts until the batch is submitted.
 const pendingNodes = ref<PendingNode[]>([])
 const savedBatchNodes = ref<UserNode[]>([])
-const pendingName = ref('')
-const batchParent = ref<SaveUserNodeInput['parent']>()
-
-// The anchor of the pending relation: the first placed node, shown as the
-// parent node the relation is attached to.
-const pendingAnchorLabel = ref('')
+const creation = computed(() => createMode.value ? {
+  count: pendingNodes.value.length + savedBatchNodes.value.length,
+  parentNames: [...new Set(Object.values(placedParents.value))],
+  saving: creating.value,
+  failed: createFailed.value,
+} : null)
+// Keep parent labels through partial saves and retries.
+const placedParents = ref<Record<string, string>>({})
 
 let map: L.Map | undefined
 let locationLayers: LocationLayers = {}
@@ -138,6 +140,7 @@ function toggleCreateMode(): void {
     routing.exit()
     clearSelection()
     emit('deselect-node')
+    emit('deselect-relation')
   }
 }
 
@@ -150,6 +153,7 @@ function toggleRoutingMode(): void {
   clearPendingNodes()
   clearSelection()
   emit('deselect-node')
+  emit('deselect-relation')
   routing.enter()
 }
 
@@ -160,26 +164,26 @@ function onKeydown(event: KeyboardEvent): void {
   }
 }
 
-// The first placement chooses the parent for the entire batch. Later
-// placements share it, even when they land on a different feature.
+// Each placement belongs to the feature it hits. Selecting a child uses its
+// existing parent, matching the backend's one-level parent/child model.
 function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
-  if (pendingNodes.value.length === 0 && savedBatchNodes.value.length === 0) {
-    batchParent.value = target
-      ? target.id !== undefined
-        ? { id: target.id }
-        : { providerNodeId: target.providerNodeId, latitude: target.latitude, longitude: target.longitude }
-      : undefined
+  const existing = target ? userNodes.byIdentity.get(nodeKey(target)) : undefined
+  const parent = existing?.parents[0] ?? existing ?? target
+  if (parent) {
+    placedParents.value[nodeKey(parent)] = ('name' in parent ? parent.name : undefined)
+      || ('tags' in parent ? parent.tags.name : undefined)
+      || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name : undefined)
+      || parent.providerNodeId
   }
   const node: PendingNode = {
     providerNodeId: crypto.randomUUID(),
     latitude: click.lat,
     longitude: click.lng,
-    label: target
-      ? target.osmTags.name || target.providerNodeId
-      : t('map.create.nodeLabel', { number: pendingNodes.value.length + 1 }),
-  }
-  if (pendingNodes.value.length === 0 && savedBatchNodes.value.length === 0) {
-    pendingAnchorLabel.value = node.label
+    parent: parent
+      ? parent.id !== undefined
+        ? { id: parent.id }
+        : { providerNodeId: parent.providerNodeId, latitude: target!.latitude, longitude: target!.longitude }
+      : undefined,
   }
   pendingNodes.value = [...pendingNodes.value, node]
   pendingNodeLayer?.render(pendingNodes.value)
@@ -189,7 +193,7 @@ function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
 // plain node (the dialog name becomes its name tag) while two or more become
 // members of a new node relation (the name names the relation). Saved nodes
 // are kept on failure, so a retry never saves a node twice.
-async function savePendingNodes(): Promise<void> {
+async function savePendingNodes(input: NodeCreationInput): Promise<void> {
   if (creating.value) return
   if (pendingNodes.value.length === 0 && savedBatchNodes.value.length === 0) return
   creating.value = true
@@ -197,23 +201,21 @@ async function savePendingNodes(): Promise<void> {
   try {
     while (pendingNodes.value.length > 0) {
       const node = pendingNodes.value[0]
-      const name = pendingName.value.trim()
+      const name = input.name.trim()
       const isSingle = savedBatchNodes.value.length + pendingNodes.value.length === 1
       const saved = await userNodes.save({
         provider: 'local',
         providerNodeId: node.providerNodeId,
         latitude: node.latitude,
         longitude: node.longitude,
-        tags: isSingle && name !== '' ? { name } : {},
-        ...(batchParent.value ? { parent: batchParent.value } : {}),
+        tags: isSingle ? { ...input.tags, ...(name !== '' ? { name } : {}) } : {},
+        ...(isSingle ? { translationLocale: input.translationLocale, translations: input.translations } : {}),
+        ...(node.parent ? { parent: node.parent } : {}),
       })
       if (!saved) {
         createFailed.value = true
         return
       }
-      // A standalone first custom node becomes the root. Keep the reference
-      // through failures so retries and all following nodes use the same root.
-      batchParent.value ??= { id: saved.parentIds[0] ?? saved.id }
       pendingNodes.value = pendingNodes.value.slice(1)
       pendingNodeLayer?.render(pendingNodes.value)
       savedBatchNodes.value = [...savedBatchNodes.value, saved]
@@ -229,11 +231,11 @@ async function savePendingNodes(): Promise<void> {
       return
     }
 
-    const name = pendingName.value.trim()
+    const name = input.name.trim()
     const members = savedBatchNodes.value.map((node) => ({ id: node.id }))
     const group = await nodeGroups.save({
       members,
-      tags: {},
+      tags: input.tags,
       ...(name !== '' ? { name } : {}),
     })
     if (!group) {
@@ -252,9 +254,7 @@ async function savePendingNodes(): Promise<void> {
 function finishBatch(): void {
   pendingNodes.value = []
   savedBatchNodes.value = []
-  pendingName.value = ''
-  batchParent.value = undefined
-  pendingAnchorLabel.value = ''
+  placedParents.value = {}
   createFailed.value = false
   pendingNodeLayer?.render([])
 }
@@ -278,7 +278,7 @@ function locateSelf(): void {
 
 // Exposed so the view can drop the map highlight when a panel closes, and
 // highlight a relation opened from the node panel.
-defineExpose({ clearSelection, selectRelation })
+defineExpose({ clearSelection, selectRelation, creation, savePendingNodes, abortCreation })
 
 // User nodes (saved edits) rendered on top of the OSM layer.
 const userNodes = useUserNodesStore()
@@ -517,6 +517,7 @@ onBeforeUnmount(() => {
         :title="t('map.routing.button')"
         :aria-pressed="routing.mode"
         :severity="routing.mode ? 'primary' : 'secondary'"
+        :disabled="creating"
         @click="toggleRoutingMode"
       />
       <!-- Adding nodes requires an editor; anonymous visitors can only browse. -->
@@ -537,45 +538,6 @@ onBeforeUnmount(() => {
     <p v-if="routing.noRoute" role="alert">{{ t('map.routing.noRoute') }}</p>
     <p v-if="routing.failed" role="alert">{{ t('map.routing.failed') }}</p>
     <p v-if="routeSummary" role="status">{{ routeSummary }}</p>
-    <div v-if="createFailed" role="alert">
-      <p>{{ t('map.create.failed') }}</p>
-      <Button :label="t('map.create.retry')" :disabled="creating" @click="savePendingNodes" />
-    </div>
-  </div>
-  <!-- Bottom bar for the nodes placed in edit mode; nothing is sent until
-       Save commits the batch. -->
-  <div
-    v-if="createMode && pendingNodes.length > 0"
-    class="pending-dialog"
-    role="form"
-    :aria-label="t('map.create.pendingDialog')"
-  >
-    <p class="pending-count" role="status">{{ t('map.create.placed', { count: pendingNodes.length }) }}</p>
-    <div class="pending-field">
-      <label class="pending-label" for="pending-node-name">{{ t('map.create.name') }}</label>
-      <InputText
-        id="pending-node-name"
-        v-model="pendingName"
-        :placeholder="t('map.create.namePlaceholder')"
-        class="pending-name"
-      />
-    </div>
-    <p class="pending-parent">
-      {{ t('map.create.parentNode') }}:
-      <span>{{ pendingAnchorLabel || t('map.create.noParent') }}</span>
-    </p>
-    <div class="pending-actions">
-      <Button size="small" :label="t('map.create.save')" icon="pi pi-check" :loading="creating" @click="savePendingNodes" />
-      <Button
-        size="small"
-        :label="t('map.create.abort')"
-        icon="pi pi-times"
-        text
-        severity="danger"
-        :disabled="creating"
-        @click="abortCreation"
-      />
-    </div>
   </div>
 </template>
 
@@ -616,65 +578,6 @@ onBeforeUnmount(() => {
   border-radius: var(--p-content-border-radius);
   box-shadow: 0 2px 6px #0002;
   font-size: 0.875rem;
-}
-
-/* The name bar for placed nodes: pinned to the very bottom of the screen,
-   full width, small font for a mobile screen. */
-.pending-dialog {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1001;
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.5rem calc(0.75rem + env(safe-area-inset-right)) calc(0.5rem + env(safe-area-inset-bottom)) calc(0.75rem + env(safe-area-inset-left));
-  background: var(--p-content-background);
-  border-radius: var(--p-content-border-radius) var(--p-content-border-radius) 0 0;
-  box-shadow: 0 -2px 6px #0002;
-  font-size: 0.75rem;
-}
-
-.pending-dialog .pending-count {
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: 0.75rem;
-}
-
-.pending-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.pending-label {
-  font-size: 0.7rem;
-  color: var(--p-text-muted-color);
-}
-
-.pending-name {
-  font-size: 0.75rem;
-}
-
-.pending-parent {
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: 0.7rem;
-  color: var(--p-text-muted-color);
-}
-
-.pending-parent span {
-  color: var(--p-text-color);
-}
-
-.pending-actions {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .create-toggle.active,

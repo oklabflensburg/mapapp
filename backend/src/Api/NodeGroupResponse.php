@@ -21,6 +21,8 @@ final readonly class NodeGroupResponse
         public array $observations,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
+        /** @var list<RelatedNodeResponse> Distinct parents of the member nodes. */
+        public array $parents = [],
     ) {
     }
 }

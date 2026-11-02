@@ -197,6 +197,14 @@ final class NodeGroupManager
             }
         }
 
+        $parents = [];
+        foreach ($group->getMembers() as $member) {
+            $parent = $member->getNode()->getParent();
+            if ($parent !== null) {
+                $parents[$parent->getId()] = $this->relatedNodeResponse($parent);
+            }
+        }
+
         return new NodeGroupResponse(
             $group->getId() ?? 0,
             $group->getName(),
@@ -209,6 +217,7 @@ final class NodeGroupManager
             $observations,
             $group->getCreatedAt(),
             $group->getUpdatedAt(),
+            array_values($parents),
         );
     }
 

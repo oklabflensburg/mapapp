@@ -15,6 +15,7 @@ export default {
   map: {
     create: {
       add: 'Knoten hinzufügen',
+      placeHint: 'Klicke auf die Karte oben, um Knoten zu platzieren.',
       placed: '{count} Knoten platziert',
       pendingDialog: 'Platzierte Knoten',
       name: 'Name',

@@ -6,6 +6,8 @@ import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
+import { useOsmDataStore } from '../stores/osmData'
+import { nodeKey, useUserNodesStore } from '../stores/userNodes'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 import { useDefaultObservationTagsStore } from '../stores/defaultObservationTags'
@@ -30,6 +32,20 @@ const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
 const tagKeyLabels = useTagKeyLabelsStore()
 const defaultObservationTags = useDefaultObservationTagsStore()
+
+const userNodes = useUserNodesStore()
+const osmData = useOsmDataStore()
+const parentNames = computed(() => {
+  // Prefer refreshed node details after a parent is edited in this session.
+  const parents = props.group?.parents ?? props.group?.members.flatMap(member =>
+    userNodes.byIdentity.get(nodeKey(member))?.parents ?? []) ?? []
+  return [...new Set(parents.map(parent => {
+    const saved = userNodes.byIdentity.get(nodeKey(parent))
+    return saved?.tags.name?.trim() || parent.name?.trim()
+      || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
+      || parent.providerNodeId
+  }))]
+})
 
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
@@ -58,6 +74,7 @@ watch(
       return
     }
     splitRows(group)
+    if (group.parents?.some(parent => parent.provider === 'OSM')) void osmData.load()
   },
 )
 
@@ -129,13 +146,17 @@ async function save(): Promise<void> {
 <template>
   <Drawer
     :visible="visible"
-    position="right"
+    position="bottom"
+    class="map-editor"
     :modal="false"
     :dismissable="false"
     :header="group?.name || t('relationEditor.title')"
-    :style="{ width: '24rem', maxWidth: '100vw' }"
     @update:visible="emit('update:visible', $event)"
   >
+    <section v-if="group" class="members-section" :aria-label="t('nodeEditor.parents')">
+      <h4 class="section-title">{{ t('nodeEditor.parents') }}</h4>
+      <p class="empty-hint">{{ parentNames.join(', ') || t('map.create.noParent') }}</p>
+    </section>
     <section v-if="group" class="members-section" :aria-label="t('relationEditor.members')">
       <h4 class="section-title">{{ t('relationEditor.members') }}</h4>
       <p class="empty-hint">{{ t('relationEditor.memberCount', { count: group.members.length }) }}</p>

@@ -24,6 +24,8 @@ export interface NodeGroup {
   // Human-readable name, e.g. of the road part the relation covers.
   name: string | null
   members: GroupMember[]
+  // Parents are returned independently of member visibility in /api/nodes.
+  parents?: RelatedNode[]
   area: GroupArea | null
   tags: Record<string, string>
   // Tag key/value pairs not yet approved by an admin.

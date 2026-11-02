@@ -109,6 +109,53 @@ final class NodeGroupControllerTest extends WebTestCase
         $this->assertAreaAroundMembers($data);
     }
 
+    public function testRelationPreservesDistinctMemberParents(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+        $parents = [];
+        foreach (['Street Alpha', 'Street Beta'] as $name) {
+            $payload = $this->memberPayload();
+            $client->jsonRequest('POST', '/api/nodes', [
+                ...$payload, 'provider' => 'OSM', 'tags' => ['name' => $name],
+            ]);
+            self::assertResponseStatusCodeSame(201);
+            $parents[] = json_decode((string) $client->getResponse()->getContent(), true);
+        }
+
+        $children = [];
+        // Two points on the first street and one on the second street.
+        foreach ([$parents[0], $parents[0], $parents[1]] as $parent) {
+            $payload = $this->memberPayload();
+            $client->jsonRequest('POST', '/api/nodes', [
+                ...$payload, 'provider' => 'local', 'tags' => [], 'parent' => ['id' => $parent['id']],
+            ]);
+            self::assertResponseStatusCodeSame(201);
+            $children[] = json_decode((string) $client->getResponse()->getContent(), true);
+        }
+
+        $group = $this->save($client, [
+            'name' => 'Cross-street area',
+            'members' => array_map(static fn (array $node): array => ['id' => $node['id']], $children),
+            'tags' => [],
+        ], 201);
+        self::assertSame(array_column($parents, 'id'), array_column($group['parents'], 'id'));
+        self::assertSame(['Street Alpha', 'Street Beta'], array_column($group['parents'], 'name'));
+
+        $client->jsonRequest('GET', '/api/node-groups');
+        self::assertResponseIsSuccessful();
+        $groups = json_decode((string) $client->getResponse()->getContent(), true);
+        $listed = array_values(array_filter($groups, static fn (array $entry): bool => $entry['id'] === $group['id']))[0];
+        self::assertSame($group['parents'], $listed['parents']);
+
+        $client->jsonRequest('GET', '/api/nodes');
+        self::assertResponseIsSuccessful();
+        $nodes = array_column(json_decode((string) $client->getResponse()->getContent(), true), null, 'id');
+        foreach ($children as $child) {
+            self::assertSame($child['parentIds'], $nodes[$child['id']]['parentIds']);
+        }
+    }
+
     public function testStreetPartBetweenTwoNodes(): void
     {
         $client = static::createClient();

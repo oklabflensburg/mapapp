@@ -15,6 +15,7 @@ export default {
   map: {
     create: {
       add: 'Add node',
+      placeHint: 'Click the map above to place nodes.',
       placed: '{count} nodes placed',
       pendingDialog: 'Placed nodes',
       name: 'Name',

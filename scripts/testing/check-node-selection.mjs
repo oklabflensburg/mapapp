@@ -79,12 +79,12 @@ try {
     await expectChild(page)
     await closeEditor(page)
     // Edit mode places pending nodes; Save commits the batch. The click lands
-    // on the child marker, so the placed node becomes its child.
+    // on the child marker, so the placed node uses that child's parent.
     await page.getByRole('button', { name: 'Add node', exact: true }).click()
     await page.mouse.click(640, 400)
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect.poll(() => requests.length).toBe(1)
-    assert.deepEqual(requests[0].parent, { id: child.id })
+    assert.deepEqual(requests[0].parent, { id: parent.id })
     await page.close()
   }
 
@@ -107,9 +107,9 @@ try {
   await expectChild(page)
   await closeEditor(page)
   await highlightParent()
-  await page.mouse.move(500, 600)
+  await page.mouse.move(500, 250)
   await page.mouse.down()
-  await page.mouse.move(560, 620, { steps: 12 })
+  await page.mouse.move(560, 270, { steps: 12 })
   await page.mouse.up()
   await expect(page.locator('.map')).not.toHaveClass(/leaflet-zoom-anim/)
   await page.waitForTimeout(250)

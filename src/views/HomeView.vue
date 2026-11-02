@@ -65,6 +65,7 @@ function deselectNode(): void {
 
 function onPanelVisible(visible: boolean): void {
   if (!visible) {
+    mapRef.value?.abortCreation()
     deselectNode()
   }
 }
@@ -92,7 +93,7 @@ function onRelationPanelVisible(visible: boolean): void {
 </script>
 
 <template>
-  <main class="home">
+  <main class="home" :class="{ 'editor-open': editTarget || relationTarget || mapRef?.creation }">
     <p v-if="mapStatusMessage" class="map-status" role="status">{{ mapStatusMessage }}</p>
     <UserBar />
     <OsmMap
@@ -105,9 +106,11 @@ function onRelationPanelVisible(visible: boolean): void {
       @deselect-relation="deselectRelation"
     />
     <NodeTagPanel
-      :visible="editTarget !== null"
+      :visible="editTarget !== null || !!mapRef?.creation"
+      :creation="mapRef?.creation ?? null"
       :node="editTarget"
       @update:visible="onPanelVisible"
+      @create="mapRef?.savePendingNodes($event)"
       @edit-relation="onEditRelation"
     />
     <RelationTagPanel
@@ -126,6 +129,15 @@ function onRelationPanelVisible(visible: boolean): void {
   position: relative;
   height: 100vh;
   height: 100dvh;
+}
+
+/* Keep map controls in the visible map area above the bottom editor. */
+.home.editor-open :deep(.locate-button) {
+  bottom: calc(45dvh + 0.75rem);
+}
+
+.home.editor-open :deep(.leaflet-bottom) {
+  bottom: 45dvh;
 }
 
 /* Floating status chip above the map; clear of notches and Leaflet's own

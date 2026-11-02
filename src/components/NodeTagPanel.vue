@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import type { NodeCreationState, NodeCreationInput } from '../map/nodeCreation'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -23,11 +24,13 @@ interface TagRow {
 const props = defineProps<{
   visible: boolean
   node: NodeEditTarget | null
+  creation?: NodeCreationState | null
 }>()
 
 const emit = defineEmits<{
   (event: 'update:visible', visible: boolean): void
   (event: 'edit-relation', group: NodeGroup): void
+  (event: 'create', input: NodeCreationInput): void
 }>()
 
 const { t } = useI18n()
@@ -38,6 +41,7 @@ const settings = useSettingsStore()
 const tagKeyLabels = useTagKeyLabelsStore()
 const defaultObservationTags = useDefaultObservationTagsStore()
 
+const pendingName = ref('')
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
 const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
@@ -88,9 +92,16 @@ function splitRows(node: NonNullable<typeof savedNode.value>): void {
   }
 }
 
+// Placement counts and save progress must not reset the editor draft.
 watch(
-  () => [props.visible, props.node] as const,
-  ([visible, node]) => {
+  [() => props.visible, () => props.node, () => !!props.creation],
+  ([visible, node, creating]) => {
+    if (visible && creating) {
+      pendingName.value = ''
+      rows.value = []
+      observationRows.value = []
+      return
+    }
     if (!visible || !node) {
       return
     }
@@ -189,11 +200,12 @@ function removeObservationRow(index: number): void {
 }
 
 function close(): void {
+  if (props.creation?.saving) return
   emit('update:visible', false)
 }
 
 async function save(): Promise<void> {
-  if (!props.node || hasIncompleteTags.value) {
+  if ((!props.node && !props.creation) || hasIncompleteTags.value) {
     return
   }
   const tags: Record<string, string> = {}
@@ -206,11 +218,7 @@ async function save(): Promise<void> {
   // Saving keeps the panel open: it stays as long as the element is
   // selected, and only closing it deselects. New and edited tags are
   // unapproved, so re-split the sections from the saved response.
-  const saved = await userNodes.save({
-    provider: props.node.provider,
-    providerNodeId: props.node.providerNodeId,
-    latitude: props.node.latitude,
-    longitude: props.node.longitude,
+  const draft = {
     tags,
     translationLocale: settings.locale,
     translations: observationRows.value.flatMap((row) => {
@@ -227,6 +235,17 @@ async function save(): Promise<void> {
         previousValueTranslation: valueDraft?.previous,
       }] : []
     }),
+  }
+  if (props.creation) {
+    emit('create', { ...draft, name: pendingName.value })
+    return
+  }
+  const saved = await userNodes.save({
+    ...draft,
+    provider: props.node!.provider,
+    providerNodeId: props.node!.providerNodeId,
+    latitude: props.node!.latitude,
+    longitude: props.node!.longitude,
   })
   if (saved) {
     splitRows(saved)
@@ -237,189 +256,202 @@ async function save(): Promise<void> {
 <template>
   <Drawer
     :visible="visible"
-    position="right"
+    position="bottom"
+    class="map-editor"
+    :closable="!creation?.saving"
+    :close-on-escape="!creation?.saving"
     :modal="false"
     :dismissable="false"
-    :header="t('nodeEditor.title')"
-    :style="{ width: '24rem', maxWidth: '100vw' }"
+    :header="t(creation ? 'map.create.add' : 'nodeEditor.title')"
     @update:visible="emit('update:visible', $event)"
   >
-    <section v-if="savedNode" class="relations-section" :aria-label="t('nodeEditor.relations')">
-      <h4 class="section-title">{{ t('nodeEditor.relations') }}</h4>
-      <p v-if="!savedNode.parents.length && !savedNode.children.length" class="empty-hint">
-        {{ t('nodeEditor.noRelations') }}
-      </p>
-      <template v-for="group in relationGroups" :key="group.label">
-        <div v-if="group.nodes.length" class="relation-group">
-          <h5 class="relation-heading">{{ t(group.label) }}</h5>
-          <ul class="relation-list">
-            <li v-for="related in group.nodes" :key="related.id" class="relation-item">
-              <span>{{ related.name || related.providerNodeId }}</span>
-              <small>{{ related.provider }}<template v-if="related.name"> · {{ related.providerNodeId }}</template></small>
-              <ParentNodeTags v-if="group.label === 'nodeEditor.parents'" :parent="related" />
-            </li>
-          </ul>
-        </div>
-      </template>
-    </section>
+    <div v-if="creation" role="form" :aria-label="t('map.create.pendingDialog')" class="creation-details">
+      <p role="status">{{ t('map.create.placed', { count: creation.count }) }}</p>
+      <p v-if="creation.count === 0" class="empty-hint">{{ t('map.create.placeHint') }}</p>
+      <label for="pending-node-name">{{ t('map.create.name') }}</label>
+      <InputText id="pending-node-name" v-model="pendingName" :disabled="creation.saving" :placeholder="t('map.create.namePlaceholder')" />
+      <p class="empty-hint">{{ t('nodeEditor.parents') }}: {{ creation.parentNames.join(', ') || t('map.create.noParent') }}</p>
+      <p v-if="creation.failed" class="save-error" role="alert">{{ t('map.create.failed') }}</p>
+    </div>
+    <fieldset :disabled="creation?.saving" class="editor-fields">
+      <section v-if="savedNode && !creation" class="relations-section" :aria-label="t('nodeEditor.relations')">
+        <h4 class="section-title">{{ t('nodeEditor.relations') }}</h4>
+        <p v-if="!savedNode.parents.length && !savedNode.children.length" class="empty-hint">
+          {{ t('nodeEditor.noRelations') }}
+        </p>
+        <template v-for="group in relationGroups" :key="group.label">
+          <div v-if="group.nodes.length" class="relation-group">
+            <h5 class="relation-heading">{{ t(group.label) }}</h5>
+            <ul class="relation-list">
+              <li v-for="related in group.nodes" :key="related.id" class="relation-item">
+                <span>{{ related.name || related.providerNodeId }}</span>
+                <small>{{ related.provider }}<template v-if="related.name"> · {{ related.providerNodeId }}</template></small>
+                <ParentNodeTags v-if="group.label === 'nodeEditor.parents'" :parent="related" />
+              </li>
+            </ul>
+          </div>
+        </template>
+      </section>
 
-    <section class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
-      <h4 class="section-title">{{ t('nodeEditor.nodeRelations') }}</h4>
-      <p v-if="nodeRelations.length === 0" class="empty-hint">
-        {{ t('nodeEditor.noNodeRelations') }}
-      </p>
-      <div v-for="group in nodeRelations" :key="group.id" class="node-relation">
-        <div class="node-relation-heading">
-          <span>{{ relationLabel(group) }}</span>
-          <Button
-            v-if="auth.canEdit"
-            :label="t('nodeEditor.editRelation')"
-            icon="pi pi-pencil"
-            text
-            severity="secondary"
-            @click="emit('edit-relation', group)"
-          />
+      <section v-if="!creation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
+        <h4 class="section-title">{{ t('nodeEditor.nodeRelations') }}</h4>
+        <p v-if="nodeRelations.length === 0" class="empty-hint">
+          {{ t('nodeEditor.noNodeRelations') }}
+        </p>
+        <div v-for="group in nodeRelations" :key="group.id" class="node-relation">
+          <div class="node-relation-heading">
+            <span>{{ relationLabel(group) }}</span>
+            <Button
+              v-if="auth.canEdit"
+              :label="t('nodeEditor.editRelation')"
+              icon="pi pi-pencil"
+              text
+              severity="secondary"
+              @click="emit('edit-relation', group)"
+            />
+          </div>
+          <div v-if="Object.keys(group.tags).length > 0" class="tag-table-scroll">
+            <table class="tag-table">
+              <tr v-for="[key, value] in Object.entries(group.tags)" :key="key">
+                <th>{{ tagKeyLabels.label(key) }}</th>
+                <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
+              </tr>
+            </table>
+          </div>
         </div>
-        <div v-if="Object.keys(group.tags).length > 0" class="tag-table-scroll">
+      </section>
+
+      <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
+        <h4 class="section-title">{{ t('nodeEditor.osmTags') }}</h4>
+        <div class="tag-table-scroll">
           <table class="tag-table">
-            <tr v-for="[key, value] in Object.entries(group.tags)" :key="key">
+            <tr v-for="[key, value] in osmTagEntries" :key="key">
               <th>{{ tagKeyLabels.label(key) }}</th>
               <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
             </tr>
           </table>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
-      <h4 class="section-title">{{ t('nodeEditor.osmTags') }}</h4>
-      <div class="tag-table-scroll">
-        <table class="tag-table">
-          <tr v-for="[key, value] in osmTagEntries" :key="key">
-            <th>{{ tagKeyLabels.label(key) }}</th>
-            <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
-          </tr>
-        </table>
-      </div>
-    </section>
-
-    <section class="custom-tags-section">
-      <p v-if="rows.length === 0 && observationRows.length === 0 && auth.canEdit" class="empty-hint">
-        {{ t('nodeEditor.empty') }}
-      </p>
-      <p v-if="!auth.canEdit" class="empty-hint">{{ t('nodeEditor.loginRequired') }}</p>
-      <!-- Approved tags are managed by admins, so they are read-only here. -->
-      <div v-if="rows.length > 0" class="tag-table-scroll">
-        <table class="tag-table">
-          <tr v-for="row in rows" :key="row.key">
-            <th>{{ tagKeyLabels.label(row.key) }}</th>
-            <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
-          </tr>
-        </table>
-      </div>
-      <p v-if="userNodes.saveFailed" class="save-error" role="alert">
-        {{ t(userNodes.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
-      </p>
-    </section>
-
-    <section v-if="auth.canEdit || observationRows.length > 0" class="observations-section">
-      <h4 class="section-title">{{ t('nodeEditor.observations') }}</h4>
-      <template v-if="auth.canEdit">
-        <Select
-          v-if="suggestedObservationOptions.length > 0"
-          :model-value="null"
-          :options="suggestedObservationOptions"
-          option-label="label"
-          option-value="key"
-          :filter-fields="['label', 'key']"
-          :placeholder="t('nodeEditor.suggestedTags')"
-          :filter="true"
-          :filter-placeholder="t('nodeEditor.searchTags')"
-          size="small"
-          class="suggestion-select"
-          :aria-label="t('nodeEditor.suggestedTags')"
-          @update:model-value="addSuggestedObservation"
-        />
-        <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
-          <div class="observation-field">
-            <label :for="`observation-key-translation-${index}`">{{ t('nodeEditor.keyTranslation') }}</label>
-            <InputText
-              :id="`observation-key-translation-${index}`"
-              :model-value="translationText(row, 'key')"
-              :placeholder="t('nodeEditor.keyTranslation')"
-              @update:model-value="editTranslation(row, 'key', $event)"
-            />
-            <InputText
-              :model-value="row.key"
-              @update:model-value="editRawTag(row, 'key', $event)"
-              :readonly="isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined"
-              :invalid="!row.key.trim()"
-              :placeholder="t('nodeEditor.key')"
-              :aria-label="t('nodeEditor.key')"
-              class="raw-tag-input"
-            />
-          </div>
-          <div class="observation-field">
-            <label :for="`observation-value-translation-${index}`">{{ t('nodeEditor.valueTranslation') }}</label>
-            <InputText
-              :id="`observation-value-translation-${index}`"
-              :model-value="translationText(row, 'value')"
-              :placeholder="t('nodeEditor.valueTranslation')"
-              @update:model-value="editTranslation(row, 'value', $event)"
-            />
-            <Select
-              v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
-              :model-value="row.value === '' ? null : row.value"
-              :invalid="!row.value.trim()"
-              :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
-              option-label="label"
-              option-value="value"
-              :placeholder="t('nodeEditor.value')"
-              :aria-label="t('nodeEditor.value')"
-              :editable="true"
-              show-clear
-              size="small"
-              class="raw-tag-input"
-              @update:model-value="editRawTag(row, 'value', $event)"
-            />
-            <InputText v-else :model-value="row.value" :invalid="!row.value.trim()" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
-          </div>
-          <Button
-            :aria-label="t('nodeEditor.removeTag')"
-            icon="pi pi-times"
-            text
-            severity="danger"
-            @click="removeObservationRow(index)"
-          />
-        </div>
-        <Button
-          :label="t('nodeEditor.addObservation')"
-          icon="pi pi-plus"
-          text
-          severity="secondary"
-          @click="addObservationRow"
-        />
-      </template>
-      <template v-else>
-        <div class="tag-table-scroll">
+      <section class="custom-tags-section">
+        <p v-if="rows.length === 0 && observationRows.length === 0 && auth.canEdit" class="empty-hint">
+          {{ t('nodeEditor.empty') }}
+        </p>
+        <p v-if="!auth.canEdit" class="empty-hint">{{ t('nodeEditor.loginRequired') }}</p>
+        <!-- Approved tags are managed by admins, so they are read-only here. -->
+        <div v-if="rows.length > 0" class="tag-table-scroll">
           <table class="tag-table">
-            <tr v-for="row in observationRows" :key="row.key">
+            <tr v-for="row in rows" :key="row.key">
               <th>{{ tagKeyLabels.label(row.key) }}</th>
               <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
             </tr>
           </table>
         </div>
-      </template>
-    </section>
+        <p v-if="!creation && userNodes.saveFailed" class="save-error" role="alert">
+          {{ t(userNodes.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
+        </p>
+      </section>
+
+      <section v-if="auth.canEdit || observationRows.length > 0" class="observations-section">
+        <h4 class="section-title">{{ t('nodeEditor.observations') }}</h4>
+        <template v-if="auth.canEdit">
+          <Select
+            v-if="suggestedObservationOptions.length > 0"
+            :model-value="null"
+            :options="suggestedObservationOptions"
+            option-label="label"
+            option-value="key"
+            :filter-fields="['label', 'key']"
+            :placeholder="t('nodeEditor.suggestedTags')"
+            :filter="true"
+            :filter-placeholder="t('nodeEditor.searchTags')"
+            size="small"
+            class="suggestion-select"
+            :aria-label="t('nodeEditor.suggestedTags')"
+            @update:model-value="addSuggestedObservation"
+          />
+          <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
+            <div class="observation-field">
+              <label :for="`observation-key-translation-${index}`">{{ t('nodeEditor.keyTranslation') }}</label>
+              <InputText
+                :id="`observation-key-translation-${index}`"
+                :model-value="translationText(row, 'key')"
+                :placeholder="t('nodeEditor.keyTranslation')"
+                @update:model-value="editTranslation(row, 'key', $event)"
+              />
+              <InputText
+                :model-value="row.key"
+                @update:model-value="editRawTag(row, 'key', $event)"
+                :readonly="isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined"
+                :invalid="!row.key.trim()"
+                :placeholder="t('nodeEditor.key')"
+                :aria-label="t('nodeEditor.key')"
+                class="raw-tag-input"
+              />
+            </div>
+            <div class="observation-field">
+              <label :for="`observation-value-translation-${index}`">{{ t('nodeEditor.valueTranslation') }}</label>
+              <InputText
+                :id="`observation-value-translation-${index}`"
+                :model-value="translationText(row, 'value')"
+                :placeholder="t('nodeEditor.valueTranslation')"
+                @update:model-value="editTranslation(row, 'value', $event)"
+              />
+              <Select
+                v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
+                :model-value="row.value === '' ? null : row.value"
+                :invalid="!row.value.trim()"
+                :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
+                option-label="label"
+                option-value="value"
+                :placeholder="t('nodeEditor.value')"
+                :aria-label="t('nodeEditor.value')"
+                :editable="true"
+                show-clear
+                size="small"
+                class="raw-tag-input"
+                @update:model-value="editRawTag(row, 'value', $event)"
+              />
+              <InputText v-else :model-value="row.value" :invalid="!row.value.trim()" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
+            </div>
+            <Button
+              :aria-label="t('nodeEditor.removeTag')"
+              icon="pi pi-times"
+              text
+              severity="danger"
+              @click="removeObservationRow(index)"
+            />
+          </div>
+          <Button
+            :label="t('nodeEditor.addObservation')"
+            icon="pi pi-plus"
+            text
+            severity="secondary"
+            @click="addObservationRow"
+          />
+        </template>
+        <template v-else>
+          <div class="tag-table-scroll">
+            <table class="tag-table">
+              <tr v-for="row in observationRows" :key="row.key">
+                <th>{{ tagKeyLabels.label(row.key) }}</th>
+                <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
+              </tr>
+            </table>
+          </div>
+        </template>
+      </section>
+
+    </fieldset>
 
     <template #footer>
       <p v-if="auth.canEdit && hasIncompleteTags" class="save-error" role="alert">{{ t('nodeEditor.requiredTagFields') }}</p>
-      <Button :label="t('nodeEditor.cancel')" text severity="secondary" @click="close" />
+      <Button :label="t(creation ? 'map.create.abort' : 'nodeEditor.cancel')" :disabled="creation?.saving" text severity="secondary" @click="close" />
       <Button
         v-if="auth.canEdit"
-        :label="t('nodeEditor.save')"
-        :loading="userNodes.saving"
-        :disabled="hasIncompleteTags"
+        :label="t(creation?.failed ? 'map.create.retry' : 'nodeEditor.save')"
+        :loading="creation ? creation.saving : userNodes.saving"
+        :disabled="hasIncompleteTags || (creation !== null && creation !== undefined && creation.count === 0)"
         icon="pi pi-check"
         @click="save"
       />
@@ -428,6 +460,28 @@ async function save(): Promise<void> {
 </template>
 
 <style scoped>
+.editor-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.creation-details {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.creation-details p {
+  margin: 0;
+}
+
+.creation-details label {
+  font-size: 0.875rem;
+  color: var(--p-text-muted-color);
+}
+
 .section-title {
   margin: 0 0 0.375rem;
   font-size: 0.875rem;
