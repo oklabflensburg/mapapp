@@ -1,4 +1,8 @@
 export default {
+  tagValues: {
+    yes: 'Yes',
+    no: 'No',
+  },
   auth: {
     login: 'Log in',
     loginTitle: 'Log in',

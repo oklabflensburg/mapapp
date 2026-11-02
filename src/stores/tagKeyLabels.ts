@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { AppLocale } from './settings'
+import i18n from '../i18n'
 
 // Last-resort display version of a raw tag key. Keep in sync with
 // TagKeyLabeler::prettify (backend) — unknown keys never render with
@@ -61,8 +62,10 @@ export const useTagKeyLabelsStore = defineStore('tagKeyLabels', () => {
   }
 
   function valueLabel(key: string, value: string): string {
+    if (value === 'yes' || value === 'no') return i18n.global.t(`tagValues.${value}`)
     const id = JSON.stringify([key, value])
-    return Object.hasOwn(values.value, id) ? values.value[id]! : value
+    if (Object.hasOwn(values.value, id)) return values.value[id]!
+    return value
   }
 
   return { labels, values, load, label, valueLabel }

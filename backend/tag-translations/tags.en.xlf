@@ -11453,9 +11453,9 @@
       </segment>
     </unit>
     <unit id="t_1c322048fb2502dcac899effb1c0ad7c1b5ec9b41edd12224d5d825df9734831" name="value:[&quot;amenity&quot;,&quot;place_of_worship&quot;]" tag:keyRef="k_43ae3b595a28" tag:category="osm" tag:ignore="false">
-      <segment state="initial">
+      <segment state="translated">
         <source>place_of_worship</source>
-        <target/>
+        <target>Church</target>
       </segment>
     </unit>
     <unit id="t_d5397a839c89cbac76f0bd030aac066edb0063544d466fc6e667abc04a02648c" name="value:[&quot;amenity&quot;,&quot;police&quot;]" tag:keyRef="k_43ae3b595a28" tag:category="osm" tag:ignore="false">
@@ -26319,9 +26319,9 @@ M.E. steht hier 04 93 Richtung Südost; wäre dann Richtung "rückwärts" und Po
       </segment>
     </unit>
     <unit id="t_917b8f00288a09a79a696094c03ac90c2ad220071d30b049c29aa4f2cf497ac1" name="value:[&quot;healthcare&quot;,&quot;pharmacy&quot;]" tag:keyRef="k_9ff28bfa80b1" tag:category="osm" tag:ignore="false">
-      <segment state="initial">
+      <segment state="translated">
         <source>pharmacy</source>
-        <target/>
+        <target>Pharmacy</target>
       </segment>
     </unit>
     <unit id="t_72020131ddacc8be49287474fdff4617cc26bebc97ffedf5648c04c4f73ea71f" name="value:[&quot;healthcare&quot;,&quot;physiotherapist&quot;]" tag:keyRef="k_9ff28bfa80b1" tag:category="osm" tag:ignore="false">
