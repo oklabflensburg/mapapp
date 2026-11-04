@@ -4,6 +4,9 @@
 // With no input arguments, refresh OSM tag TSVs and include backend tags.
 // The PHP generator writes reciprocal tag:keyRef / tag:valueRefs and
 // tag:category="osm" (TSVs) or "custom" (database) on catalog units.
+// Complete runs (keys TSV + --pairs + --database) also remove catalog units
+// whose tags disappeared from every source, so deleted nodes clean up their
+// translations. Partial runs never remove units.
 // Missing tag:ignore flags default to false; admin-set flags are preserved.
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
