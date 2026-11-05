@@ -122,6 +122,81 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
         }
     }
 
+    public function testCompleteSyncRemovesStaleUnitsWhilePartialSyncsKeepThem(): void
+    {
+        $suffix = bin2hex(random_bytes(8));
+        $directory = sys_get_temp_dir().'/tag-prune-'.$suffix;
+        mkdir($directory);
+        foreach (['en', 'de'] as $locale) {
+            copy(\dirname(__DIR__).'/Fixtures/tag-translations/tags.'.$locale.'.xlf', $directory.'/tags.'.$locale.'.xlf');
+        }
+        $staleKey = 'stale_'.$suffix;
+        $keptKey = 'kept_'.$suffix;
+        $osmKey = 'osm_'.$suffix;
+        $keys = $directory.'/keys.tsv';
+        $pairs = $directory.'/pairs.tsv';
+        file_put_contents($keys, "1\t".$osmKey."\n");
+        file_put_contents($pairs, "1\t".$osmKey."\tsurface\n");
+        $manager = static::getContainer()->get(EntityManagerInterface::class);
+        $tag = new Tag();
+        $tag->setKey($keptKey);
+        $tag->setValue('kept choice');
+        $manager->persist($tag);
+        $manager->flush();
+        try {
+            $catalog = new TagTranslationCatalog($directory);
+            $editor = static::getContainer()->get(TagTranslationCatalogEditor::class);
+            $keptValue = TagTranslationCatalog::valueId($keptKey, 'kept choice');
+            $staleValue = TagTranslationCatalog::valueId($staleKey, 'gone node');
+            $editor->merge($catalog->path('de'), 'de', [
+                'key:'.$staleKey => ['source' => $staleKey, 'note' => 'Tag key: '.$staleKey, 'category' => 'custom'],
+                $staleValue => ['source' => 'gone node', 'note' => '', 'category' => 'custom'],
+                // A stale value under a kept key must not drag the key unit away.
+                TagTranslationCatalog::valueId($keptKey, 'gone value') => ['source' => 'gone value', 'note' => '', 'category' => 'custom'],
+                $keptValue => ['source' => 'kept choice', 'note' => '', 'category' => 'custom', 'target' => 'Auswahl'],
+            ]);
+            $tester = new CommandTester(new SyncTagTranslationsCommand($manager, $catalog, $editor));
+            // Partial syncs lack the full picture and never remove units.
+            self::assertSame(0, $tester->execute(['--database' => true]));
+            self::assertStringContainsString('name="key:'.$staleKey.'"', file_get_contents($catalog->path('de')));
+            self::assertStringContainsString('name="key:wheelchair"', file_get_contents($catalog->path('de')));
+            // Complete syncs prune every unit that vanished from the sources.
+            self::assertSame(0, $tester->execute(['keys' => $keys, '--pairs' => $pairs, '--database' => true]));
+            self::assertStringContainsString('stale units removed', $tester->getDisplay());
+            foreach (['en', 'de'] as $locale) {
+                $names = array_column(iterator_to_array($catalog->entries($locale)), 'unit');
+                self::assertContains('key:'.$keptKey, $names);
+                self::assertContains($keptValue, $names);
+                self::assertContains('key:'.$osmKey, $names);
+                self::assertNotContains('key:'.$staleKey, $names);
+                self::assertNotContains($staleValue, $names);
+                self::assertNotContains(TagTranslationCatalog::valueId($keptKey, 'gone value'), $names);
+                // The fixture tag is absent from this run's sources.
+                self::assertNotContains('key:wheelchair', $names);
+                $document = new \DOMDocument();
+                $document->load($catalog->path($locale));
+                $units = [];
+                foreach ($document->getElementsByTagNameNS('urn:oasis:names:tc:xliff:document:2.0', 'unit') as $unit) {
+                    $units[$unit->getAttribute('name')] = $unit;
+                }
+                $references = $units['key:'.$keptKey]->getAttributeNS('urn:accessapp:tag-references:1', 'valueRefs');                self::assertSame([$units[$keptValue]->getAttribute('id')], $references !== '' ? explode(' ', $references) : []);
+                self::assertSame($units['key:'.$keptKey]->getAttribute('id'), $units[$keptValue]->getAttributeNS('urn:accessapp:tag-references:1', 'keyRef'));
+            }
+            // Kept translations survive the prune.
+            self::assertSame('Auswahl', $catalog->labels('de')['values'][substr($keptValue, 6)]);
+            $before = file_get_contents($catalog->path('de'));
+            self::assertSame(0, $tester->execute(['keys' => $keys, '--pairs' => $pairs, '--database' => true]));
+            self::assertSame($before, file_get_contents($catalog->path('de')));
+        } finally {
+            $manager->remove($tag);
+            $manager->flush();
+            foreach (glob($directory.'/*') as $path) {
+                unlink($path);
+            }
+            rmdir($directory);
+        }
+    }
+
     public function testGenerationClassifiesSourcesAndRemovesRedundantValueNotes(): void
     {
         $suffix = bin2hex(random_bytes(8));

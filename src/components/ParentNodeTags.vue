@@ -13,7 +13,7 @@ const osmTags = computed(() => props.parent.provider === 'OSM'
   ? osmData.tagsById?.get(props.parent.providerNodeId)
   : undefined)
 const osmEntries = computed(() => Object.entries(osmTags.value ?? {}))
-const customEntries = computed(() => Object.entries(props.parent.tags))
+const customEntries = computed(() => (props.parent.tags ?? []).map((tag) => [tag.key, tag.value] as [string, string]))
 const groups = computed(() => [
   { label: 'nodeEditor.osmTags', entries: osmEntries.value },
   { label: 'nodeEditor.parentCustomTags', entries: customEntries.value },
@@ -39,7 +39,7 @@ onMounted(() => {
         <h6>{{ t(group.label) }}</h6>
         <table :aria-label="t(group.label)">
           <tbody>
-            <tr v-for="[key, value] in group.entries" :key="key">
+            <tr v-for="([key, value], index) in group.entries" :key="index">
               <th scope="row">{{ tagKeyLabels.label(key) }}</th>
               <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
             </tr>

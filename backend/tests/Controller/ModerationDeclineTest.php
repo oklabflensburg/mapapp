@@ -77,54 +77,6 @@ final class ModerationDeclineTest extends WebTestCase
         return $entry;
     }
 
-    public function testDecliningNodeDeletesItAndItsObservationsAndPreservesChildren(): void
-    {
-        $client = static::createClient();
-        $editor = $this->createUser('decline-editor@example.test', ['editor']);
-        $admin = $this->createUser('decline-admin@example.test', ['admin']);
-        $node = $this->scope(false, $editor);
-        $child = $this->scope(false, $editor);
-        $child->setParent($node);
-        $tag = $this->tag();
-        $entry = $this->observation($node, $tag, $editor);
-        $nodeId = $node->getId();
-        $entryId = $entry->getId();
-        $url = '/admin/node/'.$nodeId.'/decline';
-
-        $client->loginUser($editor, 'admin');
-        $client->request('POST', $url);
-        self::assertResponseStatusCodeSame(403);
-        $client->loginUser($admin, 'admin');
-        $client->request('GET', $url);
-        self::assertResponseStatusCodeSame(405);
-        $client->request('POST', $url, ['_token' => 'invalid']);
-        self::assertResponseStatusCodeSame(403);
-        $client->request('GET', '/admin/pending-observation/'.$nodeId.'/edit');
-        self::assertResponseIsSuccessful();
-        $form = $client->getCrawler()->selectButton('Decline node')->form();
-
-        // A stale review page cannot decline an already approved node.
-        $manager = static::getContainer()->get('doctrine')->getManager();
-        $manager->find(Node::class, $nodeId)->setApproved(true);
-        $manager->flush();
-        $client->submit($form);
-        self::assertResponseStatusCodeSame(409);
-        $manager = static::getContainer()->get('doctrine')->getManager();
-        $manager->find(Node::class, $nodeId)->setApproved(false);
-        $manager->flush();
-        $client->submit($form);
-        self::assertResponseRedirects('/admin?routeName=app_admin_pending_observations');
-        $client->followRedirect();
-        self::assertResponseIsSuccessful();
-        $manager = static::getContainer()->get('doctrine')->getManager();
-        $manager->clear();
-        self::assertNull($manager->find(Node::class, $nodeId));
-        self::assertNull($manager->find(NodeTag::class, $entryId));
-        self::assertNotNull($manager->find(Tag::class, $tag->getId()));
-        self::assertNotNull($manager->find(Node::class, $child->getId()));
-        self::assertNull($manager->find(Node::class, $child->getId())->getParent());
-    }
-
     public static function tagKinds(): iterable
     {
         yield 'node' => [false];

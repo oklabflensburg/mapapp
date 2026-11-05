@@ -20,8 +20,9 @@ final class ObservationTranslations
 
     public function save(SaveUserNodeRequest $request, Node $node, User $user): void
     {
+        $submitted = SaveUserNodeRequest::tagEntryCounts($request->tags);
         foreach ($request->translations as $translation) {
-            if (($request->tags[$translation['key']] ?? null) !== $translation['value']) {
+            if (($submitted[$translation['key']."\0".$translation['value']] ?? 0) < 1) {
                 throw new UnprocessableEntityHttpException('Translations must belong to a submitted observation.');
             }
             foreach ($node->getNodeTags() as $nodeTag) {

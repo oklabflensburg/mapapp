@@ -19,6 +19,18 @@ final class ObservationTranslationTest extends WebTestCase
     private string $key;
     private string $value = 'rough/ü<&';
 
+    /** @param array<string, mixed> $node */
+    private function observationTranslations(array $node, string $key): array
+    {
+        foreach ($node['observationTranslations'] as $observation) {
+            if ($observation['key'] === $key) {
+                return $observation['translations'];
+            }
+        }
+
+        return [];
+    }
+
     private function submitObservation(): KernelBrowser
     {
         $client = static::createClient();
@@ -35,7 +47,7 @@ final class ObservationTranslationTest extends WebTestCase
         $this->payload = [
             'provider' => 'local', 'providerNodeId' => 'translation-node-'.$suffix,
             'latitude' => 54.791, 'longitude' => 9.437,
-            'tags' => [$this->key => $this->value], 'translationLocale' => 'de',
+            'tags' => [['key' => $this->key, 'value' => $this->value]], 'translationLocale' => 'de',
             'translations' => [[
                 'key' => $this->key, 'value' => $this->value,
                 'keyTranslation' => 'Oberfläche & <Belag>', 'valueTranslation' => 'Rau',
@@ -45,7 +57,7 @@ final class ObservationTranslationTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent(), true);
         $this->nodeId = $data['id'];
-        self::assertSame('Rau', $data['observationTranslations'][$this->key]['de']['valueTranslation']);
+        self::assertSame('Rau', $this->observationTranslations($data, $this->key)['de']['valueTranslation']);
 
         return $client;
     }
@@ -93,7 +105,7 @@ final class ObservationTranslationTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $nodes = json_decode($client->getResponse()->getContent(), true);
         $saved = array_values(array_filter($nodes, fn ($node) => $node['id'] === $this->nodeId))[0];
-        self::assertSame('Rau', $saved['observationTranslations'][$this->key]['de']['valueTranslation']);
+        self::assertSame('Rau', $this->observationTranslations($saved, $this->key)['de']['valueTranslation']);
         $client->request('GET', '/api/i18n/tag-keys/de');
         self::assertArrayNotHasKey($this->key, json_decode($client->getResponse()->getContent(), true)['labels']);
 
@@ -268,8 +280,8 @@ final class ObservationTranslationTest extends WebTestCase
         $client->jsonRequest('POST', '/api/nodes', $this->payload);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent(), true);
-        self::assertSame('Surface', $data['observationTranslations'][$this->key]['en']['keyTranslation']);
-        self::assertSame('Oberfläche & <Belag>', $data['observationTranslations'][$this->key]['de']['keyTranslation']);
+        self::assertSame('Surface', $this->observationTranslations($data, $this->key)['en']['keyTranslation']);
+        self::assertSame('Oberfläche & <Belag>', $this->observationTranslations($data, $this->key)['de']['keyTranslation']);
         self::assertSame($german, file_get_contents($this->directory.'/tags.de.xlf'));
         $this->payload['translationLocale'] = 'fr';
         $client->jsonRequest('POST', '/api/nodes', $this->payload);

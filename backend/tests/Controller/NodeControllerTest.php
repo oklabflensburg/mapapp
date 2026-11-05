@@ -19,6 +19,12 @@ final class NodeControllerTest extends WebTestCase
 
     private const PROVIDER_NODE_ID = 'n26013095';
 
+    /** @return array{key: string, value: string} */
+    private static function tag(string $key, string $value): array
+    {
+        return ['key' => $key, 'value' => $value];
+    }
+
     private function removeNodeUnderTest(): void
     {
         $entityManager = static::getContainer()->get('doctrine')->getManager();
@@ -40,7 +46,7 @@ final class NodeControllerTest extends WebTestCase
             'providerNodeId' => self::PROVIDER_NODE_ID,
             'latitude' => 54.791,
             'longitude' => 9.437,
-            'tags' => ['access' => 'yes', 'note' => 'step-free entrance'],
+            'tags' => [self::tag('access', 'yes'), self::tag('note', 'step-free entrance')],
         ]));
 
         self::assertResponseIsSuccessful();
@@ -50,7 +56,7 @@ final class NodeControllerTest extends WebTestCase
         self::assertSame(self::PROVIDER_NODE_ID, $data['providerNodeId']);
         self::assertSame(54.791, $data['latitude']);
         self::assertSame(9.437, $data['longitude']);
-        self::assertSame(['access' => 'yes', 'note' => 'step-free entrance'], $data['tags']);
+        self::assertSame([self::tag('access', 'yes'), self::tag('note', 'step-free entrance')], $data['tags']);
     }
 
     public function testSavingSameNodeAgainUpdatesItInsteadOfDuplicating(): void
@@ -65,16 +71,16 @@ final class NodeControllerTest extends WebTestCase
             'tags' => $tags,
         ]);
 
-        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload(['access' => 'yes']));
+        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload([self::tag('access', 'yes')]));
         self::assertSame(201, $client->getResponse()->getStatusCode());
         $first = json_decode((string) $client->getResponse()->getContent(), true);
 
-        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload(['access' => 'no', 'note' => 'remodelled']));
+        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload([self::tag('access', 'no'), self::tag('note', 'remodelled')]));
         self::assertSame(200, $client->getResponse()->getStatusCode());
         $second = json_decode((string) $client->getResponse()->getContent(), true);
 
         self::assertSame($first['id'], $second['id']);
-        self::assertSame(['access' => 'no', 'note' => 'remodelled'], $second['tags']);
+        self::assertSame([self::tag('access', 'no'), self::tag('note', 'remodelled')], $second['tags']);
 
         $client->request('GET', '/api/nodes');
         self::assertResponseIsSuccessful();
@@ -116,7 +122,7 @@ final class NodeControllerTest extends WebTestCase
             'providerNodeId' => self::PROVIDER_NODE_ID,
             'latitude' => 54.791,
             'longitude' => 9.437,
-            'tags' => ['note' => 'entrance from the north'],
+            'tags' => [self::tag('note', 'entrance from the north')],
         ]));
         self::assertSame(201, $client->getResponse()->getStatusCode());
 
@@ -125,7 +131,7 @@ final class NodeControllerTest extends WebTestCase
             'providerNodeId' => self::PROVIDER_NODE_ID,
             'latitude' => 54.791,
             'longitude' => 9.437,
-            'tags' => ['comment' => 'steep stairs'],
+            'tags' => [self::tag('comment', 'steep stairs')],
         ]));
         self::assertSame(200, $client->getResponse()->getStatusCode());
 
@@ -143,8 +149,8 @@ final class NodeControllerTest extends WebTestCase
         $client->loginUser($editorOne);
         $node = $findNodeUnderTest();
         self::assertNotNull($node);
-        self::assertSame(['note' => 'entrance from the north'], $node['tags']);
-        self::assertSame(['note' => 'entrance from the north'], $node['observations']);
+        self::assertSame([self::tag('note', 'entrance from the north')], $node['tags']);
+        self::assertSame([self::tag('note', 'entrance from the north')], $node['observations']);
 
         // The node still has no approved tag, so only its creator sees it.
         $client->loginUser($editorTwo);
@@ -153,10 +159,51 @@ final class NodeControllerTest extends WebTestCase
         $this->setTagApproval('note', 'entrance from the north', true);
         $node = $findNodeUnderTest();
         self::assertNotNull($node);
-        // The tag map's key order follows the database rows and is not part
+        // The tag list's order follows the database rows and is not part
         // of the API contract.
-        self::assertEqualsCanonicalizing(['note' => 'entrance from the north', 'comment' => 'steep stairs'], $node['tags']);
-        self::assertSame(['comment' => 'steep stairs'], $node['observations']);
+        self::assertEqualsCanonicalizing([self::tag('note', 'entrance from the north'), self::tag('comment', 'steep stairs')], $node['tags']);
+        self::assertSame([self::tag('comment', 'steep stairs')], $node['observations']);
+    }
+
+    public function testOneNodeCanCarrySeveralTagsWithTheSameKey(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+        $this->removeNodeUnderTest();
+        $payload = static fn (array $tags): string => (string) json_encode([
+            'providerNodeId' => self::PROVIDER_NODE_ID,
+            'latitude' => 54.791,
+            'longitude' => 9.437,
+            'tags' => $tags,
+        ]);
+
+        // Two tags share the key but carry different values.
+        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload([
+            self::tag('entrance', 'north'),
+            self::tag('entrance', 'south'),
+        ]));
+        self::assertSame(201, $client->getResponse()->getStatusCode());
+        $node = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertEqualsCanonicalizing([self::tag('entrance', 'north'), self::tag('entrance', 'south')], $node['tags']);
+        self::assertEqualsCanonicalizing([self::tag('entrance', 'north'), self::tag('entrance', 'south')], $node['observations']);
+
+        // Saving again keeps both values: neither is dropped for sharing a key.
+        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload([
+            self::tag('entrance', 'north'),
+            self::tag('entrance', 'south'),
+        ]));
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        $node = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertEqualsCanonicalizing([self::tag('entrance', 'north'), self::tag('entrance', 'south')], $node['tags']);
+
+        // Submitting only one value removes exactly that entry, not every tag
+        // with the shared key.
+        $client->request('POST', '/api/nodes', [], [], ['CONTENT_TYPE' => 'application/json'], $payload([
+            self::tag('entrance', 'south'),
+        ]));
+        self::assertSame(200, $client->getResponse()->getStatusCode());
+        $node = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame([self::tag('entrance', 'south')], $node['tags']);
     }
 
     public function testAnonymousVisitorsSeeNoNodesWithoutApprovedTags(): void
@@ -170,7 +217,7 @@ final class NodeControllerTest extends WebTestCase
             'providerNodeId' => self::PROVIDER_NODE_ID,
             'latitude' => 54.791,
             'longitude' => 9.437,
-            'tags' => ['note' => 'anonymous entrance'],
+            'tags' => [self::tag('note', 'anonymous entrance')],
         ]));
         self::assertSame(201, $client->getResponse()->getStatusCode());
 

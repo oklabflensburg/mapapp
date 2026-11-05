@@ -13,12 +13,14 @@ use Doctrine\DBAL\Connection;
 final class StreetPartArea
 {
     /**
-     * Half the corridor width. The corridor must touch the way's edges for
-     * GraphHopper's in_<area> checks to fire, so at 2m the member nodes must
-     * sit on the way they mark. Matches the radius of the custom areas drawn
-     * around tagged nodes in Routing::areaPolygon().
+     * Half the corridor width. The corridor must reach the way's edges for
+     * GraphHopper's in_<area> checks to fire, so the member nodes must sit
+     * on the way they mark. GraphHopper matches the exact OSM edge geometry:
+     * an area around way-aligned members still fires down to a few
+     * centimeters in half-width, so 1m keeps a large safety margin while
+     * the rendered corridor stays slim.
      */
-    public const AREA_RADIUS_METERS = 2;
+    public const AREA_RADIUS_METERS = 1;
 
     public function __construct(private readonly Connection $connection)
     {

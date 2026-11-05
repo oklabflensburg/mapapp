@@ -13,6 +13,18 @@ final class NodeGroupControllerTest extends WebTestCase
 
     private const EDITOR_EMAIL = 'editor@example.test';
 
+    /** @param list<array{key: string, value: string}> $tags */
+    private static function tagValue(array $tags, string $key): ?string
+    {
+        foreach ($tags as $tag) {
+            if ($tag['key'] === $key) {
+                return $tag['value'];
+            }
+        }
+
+        return null;
+    }
+
     /** @var list<string> */
     private array $memberProviderNodeIds = [];
 
@@ -68,8 +80,8 @@ final class NodeGroupControllerTest extends WebTestCase
 
     /**
      * The street part's area is the corridor around the member line: a closed
-     * GeoJSON ring whose points stay within the fixed width (2 m, about
-     * 0.00002 degrees latitude) of the member coordinates.
+     * GeoJSON ring whose points stay within the fixed width (1 m, about
+     * 0.00001 degrees latitude) of the member coordinates.
      */
     private function assertAreaAroundMembers(array $data): void
     {
@@ -98,13 +110,13 @@ final class NodeGroupControllerTest extends WebTestCase
         $data = $this->save($client, [
             'name' => 'Hochallee north part',
             'members' => [$this->memberPayload(), $this->memberPayload(), $this->memberPayload()],
-            'tags' => ['surface' => 'cobblestone'],
+            'tags' => [['key' => 'surface', 'value' => 'cobblestone']],
         ], 201);
 
         self::assertSame('Hochallee north part', $data['name']);
         self::assertCount(3, $data['members']);
-        self::assertSame('cobblestone', $data['tags']['surface']);
-        self::assertSame(['surface' => 'cobblestone'], $data['observations']);
+        self::assertSame('cobblestone', self::tagValue($data['tags'], 'surface'));
+        self::assertSame([['key' => 'surface', 'value' => 'cobblestone']], $data['observations']);
         self::assertSame($this->memberProviderNodeIds, array_column($data['members'], 'providerNodeId'));
         $this->assertAreaAroundMembers($data);
     }
@@ -117,7 +129,7 @@ final class NodeGroupControllerTest extends WebTestCase
         foreach (['Street Alpha', 'Street Beta'] as $name) {
             $payload = $this->memberPayload();
             $client->jsonRequest('POST', '/api/nodes', [
-                ...$payload, 'provider' => 'OSM', 'tags' => ['name' => $name],
+                ...$payload, 'provider' => 'OSM', 'tags' => [['key' => 'name', 'value' => $name]],
             ]);
             self::assertResponseStatusCodeSame(201);
             $parents[] = json_decode((string) $client->getResponse()->getContent(), true);
@@ -184,7 +196,7 @@ final class NodeGroupControllerTest extends WebTestCase
 
         $first = $this->save($client, [
             'members' => [$this->memberPayload(), $this->memberPayload(), $this->memberPayload()],
-            'tags' => ['surface' => 'cobblestone'],
+            'tags' => [['key' => 'surface', 'value' => 'cobblestone']],
         ], 201);
 
         // Repeated member references are deduplicated, and tag saves replace
@@ -196,13 +208,13 @@ final class NodeGroupControllerTest extends WebTestCase
                 array_map(static fn (array $member): array => ['id' => $member['id']], $first['members']),
                 [$this->memberPayload()],
             ),
-            'tags' => ['surface' => 'asphalt', 'lit' => 'yes'],
+            'tags' => [['key' => 'surface', 'value' => 'asphalt'], ['key' => 'lit', 'value' => 'yes']],
         ], 200);
 
         self::assertSame($first['id'], $second['id']);
         self::assertSame('Hochallee south part', $second['name']);
         self::assertCount(4, $second['members']);
-        self::assertSame(['surface' => 'asphalt', 'lit' => 'yes'], $second['tags']);
+        self::assertSame([['key' => 'surface', 'value' => 'asphalt'], ['key' => 'lit', 'value' => 'yes']], $second['tags']);
     }
 
     public function testListShowsRelationsWithMembers(): void
@@ -212,7 +224,7 @@ final class NodeGroupControllerTest extends WebTestCase
 
         $this->save($client, [
             'members' => [$this->memberPayload(), $this->memberPayload(), $this->memberPayload()],
-            'tags' => ['surface' => 'cobblestone'],
+            'tags' => [['key' => 'surface', 'value' => 'cobblestone']],
         ], 201);
 
         $client->request('GET', '/api/node-groups');
@@ -224,7 +236,7 @@ final class NodeGroupControllerTest extends WebTestCase
             fn (array $group): bool => array_intersect(array_column($group['members'], 'providerNodeId'), $this->memberProviderNodeIds) !== [],
         ));
         self::assertNotEmpty($matching);
-        self::assertSame('cobblestone', $matching[0]['tags']['surface']);
+        self::assertSame('cobblestone', self::tagValue($matching[0]['tags'], 'surface'));
         self::assertCount(3, $matching[0]['members']);
         $this->assertAreaAroundMembers($matching[0]);
     }
@@ -238,7 +250,7 @@ final class NodeGroupControllerTest extends WebTestCase
         $client->loginUser($editorOne);
         $group = $this->save($client, [
             'members' => [$this->memberPayload(), $this->memberPayload()],
-            'tags' => ['surface' => 'cobblestone'],
+            'tags' => [['key' => 'surface', 'value' => 'cobblestone']],
         ], 201);
 
         $findGroup = function () use ($client, $group): ?array {
@@ -255,7 +267,8 @@ final class NodeGroupControllerTest extends WebTestCase
         // The creator sees the relation while its tags await approval.
         $listed = $findGroup();
         self::assertNotNull($listed);
-        self::assertSame(['surface' => 'cobblestone'], $listed['observations']);
+        self::assertSame([['key' => 'surface', 'value' => 'cobblestone']], $listed['observations']);
+        self::assertFalse($listed['approved']);
 
         // Another editor does not, until one tag is approved.
         $client->loginUser($editorTwo);
@@ -264,8 +277,9 @@ final class NodeGroupControllerTest extends WebTestCase
         $this->setGroupTagApproval($group['id'], 'surface', 'cobblestone', true);
         $listed = $findGroup();
         self::assertNotNull($listed);
-        self::assertSame(['surface' => 'cobblestone'], $listed['tags']);
+        self::assertSame([['key' => 'surface', 'value' => 'cobblestone']], $listed['tags']);
         self::assertSame([], $listed['observations']);
+        self::assertTrue($listed['approved']);
     }
 
     private function setGroupTagApproval(int $groupId, string $key, string $value, bool $approved): void

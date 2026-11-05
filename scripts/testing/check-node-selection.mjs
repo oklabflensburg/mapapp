@@ -10,14 +10,14 @@ const childName = 'Created child'
 function node(id, name, createdAt) {
   return {
     id, provider: 'local', providerNodeId: `local-${id}`,
-    latitude: 54.791, longitude: 9.437, tags: { name }, observations: { name },
+    latitude: 54.791, longitude: 9.437, tags: [{ key: 'name', value: name }], observations: [{ key: 'name', value: name }],
     parentIds: [], childIds: [], parents: [], children: [],
     createdAt, updatedAt: createdAt,
   }
 }
 
 function summary(node) {
-  return { id: node.id, provider: node.provider, providerNodeId: node.providerNodeId, name: node.tags.name, tags: node.tags }
+  return { id: node.id, provider: node.provider, providerNodeId: node.providerNodeId, name: (node.tags.find(tag => tag.key === 'name') ?? {}).value, tags: node.tags }
 }
 
 const building = {
@@ -71,7 +71,7 @@ try {
     await expect(page.getByRole('region', { name: 'Relations', exact: true })).toContainText('Saved parent')
     await closeEditor(page)
     // A parent edited after its child must not become the topmost marker.
-    parent.tags = { name: 'Recently edited parent' }
+    parent.tags = [{ key: 'name', value: 'Recently edited parent' }]
     parent.updatedAt = '2026-10-20T12:00:00Z'
     child.parents = [summary(parent)]
     await page.reload()

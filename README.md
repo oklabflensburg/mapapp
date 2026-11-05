@@ -179,12 +179,14 @@ relation** (link) button, then click nodes or map features to add them
 **Create relation** saves the relation and opens its tag editor. Press Escape
 to leave relation mode.
 
-Relations are street parts: the area they cover is the corridor of a fixed
-width (20 m around the member line, computed by PostGIS in
-`backend/src/Service/StreetPartArea.php`) around the line through the
-members in order. The map draws it in amber: a dashed preview connects the
+Relations are street parts: their area is the corridor of a fixed half-width
+(1 m around the member line, computed by PostGIS in
+`backend/src/Service/StreetPartArea.php`). Routing uses that corridor, but
+the map draws only the line through the members in order, rendered in amber
+at a minimal, constant on-screen width: a dashed preview connects the
 members collected in relation mode, and every saved relation shows its
-corridor outline. The lines are visual aids only — clicks pass through to
+member line. While browsing, clicking a relation's line selects the
+relation; otherwise the lines are visual aids only — clicks pass through to
 the nodes and features beneath them.
 
 Routing uses these corridors as GraphHopper custom areas: when a logged-in

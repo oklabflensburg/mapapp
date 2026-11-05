@@ -26,12 +26,13 @@ final class SaveNodeGroupRequest
         #[Assert\Callback([self::class, 'validateMembers'])]
         public array $members = [],
 
-        /** @var array<string, string> */
-        #[Assert\All([
-            new Assert\NotBlank(),
-            new Assert\Length(max: 255),
-        ])]
-        #[Assert\Callback([SaveUserNodeRequest::class, 'validateTagKeys'])]
+        /**
+         * Relation tags as key/value pairs, so a relation can carry several
+         * tags with the same key but different values.
+         *
+         * @var list<array{key: string, value: string}>
+         */
+        #[Assert\Callback([SaveUserNodeRequest::class, 'validateTagEntries'])]
         public array $tags = [],
     ) {
     }

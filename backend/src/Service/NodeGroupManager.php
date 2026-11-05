@@ -6,6 +6,7 @@ use App\Api\NodeGroupResponse;
 use App\Api\RelatedNodeResponse;
 use App\Api\SaveNodeGroupRequest;
 use App\Api\SaveNodeGroupResult;
+use App\Api\SaveUserNodeRequest;
 use App\Entity\Node;
 use App\Entity\NodeGroup;
 use App\Entity\NodeGroupTag;
@@ -147,36 +148,42 @@ final class NodeGroupManager
 
     /**
      * Replaces the current user's tag additions on the relation with the
-     * request tags, mirroring node tag saves; other users' tags are kept.
+     * request tags, mirroring node tag saves; other users' tags are kept, and
+     * one user can keep several tags with the same key but different values.
      *
-     * @param array<string, string> $tags
+     * @param list<array{key: string, value: string}> $tags
      */
     private function assignTags(NodeGroup $group, array $tags): void
     {
         $user = $this->defaultUser();
+        $requested = SaveUserNodeRequest::tagEntryCounts($tags);
 
         foreach ($group->getGroupTags() as $groupTag) {
             if ($groupTag->getCreatedByUser() !== $user) {
                 continue;
             }
             $tag = $groupTag->getTag();
-            if (($tags[$tag->getKey()] ?? null) === $tag->getValue()) {
-                unset($tags[$tag->getKey()]);
+            $pair = $tag->getKey()."\0".$tag->getValue();
+            if (($requested[$pair] ?? 0) > 0) {
+                $requested[$pair]--;
             } else {
                 $group->getGroupTags()->removeElement($groupTag);
                 $this->entityManager->remove($groupTag);
             }
         }
 
-        foreach ($tags as $key => $value) {
-            $groupTag = $group->addTag($this->tagRepository->findOrCreate($key, $value), $user);
-            if ($groupTag !== null) {
-                // Admins approve their own additions, but only on this
-                // relation: the same value added elsewhere stays unapproved.
-                if ($this->currentUserIsAdmin()) {
-                    $groupTag->setApproved(true);
+        foreach ($requested as $pair => $count) {
+            [$key, $value] = explode("\0", $pair, 2);
+            for ($i = 0; $i < $count; $i++) {
+                $groupTag = $group->addTag($this->tagRepository->findOrCreate($key, $value), $user);
+                if ($groupTag !== null) {
+                    // Admins approve their own additions, but only on this
+                    // relation: the same value added elsewhere stays unapproved.
+                    if ($this->currentUserIsAdmin()) {
+                        $groupTag->setApproved(true);
+                    }
+                    $this->entityManager->persist($groupTag);
                 }
-                $this->entityManager->persist($groupTag);
             }
         }
     }
@@ -185,15 +192,17 @@ final class NodeGroupManager
     {
         $tags = [];
         $observations = [];
+        $approved = false;
         $user = $this->currentUser();
         foreach ($group->getGroupTags() as $groupTag) {
+            $approved = $approved || $groupTag->isApproved();
             if (!$this->tagIsVisible($groupTag, $user)) {
                 continue;
             }
             $tag = $groupTag->getTag();
-            $tags[$tag->getKey()] = $tag->getValue();
+            $tags[] = ['key' => $tag->getKey(), 'value' => $tag->getValue()];
             if (!$groupTag->isApproved()) {
-                $observations[$tag->getKey()] = $tag->getValue();
+                $observations[] = ['key' => $tag->getKey(), 'value' => $tag->getValue()];
             }
         }
 
@@ -215,6 +224,7 @@ final class NodeGroupManager
             )),
             $tags,
             $observations,
+            $approved,
             $group->getCreatedAt(),
             $group->getUpdatedAt(),
             array_values($parents),
@@ -231,8 +241,8 @@ final class NodeGroupManager
                 continue;
             }
             $tag = $nodeTag->getTag();
-            $tags[$tag->getKey()] = $tag->getValue();
-            if ($tag->getKey() === 'name' && trim($tag->getValue()) !== '') {
+            $tags[] = ['key' => $tag->getKey(), 'value' => $tag->getValue()];
+            if ($tag->getKey() === 'name' && trim($tag->getValue()) !== '' && $name === null) {
                 $name = $tag->getValue();
             }
         }

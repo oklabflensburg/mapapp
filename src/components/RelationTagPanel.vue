@@ -7,7 +7,7 @@ import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useOsmDataStore } from '../stores/osmData'
-import { nodeKey, useUserNodesStore } from '../stores/userNodes'
+import { nodeKey, useUserNodesStore, tagValue, type TagEntry } from '../stores/userNodes'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 import { useDefaultObservationTagsStore } from '../stores/defaultObservationTags'
@@ -41,7 +41,7 @@ const parentNames = computed(() => {
     userNodes.byIdentity.get(nodeKey(member))?.parents ?? []) ?? []
   return [...new Set(parents.map(parent => {
     const saved = userNodes.byIdentity.get(nodeKey(parent))
-    return saved?.tags.name?.trim() || parent.name?.trim()
+    return tagValue(saved?.tags, 'name')?.trim() || parent.name?.trim()
       || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
       || parent.providerNodeId
   }))]
@@ -53,14 +53,16 @@ const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.valu
   .some(row => !row.key.trim() || !row.value.trim()))
 
 // Mirrors the node editor: approved tags are read-only for editors, and the
-// observations map decides which entries are the current user's own pending
-// ones. The saved response re-splits the sections.
+// observations pairs decide which entries are the current user's own pending
+// ones, matched by key and value so several values of one key can coexist.
+// The saved response re-splits the sections.
 function splitRows(group: NodeGroup): void {
   rows.value = []
   observationRows.value = []
-  for (const [key, value] of Object.entries(group.tags)) {
-    if (key in group.observations) {
-      observationRows.value.push({ key, value: group.observations[key] })
+  const observationKeys = new Set(group.observations.map((observation) => `${observation.key}\0${observation.value}`))
+  for (const { key, value } of group.tags) {
+    if (observationKeys.has(`${key}\0${value}`)) {
+      observationRows.value.push({ key, value })
     } else {
       rows.value.push({ key, value })
     }
@@ -128,11 +130,11 @@ async function save(): Promise<void> {
   if (!props.group || hasIncompleteTags.value) {
     return
   }
-  const tags: Record<string, string> = {}
+  const tags: TagEntry[] = []
   for (const row of [...rows.value, ...observationRows.value]) {
     const key = row.key.trim()
     if (key !== '') {
-      tags[key] = row.value
+      tags.push({ key, value: row.value })
     }
   }
   const saved = await nodeGroups.save({ id: props.group.id, tags })
@@ -176,7 +178,7 @@ async function save(): Promise<void> {
       <!-- Approved tags are managed by admins, so they are read-only here. -->
       <div v-if="rows.length > 0" class="tag-table-scroll">
         <table class="tag-table">
-          <tr v-for="row in rows" :key="row.key">
+          <tr v-for="(row, index) in rows" :key="index">
             <th>{{ tagKeyLabels.label(row.key) }}</th>
             <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
           </tr>
@@ -253,7 +255,7 @@ async function save(): Promise<void> {
       <template v-else>
         <div class="tag-table-scroll">
           <table class="tag-table">
-            <tr v-for="row in observationRows" :key="row.key">
+            <tr v-for="(row, index) in observationRows" :key="index">
               <th>{{ tagKeyLabels.label(row.key) }}</th>
               <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
             </tr>

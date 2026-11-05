@@ -9,7 +9,7 @@ final readonly class RelatedNodeResponse
         public string $provider,
         public string $providerNodeId,
         public ?string $name,
-        /** @var array<string, string> */
+        /** @var list<array{key: string, value: string}> */
         public array $tags,
         public float $latitude,
         public float $longitude,

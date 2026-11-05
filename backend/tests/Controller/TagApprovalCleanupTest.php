@@ -164,7 +164,8 @@ final class TagApprovalCleanupTest extends WebTestCase
 
     /**
      * Approves the relation tag through the review form on the relation
-     * review page.
+     * review page. The form also offers a save draft button, so the
+     * submit must target its approve button explicitly.
      */
     private function approveGroupTag(KernelBrowser $client, NodeGroupTag $groupTag): void
     {
@@ -172,7 +173,7 @@ final class TagApprovalCleanupTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $form = $crawler
-            ->filter(sprintf('form[action="/admin/node-group-tag/%d/approve"]', $groupTag->getId()))
+            ->filter(sprintf('form[action="/admin/node-group-tag/%d/approve"] button[name$="[approve]"]', $groupTag->getId()))
             ->form();
         $client->submit($form);
         self::assertResponseRedirects();
@@ -284,7 +285,7 @@ final class TagApprovalCleanupTest extends WebTestCase
             'providerNodeId' => 'tag-approval-'.$identity,
             'latitude' => 54.791,
             'longitude' => 9.437,
-            'tags' => ['cuisine' => 'french-'.$identity, 'access' => 'yes-'.$identity],
+            'tags' => [['key' => 'cuisine', 'value' => 'french-'.$identity], ['key' => 'access', 'value' => 'yes-'.$identity]],
         ]);
         self::assertResponseStatusCodeSame(201);
         $nodeId = json_decode($client->getResponse()->getContent(), true)['id'];
@@ -300,7 +301,7 @@ final class TagApprovalCleanupTest extends WebTestCase
             'providerNodeId' => 'tag-approval-'.$identity,
             'latitude' => 54.791,
             'longitude' => 9.437,
-            'tags' => ['cuisine' => 'italian-'.$identity],
+            'tags' => [['key' => 'cuisine', 'value' => 'italian-'.$identity]],
         ]);
         self::assertResponseStatusCodeSame(200);
 

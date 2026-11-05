@@ -5,8 +5,9 @@ namespace App\Api;
 final readonly class UserNodeResponse
 {
     /**
-     * @param array<string, string> $tags
-     * @param array<string, string> $observations
+     * @param list<array{key: string, value: string}> $tags
+     * @param list<array{key: string, value: string}> $observations
+     * @param list<array{key: string, value: string, translations: array<string, array{keyTranslation?: string, valueTranslation?: string}>}> $observationTranslations
      */
     public function __construct(
         public int $id,
@@ -15,6 +16,7 @@ final readonly class UserNodeResponse
         public float $longitude,
         public array $tags,
         public array $observations,
+        public bool $approved,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
         public string $provider,
@@ -26,7 +28,7 @@ final readonly class UserNodeResponse
         public array $parents,
         /** @var list<RelatedNodeResponse> */
         public array $children,
-        /** @var array<string, array<string, array<string, string>>> */
+        /** @var list<array{key: string, value: string, translations: array<string, array{keyTranslation?: string, valueTranslation?: string}>}> */
         public array $observationTranslations = [],
     ) {
     }

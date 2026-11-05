@@ -7,7 +7,7 @@ import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import ParentNodeTags from './ParentNodeTags.vue'
-import { nodeKey, useUserNodesStore, type NodeEditTarget } from '../stores/userNodes'
+import { nodeKey, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
@@ -64,21 +64,25 @@ function relationLabel(group: NodeGroup): string {
   return group.name ? `${group.name} · ${count}` : count
 }
 
-// The observations map holds exactly the current user's unapproved tags
-// (the backend hides other users' pending tags), so membership in it — not
-// a value comparison against the merged tags map, which collapses a key
-// shared by an approved tag and an unapproved observation — decides the
-// section. The observation value comes from the observations map because
-// the merged tags map may carry the approved value for the same key.
+// The observations pairs hold exactly the current user's unapproved tags
+// (the backend hides other users' pending tags), so membership of the pair —
+// not a key comparison against the merged tags list, which can carry several
+// values of one key — decides the section. The observation value comes from
+// the observations pair because the merged tags list may carry an approved
+// value for the same key.
 function splitRows(node: NonNullable<typeof savedNode.value>): void {
   rows.value = []
   observationRows.value = []
-  for (const [key, value] of Object.entries(node.tags)) {
-    if (key in node.observations) {
-      const row: TagRow = { key, value: node.observations[key], translations: {} }
-      for (const [locale, proposal] of Object.entries(node.observationTranslations?.[key] ?? {})) {
+  const observationKeys = new Set(node.observations.map((observation) => `${observation.key}\0${observation.value}`))
+  for (const { key, value } of node.tags) {
+    if (observationKeys.has(`${key}\0${value}`)) {
+      const row: TagRow = { key, value, translations: {} }
+      const proposal = node.observationTranslations?.find(
+        (translation) => translation.key === key && translation.value === value,
+      )
+      for (const [locale, translations] of Object.entries(proposal?.translations ?? {})) {
         for (const kind of ['key', 'value'] as const) {
-          const text = proposal[`${kind}Translation`]
+          const text = translations[`${kind}Translation`]
           if (text !== undefined) {
             const id = JSON.stringify([locale, kind, key, ...(kind === 'value' ? [row.value] : [])])
             row.translations![id] = { text, previous: text }
@@ -208,11 +212,11 @@ async function save(): Promise<void> {
   if ((!props.node && !props.creation) || hasIncompleteTags.value) {
     return
   }
-  const tags: Record<string, string> = {}
+  const tags: TagEntry[] = []
   for (const row of [...rows.value, ...observationRows.value]) {
     const key = row.key.trim()
     if (key !== '') {
-      tags[key] = row.value
+      tags.push({ key, value: row.value })
     }
   }
   // Saving keeps the panel open: it stays as long as the element is
@@ -310,11 +314,11 @@ async function save(): Promise<void> {
               @click="emit('edit-relation', group)"
             />
           </div>
-          <div v-if="Object.keys(group.tags).length > 0" class="tag-table-scroll">
+          <div v-if="group.tags.length > 0" class="tag-table-scroll">
             <table class="tag-table">
-              <tr v-for="[key, value] in Object.entries(group.tags)" :key="key">
-                <th>{{ tagKeyLabels.label(key) }}</th>
-                <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
+              <tr v-for="(tag, index) in group.tags" :key="index">
+                <th>{{ tagKeyLabels.label(tag.key) }}</th>
+                <td>{{ tagKeyLabels.valueLabel(tag.key, tag.value) }}</td>
               </tr>
             </table>
           </div>
@@ -341,7 +345,7 @@ async function save(): Promise<void> {
         <!-- Approved tags are managed by admins, so they are read-only here. -->
         <div v-if="rows.length > 0" class="tag-table-scroll">
           <table class="tag-table">
-            <tr v-for="row in rows" :key="row.key">
+            <tr v-for="(row, index) in rows" :key="index">
               <th>{{ tagKeyLabels.label(row.key) }}</th>
               <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
             </tr>
@@ -433,7 +437,7 @@ async function save(): Promise<void> {
         <template v-else>
           <div class="tag-table-scroll">
             <table class="tag-table">
-              <tr v-for="row in observationRows" :key="row.key">
+              <tr v-for="(row, index) in observationRows" :key="index">
                 <th>{{ tagKeyLabels.label(row.key) }}</th>
                 <td>{{ tagKeyLabels.valueLabel(row.key, row.value) }}</td>
               </tr>

@@ -42,6 +42,24 @@ final class NodeCreationTest extends WebTestCase
         return ['provider' => 'local', 'providerNodeId' => bin2hex(random_bytes(16)), 'latitude' => 54.791, 'longitude' => 9.437, 'tags' => []];
     }
 
+    /** @return array{key: string, value: string} */
+    private static function tag(string $key, string $value): array
+    {
+        return ['key' => $key, 'value' => $value];
+    }
+
+    /** @param list<array{key: string, value: string}> $tags */
+    private static function tagValue(array $tags, string $key): ?string
+    {
+        foreach ($tags as $tag) {
+            if ($tag['key'] === $key) {
+                return $tag['value'];
+            }
+        }
+
+        return null;
+    }
+
     private function save(KernelBrowser $client, array $payload, int $status = 201): array
     {
         $client->jsonRequest('POST', '/api/nodes', $payload);
@@ -75,7 +93,7 @@ final class NodeCreationTest extends WebTestCase
     {
         $client = static::createClient();
         $this->loginEditor($client);
-        $parentTags = ['name' => 'Named parent', 'access' => 'yes'];
+        $parentTags = [self::tag('name', 'Named parent'), self::tag('access', 'yes')];
         $parent = $this->save($client, array_replace($this->payload(), ['tags' => $parentTags]));
         $otherParent = $this->save($client, $this->payload());
         $payload = $this->payload() + ['parent' => ['id' => $parent['id']]];
@@ -96,11 +114,11 @@ final class NodeCreationTest extends WebTestCase
         self::assertSame([$parent['id']], $child['parentIds']);
         self::assertEqualsCanonicalizing($child['parentIds'], array_column($child['parents'], 'id'));
         unset($payload['parent']);
-        $payload['tags'] = ['name' => 'New node'];
+        $payload['tags'] = [self::tag('name', 'New node')];
         $edited = $this->save($client, $payload, 200);
         self::assertEqualsCanonicalizing($child['parentIds'], $edited['parentIds']);
         self::assertEqualsCanonicalizing($child['parents'], $edited['parents']);
-        self::assertSame('New node', $edited['tags']['name']);
+        self::assertSame('New node', self::tagValue($edited['tags'], 'name'));
         $sibling = $this->save($client, $this->payload() + ['parent' => ['id' => $parent['id']]]);
         $client->request('GET', '/api/nodes');
         $nodes = json_decode($client->getResponse()->getContent(), true);
@@ -109,10 +127,10 @@ final class NodeCreationTest extends WebTestCase
         self::assertEqualsCanonicalizing($listedParent['childIds'], array_column($listedParent['children'], 'id'));
         $namedChild = array_values(array_filter($listedParent['children'], static fn (array $n): bool => $n['id'] === $child['id']))[0];
         self::assertSame('New node', $namedChild['name']);
-        self::assertSame(['name' => 'New node'], $namedChild['tags']);
+        self::assertSame([self::tag('name', 'New node')], $namedChild['tags']);
         $listedChild = array_values(array_filter($nodes, static fn (array $n): bool => $n['id'] === $child['id']))[0];
         $namedParent = array_values(array_filter($listedChild['parents'], static fn (array $n): bool => $n['id'] === $parent['id']))[0];
-        self::assertSame($parentTags, $namedParent['tags']);
+        self::assertEqualsCanonicalizing($parentTags, $namedParent['tags']);
     }
 
     public function testOsmReferenceCanBecomeEditedNodeWithoutDuplication(): void
@@ -138,14 +156,14 @@ final class NodeCreationTest extends WebTestCase
         self::assertSame($child['parents'], $listedChild['parents']);
         $secondChild = $this->save($client, $this->payload() + ['parent' => $reference]);
         self::assertSame([$parentId], $secondChild['parentIds']);
-        $edited = $this->save($client, $reference + ['tags' => ['name' => 'Edited OSM parent']], 200);
+        $edited = $this->save($client, $reference + ['tags' => [self::tag('name', 'Edited OSM parent')]], 200);
         self::assertSame($parentId, $edited['id']);
         self::assertEqualsCanonicalizing([$child['id'], $secondChild['id']], $edited['childIds']);
         $client->request('GET', '/api/nodes');
         $nodes = json_decode($client->getResponse()->getContent(), true);
         $listedChild = array_values(array_filter($nodes, static fn (array $n): bool => $n['id'] === $child['id']))[0];
         self::assertSame('Edited OSM parent', $listedChild['parents'][0]['name']);
-        self::assertSame(['name' => 'Edited OSM parent'], $listedChild['parents'][0]['tags']);
+        self::assertSame([self::tag('name', 'Edited OSM parent')], $listedChild['parents'][0]['tags']);
     }
 
     public function testSelectingChildAddsSiblingAndCannotNestExistingParent(): void
@@ -172,13 +190,13 @@ final class NodeCreationTest extends WebTestCase
         $editorTwo = $this->createUser('editor-two@example.test', ['editor']);
 
         $client->loginUser($editorOne);
-        $payload = array_replace($this->payload(), ['tags' => ['name' => $value]]);
+        $payload = array_replace($this->payload(), ['tags' => [self::tag('name', $value)]]);
         $node = $this->save($client, $payload);
 
         $client->loginUser($editorTwo);
         $resaved = $this->save($client, $payload, 200);
         self::assertSame($node['id'], $resaved['id']);
-        self::assertSame(['name' => $value], $resaved['tags']);
+        self::assertSame([self::tag('name', $value)], $resaved['tags']);
 
         $entityManager = static::getContainer()->get('doctrine')->getManager();
         $nodeTags = $entityManager->getRepository(NodeTag::class)->findBy(['node' => $node['id']]);
@@ -200,12 +218,14 @@ final class NodeCreationTest extends WebTestCase
         $editorValue = 'editor-tag-'.bin2hex(random_bytes(8));
         $client = static::createClient();
         $this->loginEditor($client);
-        $editorNode = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => $editorValue]]));
-        self::assertSame(['name' => $editorValue], $editorNode['observations']);
+        $editorNode = $this->save($client, array_replace($this->payload(), ['tags' => [self::tag('name', $editorValue)]]));
+        self::assertFalse($editorNode['approved']);
+        self::assertSame([self::tag('name', $editorValue)], $editorNode['observations']);
 
         $adminValue = 'admin-tag-'.bin2hex(random_bytes(8));
         $client->loginUser($this->createUser('admin-tags@example.test', ['admin']));
-        $adminNode = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => $adminValue]]));
+        $adminNode = $this->save($client, array_replace($this->payload(), ['tags' => [self::tag('name', $adminValue)]]));
+        self::assertTrue($adminNode['approved']);
         self::assertSame([], $adminNode['observations']);
 
         // Approval is per tag and per node: it lives on the node tag rows,
@@ -216,67 +236,72 @@ final class NodeCreationTest extends WebTestCase
         self::assertTrue($repository->findBy(['node' => $adminNode['id']])[0]->isApproved());
     }
 
-    public function testCustomNodesRequireIndependentApprovalInTheObservationQueue(): void
+    public function testApprovingATagPublishesItsNode(): void
     {
         $client = static::createClient();
         $this->loginEditor($client);
         $payload = $this->payload();
         $node = $this->save($client, $payload);
-        $tagged = $this->save($client, array_replace($this->payload(), ['tags' => ['name' => 'Pending node']]));
+        $taggedPayload = array_replace($this->payload(), ['tags' => [self::tag('name', 'Pending node')]]);
+        $tagged = $this->save($client, $taggedPayload);
         $manager = static::getContainer()->get('doctrine')->getManager();
+        // Custom nodes stay pending until one of their tags is approved.
         self::assertFalse($manager->find(Node::class, $node['id'])->isApproved());
-        $tag = $manager->getRepository(NodeTag::class)->findOneBy(['node' => $tagged['id']]);
-        $tag->setApproved(true);
-        $manager->flush();
+        self::assertFalse($manager->find(Node::class, $tagged['id'])->isApproved());
 
         // Authors can see their own submissions, even without tags.
         $client->request('GET', '/api/nodes');
-        self::assertContains($node['id'], array_column(json_decode($client->getResponse()->getContent(), true), 'id'));
+        $listed = array_column(json_decode($client->getResponse()->getContent(), true), null, 'id');
+        self::assertFalse($listed[$node['id']]['approved']);
+        self::assertFalse($listed[$tagged['id']]['approved']);
+        // Another editor cannot see either pending custom node.
+        $client->loginUser($this->createUser('node-visibility-other@example.test', ['editor']));
+        $client->request('GET', '/api/nodes');
+        $ids = array_column(json_decode($client->getResponse()->getContent(), true), 'id');
+        self::assertNotContains($node['id'], $ids);
+        self::assertNotContains($tagged['id'], $ids);
         $client->getCookieJar()->clear();
         $client->request('GET', '/api/nodes');
         $ids = array_column(json_decode($client->getResponse()->getContent(), true), 'id');
         self::assertNotContains($node['id'], $ids);
-        // Approving a tag does not implicitly approve its node.
         self::assertNotContains($tagged['id'], $ids);
 
+        // The queue lists only nodes with unapproved tags, not tagless ones.
         $client->loginUser($this->createUser('node-review-admin@example.test', ['admin']), 'admin');
         $client->request('GET', '/admin/pending-observations');
         $client->followRedirect();
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', $payload['providerNodeId']);
+        $tableText = $client->getCrawler()->filter('table')->text();
+        self::assertStringNotContainsString($payload['providerNodeId'], $tableText);
         self::assertSelectorTextContains('table', $tagged['providerNodeId']);
-        self::assertSelectorTextContains('table', 'New node awaiting approval');
 
-        $client->request('GET', '/admin/node/'.$node['id'].'/next-pending');
-        self::assertResponseRedirects('/admin/pending-observation/'.$tagged['id'].'/edit');
-
-        $client->request('GET', '/admin/pending-observation/'.$node['id'].'/edit');
-        self::assertResponseIsSuccessful();
-        $form = $client->getCrawler()->selectButton('Approve node')->form();
-        $client->request('POST', '/admin/node/'.$node['id'].'/approve', ['_token' => 'invalid']);
-        self::assertResponseStatusCodeSame(403);
+        // Approving the tag through the review screen approves its node.
+        $nodeTagId = $manager->getRepository(NodeTag::class)->findOneBy(['node' => $tagged['id']])->getId();
+        $crawler = $client->request('GET', '/admin/node/'.$tagged['id'].'/edit');
+        $form = $crawler->filter('form[action="/admin/node-tag/'.$nodeTagId.'/approve"]')->form();
         $client->submit($form);
-        self::assertResponseRedirects('/admin/pending-observation/'.$node['id'].'/edit');
-        $client->followRedirect();
-        self::assertSelectorNotExists('.pending-node-approval');
+        self::assertResponseRedirects();
+        $manager->clear();
+        self::assertTrue($manager->find(Node::class, $tagged['id'])->isApproved());
+
+        // The published node leaves the queue.
         $client->request('GET', '/admin/pending-observations');
         $client->followRedirect();
-        self::assertStringNotContainsString($payload['providerNodeId'], $client->getCrawler()->filter('table')->text());
+        self::assertStringNotContainsString($tagged['providerNodeId'], $client->getCrawler()->filter('table')->text());
 
-        // Approval publishes a tagless node; pending tags stay independent.
+        // The tagless node stays pending; the tagged one is public.
         $client->getCookieJar()->clear();
         $client->request('GET', '/api/nodes');
         $ids = array_column(json_decode($client->getResponse()->getContent(), true), 'id');
-        self::assertContains($node['id'], $ids);
-        self::assertNotContains($tagged['id'], $ids);
+        self::assertNotContains($node['id'], $ids);
+        self::assertContains($tagged['id'], $ids);
+        $listed = array_column(json_decode($client->getResponse()->getContent(), true), null, 'id');
+        self::assertTrue($listed[$tagged['id']]['approved']);
 
-        // Resaving does not reset node approval.
+        // Resaving does not reset the derived node approval.
         $this->loginEditor($client);
-        $this->save($client, $payload, 200);
-        self::assertTrue(static::getContainer()->get('doctrine')->getManager()->find(Node::class, $node['id'])->isApproved());
-        $client->loginUser($this->createUser(self::EDITOR_EMAIL, ['editor']), 'admin');
-        $client->request('POST', '/admin/node/'.$tagged['id'].'/approve', ['_token' => 'invalid']);
-        self::assertResponseStatusCodeSame(403);
+        $this->save($client, $taggedPayload, 200);
+        self::assertTrue(static::getContainer()->get('doctrine')->getManager()->find(Node::class, $tagged['id'])->isApproved());
     }
 
     public function testAdminReviewShowsAllCustomTagsOfANewNode(): void
@@ -284,7 +309,7 @@ final class NodeCreationTest extends WebTestCase
         $client = static::createClient();
         $this->loginEditor($client);
         $name = 'New place '.bin2hex(random_bytes(8));
-        $tags = ['name' => $name, 'custom_access_note' => '<step-free> & open'];
+        $tags = [self::tag('name', $name), self::tag('custom_access_note', '<step-free> & open')];
         $node = $this->save($client, array_replace($this->payload(), ['tags' => $tags]));
         $manager = static::getContainer()->get('doctrine')->getManager();
         foreach ($manager->getRepository(NodeTag::class)->findBy(['node' => $node['id']]) as $nodeTag) {
@@ -298,8 +323,10 @@ final class NodeCreationTest extends WebTestCase
         $client->request('GET', '/admin/pending-observations');
         $client->followRedirect();
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('table', 'name='.$name);
-        self::assertSelectorTextContains('table', 'custom_access_note=<step-free> & open');
+        // The queue lists the node's unapproved tags; approved ones are gone.
+        $tableText = $client->getCrawler()->filter('table')->text();
+        self::assertStringContainsString('custom_access_note=<step-free> & open', $tableText);
+        self::assertStringNotContainsString('name='.$name, $tableText);
 
         foreach (['pending-observation', 'node'] as $screen) {
             $client->request('GET', '/admin/'.$screen.'/'.$node['id'].'/edit');
@@ -310,7 +337,6 @@ final class NodeCreationTest extends WebTestCase
             self::assertSelectorTextContains('.node-custom-tags', 'custom_access_note');
             self::assertSelectorTextContains('.node-custom-tags', '<step-free> & open');
             self::assertSelectorNotExists('.node-custom-tags step-free');
-            self::assertSelectorExists('.pending-node-approval');
             self::assertSelectorTextContains('.node-edit-unapproved-tags', 'custom_access_note');
         }
     }

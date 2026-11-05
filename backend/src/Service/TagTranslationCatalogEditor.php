@@ -3,7 +3,7 @@
 namespace App\Service;
 
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Translation\Loader\XliffFileLoader;
+use Symfony\Component\Translation\Util\XliffUtils;
 
 /** Synchronize or edit targets without rebuilding existing units and metadata. */
 final class TagTranslationCatalogEditor
@@ -115,9 +115,8 @@ final class TagTranslationCatalogEditor
     private function mergeLocked(string $path, string $locale, array $entries, array $expectedTargets, bool $allowNewTargets, bool $linkReferences, array $expectedIgnores = []): int
     {
         // Validate before editing; never silently replace a malformed catalog.
-        (new XliffFileLoader())->load($path, $locale, 'tags');
-        $document = new \DOMDocument();
-        $document->load($path, LIBXML_NONET);
+        $document = $this->loadDocument($path);
+        $this->validateSchema($document, $path);
         $units = [];
         foreach ($document->getElementsByTagNameNS(self::NS, 'unit') as $unit) {
             $units[$unit->getAttribute('name')] = $unit;
@@ -223,8 +222,72 @@ final class TagTranslationCatalogEditor
         if ($added === 0 && !$metadataChanged && !$referencesChanged && !array_any($entries, static fn (array $entry): bool => isset($entry['target']))) {
             return 0;
         }
+        $this->write($path, $document);
+
+        return $added;
+    }
+
+    /** Remove stale units whose sources vanished; rebuild key/value references.
+     * Only call with the complete unit set from every source (OSM TSVs + database).
+     * @param list<string> $keep Unit names still present in the current sources.
+     */
+    public function prune(string $path, string $locale, array $keep): int
+    {
+        $lock = $this->lockFactory->createLock('tag-catalog:'.hash('sha256', realpath($path) ?: $path));
+        if (!$lock->acquire(true)) {
+            throw new \RuntimeException('Could not lock the translation catalog.');
+        }
+        try {
+            // Validate before editing; never silently replace a malformed catalog.
+            $document = $this->loadDocument($path);
+            $this->validateSchema($document, $path);
+            $units = [];
+            foreach ($document->getElementsByTagNameNS(self::NS, 'unit') as $unit) {
+                $units[$unit->getAttribute('name')] = $unit;
+            }
+            $keepSet = array_flip($keep);
+            $removed = 0;
+            foreach ($units as $name => $unit) {
+                if (isset($keepSet[$name])) {
+                    continue;
+                }
+                $this->removeElement($unit);
+                unset($units[$name]);
+                ++$removed;
+            }
+            $referencesChanged = $this->linkReferences($document, $units);
+            if ($removed > 0 || $referencesChanged) {
+                $this->write($path, $document);
+            }
+
+            return $removed;
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /* Parse without building Symfony's message/metadata tree; the catalogs are too large for that. */
+    private function loadDocument(string $path): \DOMDocument
+    {
+        $document = new \DOMDocument();
+        if (!$document->load($path, LIBXML_NONET)) {
+            throw new \InvalidArgumentException('The translation catalog is not well-formed XML: '.$path);
+        }
+
+        return $document;
+    }
+
+    private function validateSchema(\DOMDocument $document, string $path): void
+    {
+        if ($errors = XliffUtils::validateSchema($document)) {
+            throw new \InvalidArgumentException(\sprintf('Invalid translation catalog "%s": %s', $path, XliffUtils::getErrorsAsString($errors)));
+        }
+    }
+
+    private function write(string $path, \DOMDocument $document): void
+    {
+        $this->validateSchema($document, $path);
         $xml = $document->saveXML();
-        (new XliffFileLoader())->load($xml, $locale, 'tags');
         // Replace only a complete, valid document.
         $temporary = tempnam(\dirname($path), '.tags-');
         if ($temporary === false) {
@@ -240,8 +303,6 @@ final class TagTranslationCatalogEditor
                 unlink($temporary);
             }
         }
-
-        return $added;
     }
 
     private function setIgnore(\DOMDocument $document, \DOMElement $unit, bool $ignore): bool

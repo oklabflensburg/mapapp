@@ -89,6 +89,9 @@ final class SyncTagTranslationsCommand extends Command
             return Command::INVALID;
         }
         ksort($entries);
+        // Removing translations requires knowing every current unit, so only
+        // a sync with all inputs (OSM keys, OSM pairs, database) may prune.
+        $complete = $input->getArgument('keys') !== null && $input->getOption('pairs') !== null && $input->getOption('database');
         foreach (TagKeyLabeler::SUPPORTED_LOCALES as $locale) {
             $localized = $entries;
             foreach ($legacy as $label) {
@@ -97,7 +100,8 @@ final class SyncTagTranslationsCommand extends Command
                 }
             }
             $added = $this->editor->merge($this->catalog->path($locale), $locale, $localized, linkReferences: true);
-            $output->writeln($locale.': '.$added.' new translation units');
+            $removed = $complete ? $this->editor->prune($this->catalog->path($locale), $locale, array_keys($localized)) : 0;
+            $output->writeln($locale.': '.$added.' new translation units'.($complete ? ', '.$removed.' stale units removed' : ''));
         }
 
         return Command::SUCCESS;

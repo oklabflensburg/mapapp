@@ -43,14 +43,16 @@ let failNext = false
 let nextNodeId = 1
 let nextGroupId = 1
 
+const tagListValue = (tags, key) => (tags ?? []).find(tag => tag.key === key)?.value
+
 function withRelations(node) {
   const reference = node.parent
   const parent = reference?.id != null ? nodes.find(n => n.id === reference.id) : reference?.providerNodeId ? {
-    id: -1, provider: 'OSM', providerNodeId: reference.providerNodeId, tags: {},
+    id: -1, provider: 'OSM', providerNodeId: reference.providerNodeId, tags: [],
   } : undefined
   return { ...node, parentIds: parent ? [parent.id] : [], parents: parent ? [{
     id: parent.id, provider: parent.provider, providerNodeId: parent.providerNodeId,
-    name: parent.tags.name ?? null, tags: parent.tags,
+    name: tagListValue(parent.tags, 'name') ?? null, tags: parent.tags,
   }] : [], children: [] }
 }
 
@@ -68,15 +70,20 @@ await page.route('**/api/nodes', async route => {
     node = { id: nextNodeId++, provider: 'local', parentIds: [], childIds: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...input }
     nodes.push(node)
   }
-  node.observationTranslations ??= {}
+  node.observationTranslations ??= []
   for (const translation of input.translations ?? []) {
-    node.observationTranslations[translation.key] ??= {}
-    node.observationTranslations[translation.key][input.translationLocale] = {
+    let entry = node.observationTranslations.find(
+      candidate => candidate.key === translation.key && candidate.value === translation.value)
+    if (!entry) {
+      entry = { key: translation.key, value: translation.value, translations: {} }
+      node.observationTranslations.push(entry)
+    }
+    entry.translations[input.translationLocale] = {
       keyTranslation: translation.keyTranslation, valueTranslation: translation.valueTranslation,
     }
   }
-  node.tags = input.tags ?? {}
-  node.observations = input.tags ?? {}
+  node.tags = input.tags ?? []
+  node.observations = input.tags ?? []
   // Simulate a lost response after the write has committed.
   if (failNext) {
     failNext = false
@@ -91,15 +98,15 @@ await page.route('**/api/node-groups', async route => {
   let group = input.id != null ? groups.find(node => node.id === input.id) : undefined
   if (!group) {
     group = {
-      id: nextGroupId++, name: input.name ?? null, members: [], tags: input.tags ?? {},
-      observations: {}, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      id: nextGroupId++, name: input.name ?? null, members: [], tags: input.tags ?? [],
+      observations: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     }
     groups.push(group)
   }
   for (const reference of input.members ?? []) {
     const node = nodes.find(n => n.id === reference.id)
     if (node && !group.members.some(member => member.id === node.id)) {
-      group.members.push({ id: node.id, provider: node.provider, providerNodeId: node.providerNodeId, name: node.tags.name ?? null, tags: node.tags })
+      group.members.push({ id: node.id, provider: node.provider, providerNodeId: node.providerNodeId, name: tagListValue(node.tags, 'name') ?? null, tags: node.tags })
     }
   }
   group.parents = [...new Map(group.members.flatMap(member => withRelations(nodes.find(n => n.id === member.id)).parents).map(parent => [`${parent.provider}:${parent.providerNodeId}`, parent])).values()]
@@ -159,6 +166,9 @@ try {
   assert.deepEqual(nodeRequests.map(request => request.parent), [undefined, undefined])
   assert.equal(groupRequests.length, 1)
   assert.equal(groupRequests[0].name, 'Hochallee north part')
+  // The dialog name also becomes a name tag, so it reaches the translation
+  // catalog like a node name does.
+  assert.equal(tagListValue(groupRequests[0].tags, 'name'), 'Hochallee north part')
   assert.deepEqual(groupRequests[0].members.map(member => member.id), nodes.map(node => node.id))
   await expect(page.locator('.p-drawer')).toContainText('Hochallee north part')
   // Relation tags also require both raw fields before an update can be sent.
@@ -191,7 +201,7 @@ try {
   await expect(dialog).toBeHidden()
   await expect(page.locator('.p-drawer')).toBeVisible()
   const single = nodeRequests.at(-1)
-  assert.deepEqual(single.tags, { name: 'Solo test node' })
+  assert.deepEqual(single.tags, [{ key: 'name', value: 'Solo test node' }])
   assert.equal(single.parent, undefined)
   assert.equal(groupRequests.length, 1, 'a single node creates no relation')
   const projected = pixel(single.latitude, single.longitude)
@@ -227,7 +237,7 @@ try {
   await observation.getByLabel('Value translation', { exact: true }).fill('Rough surface')
   await tagSave.click()
   await expect.poll(() => nodeRequests.length).toBe(beforeIncomplete + 1)
-  assert.deepEqual(nodeRequests.at(-1).tags, { name: 'Solo test node', surface: 'rough_surface' })
+  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'name', value: 'Solo test node' }, { key: 'surface', value: 'rough_surface' }])
   assert.deepEqual(nodeRequests.at(-1).translations, [{
     key: 'surface', value: 'rough_surface', keyTranslation: 'Surface', valueTranslation: 'Rough surface',
     previousKeyTranslation: '', previousValueTranslation: '',
@@ -262,7 +272,7 @@ try {
   await tagSave.click()
   await expect(observation.getByLabel('Value translation', { exact: true })).toHaveValue('Rough surface')
   assert.equal(nodeRequests.at(-1).translationLocale, 'en')
-  assert.deepEqual(nodeRequests.at(-1).tags, { name: 'Solo test node', test_surface: 'rough' })
+  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'name', value: 'Solo test node' }, { key: 'test_surface', value: 'rough' }])
   assert.deepEqual(nodeRequests.at(-1).translations, [{
     key: 'test_surface', value: 'rough', keyTranslation: 'Surface', valueTranslation: 'Rough surface',
     previousKeyTranslation: '', previousValueTranslation: '',
@@ -400,7 +410,7 @@ try {
   await save.click()
   await expect(dialog).toBeHidden()
   await expect(page.locator('.p-drawer')).toContainText('Edit node')
-  assert.deepEqual(nodeRequests.at(-1).tags, { name: 'Mobile node', surface: 'smooth' })
+  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'surface', value: 'smooth' }, { key: 'name', value: 'Mobile node' }])
   assert.equal(nodeRequests.at(-1).translations[0].valueTranslation, 'Smooth')
   await closeEditor()
   console.log('PASS: edit mode placement, pending dialog, relation save, single node save, observation translations and layout, abort, escape, per-node OSM/custom parents, cross-street relations, parent labels after reload, retry, mobile layout and creation drafts')

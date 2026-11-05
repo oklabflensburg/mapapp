@@ -5,8 +5,8 @@ namespace App\Api;
 final readonly class NodeGroupResponse
 {
     /**
-     * @param array<string, string> $tags
-     * @param array<string, string> $observations
+     * @param list<array{key: string, value: string}> $tags
+     * @param list<array{key: string, value: string}> $observations
      * @param list<RelatedNodeResponse> $members
      * @param array{type: string, coordinates: list<list<list<float>>>}|null $area
      *        GeoJSON polygon geometry of the street part's corridor (null
@@ -19,6 +19,8 @@ final readonly class NodeGroupResponse
         public ?array $area,
         public array $tags,
         public array $observations,
+        /** Whether a relation tag was approved, mirroring node approval. */
+        public bool $approved,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
         /** @var list<RelatedNodeResponse> Distinct parents of the member nodes. */

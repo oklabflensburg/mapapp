@@ -1,126 +1,93 @@
 // Deterministic browser check; requires npm run dev. API, session, and OSM
 // fixtures are intercepted so this check never writes to the development
-// database. Verifies: relation mode collects clicked nodes, requires two
-// members, toggles members, previews the pending part as a dashed line,
-// creates the relation with its corridor area rendered on the map, opens its
-// tag editor, and shows the relation with its tags and area when a member
-// node is selected.
+// database. Verifies: edit mode connects two placed nodes with a dashed
+// preview line, saving creates the relation rendered as the solid line
+// through its members at a minimal, zoom-independent on-screen width,
+// clicking the relation's line opens its editor while browsing, and a
+// reload renders the relation's member line from the listed relations.
 import assert from 'node:assert/strict'
 import { chromium, expect } from '@playwright/test'
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
 const center = { lat: 54.791, lng: 9.437 }
-const points = [
-  { lat: center.lat, lng: center.lng },
-  { lat: center.lat + 0.0005, lng: center.lng + 0.001 },
-]
 const fixture = {
   type: 'FeatureCollection',
-  features: points.map((point, index) => ({
-    type: 'Feature',
-    id: `n-fixture-${index}`,
-    properties: { name: `Fixture node ${index}`, highway: 'crossing' },
-    geometry: { type: 'Point', coordinates: [point.lng, point.lat] },
-  })),
+  features: [
+    // An in-viewport street keeps the OSM canvas layer alive; it runs well
+    // south of the sampled member-line pixels so it cannot interfere with
+    // the amber checks.
+    { type: 'Feature', id: 'w-street-south', properties: { name: 'Street South', highway: 'residential' }, geometry: { type: 'LineString', coordinates: [[9.42, 54.792], [9.45, 54.792]] } },
+  ],
 }
 
-function pixel(lat, lng) {
-  const project = (lat, lng) => {
-    const scale = 256 * 2 ** 14
-    const sine = Math.sin(lat * Math.PI / 180)
-    return [(lng + 180) / 360 * scale, (0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI)) * scale]
-  }
-  const point = project(lat, lng)
-  const origin = project(center.lat, center.lng)
-  return { x: 640 + point[0] - origin[0], y: 400 + point[1] - origin[1] }
-}
+// The two member points in page pixels at the initial zoom 14.
+const a = { x: 380, y: 270 }
+const b = { x: 450, y: 310 }
 
-// Inverse of pixel(), for building fixture geometries at known screen spots.
-function unproject(x, y) {
-  const scale = 256 * 2 ** 14
-  const project = (lat, lng) => {
-    const sine = Math.sin(lat * Math.PI / 180)
-    return [(lng + 180) / 360 * scale, (0.5 - Math.log((1 + sine) / (1 - sine)) / (4 * Math.PI)) * scale]
-  }
-  const origin = project(center.lat, center.lng)
-  const lng = (x - 640 + origin[0]) / scale * 360 - 180
-  const mercatorY = 0.5 - (y - 400 + origin[1]) / scale
-  const lat = (2 * Math.atan(Math.exp(mercatorY * 2 * Math.PI)) - Math.PI / 2) * 180 / Math.PI
-  return { lat, lng }
-}
-
+const nodes = []
 const groups = []
-const members = []
-const requests = []
+const groupRequests = []
+let nextNodeId = 1
 let nextGroupId = 1
-let nextNodeId = 1000
+
+const tagListValue = (tags, key) => (tags ?? []).find(tag => tag.key === key)?.value
 
 await page.route('**/data/flensburg.geojson', route => route.fulfill({ json: fixture }))
+// Editing requires an editor session; the check never touches the backend.
 await page.route('**/api/me', route => route.fulfill({
   json: { user: { name: 'Check Editor', email: 'check-editor@example.com', roles: ['ROLE_EDITOR'] } },
 }))
-await page.route('**/api/nodes', route => route.fulfill({ json: [] }))
+await page.route('**/api/nodes', async route => {
+  if (route.request().method() === 'GET') return route.fulfill({ json: [] })
+  const input = route.request().postDataJSON()
+  const node = {
+    id: nextNodeId++, provider: 'local', parentIds: [],
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    tags: [], observations: [], parents: [], children: [], ...input,
+  }
+  nodes.push(node)
+  return route.fulfill({ status: 200, json: node })
+})
 await page.route('**/api/node-groups', async route => {
   if (route.request().method() === 'GET') return route.fulfill({ json: groups })
   const input = route.request().postDataJSON()
-  requests.push(input)
-  let group = input.id != null ? groups.find(node => node.id === input.id) : undefined
-  if (!group) {
-    // Saved street parts carry the corridor polygon the backend buffers
-    // around the member line; the fixture places it below the fixture
-    // nodes (the areaBox pixels).
-    group = {
-      id: nextGroupId++, members: [], tags: {}, observations: {},
-      area: { type: 'Polygon', coordinates: [areaBoxRing()] },
-      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    }
-    groups.push(group)
+  groupRequests.push(input)
+  const group = {
+    id: nextGroupId++, name: input.name ?? null, members: [], area: null,
+    tags: input.tags ?? [], observations: [],
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   }
   for (const reference of input.members ?? []) {
-    let node
-    if (reference.id != null) {
-      node = members.find(member => member.id === reference.id)
-    } else {
-      node = members.find(member => member.providerNodeId === reference.providerNodeId)
-      if (!node) {
-        node = { id: nextNodeId++, provider: 'OSM', name: null, tags: {}, ...reference }
-        members.push(node)
-      }
-    }
-    if (node && !group.members.some(member => member.id === node.id)) {
-      group.members.push(node)
+    const node = nodes.find(candidate => candidate.id === reference.id)
+    if (node) {
+      group.members.push({
+        id: node.id, provider: node.provider, providerNodeId: node.providerNodeId,
+        name: tagListValue(node.tags, 'name') ?? null, tags: node.tags ?? [],
+        latitude: node.latitude, longitude: node.longitude,
+      })
     }
   }
-  if (input.tags != null) {
-    group.tags = input.tags
-    group.observations = input.tags
-  }
-  return route.fulfill({ status: input.id != null ? 200 : 201, json: group })
+  groups.push(group)
+  return route.fulfill({ status: 201, json: group })
 })
 
-const relationToggle = page.getByRole('button', { name: 'Create a node relation', exact: true })
-const create = page.getByRole('button', { name: 'Create relation', exact: true })
-const a = pixel(points[0].lat, points[0].lng)
-const b = pixel(points[1].lat, points[1].lng)
+const add = page.getByRole('button', { name: 'Add node', exact: true })
+const dialog = page.getByRole('form', { name: 'Placed nodes', exact: true })
+const save = page.locator('.p-drawer').getByRole('button', { name: 'Save', exact: true })
 
-// The street part area fixture: a rectangle south of the fixture nodes whose
-// border passes through known pixels, so its rendering is verifiable.
-const areaBox = { x1: 635, y1: 425, x2: 655, y2: 435 }
-
-function areaBoxRing() {
-  const corners = [
-    [areaBox.x1, areaBox.y1], [areaBox.x2, areaBox.y1],
-    [areaBox.x2, areaBox.y2], [areaBox.x1, areaBox.y2], [areaBox.x1, areaBox.y1],
-  ]
-  return corners.map(([x, y]) => {
-    const point = unproject(x, y)
-    return [point.lng, point.lat]
-  })
+async function ready() {
+  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
+  await expect(add).toBeVisible()
 }
 
-// The amber area stroke (#d97706) is drawn onto the shared overlay canvas, so
-// the check samples the pixels around a page position for it.
+async function closeEditor() {
+  await page.locator('.p-drawer').getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(page.locator('.p-drawer')).toBeHidden()
+}
+
+// The amber relation stroke (#d97706) is drawn onto the shared overlay
+// canvas, so the check samples the pixels around a page position for it.
 async function amberAt(x, y) {
   return page.evaluate(({ x, y }) => {
     const canvas = document.querySelector('.leaflet-overlay-pane canvas')
@@ -144,94 +111,83 @@ async function amberAt(x, y) {
   }, { x, y })
 }
 
-async function ready() {
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
-  await expect(relationToggle).toBeVisible()
+// A point on the member line: the fraction from a to b, shifted and scaled
+// like Leaflet when zooming around the map center (640, 400).
+function memberPoint(fraction, zoom = 14) {
+  const x = a.x + (b.x - a.x) * fraction
+  const y = a.y + (b.y - a.y) * fraction
+  const shrink = 2 ** (zoom - 14)
+  return { x: 640 + (x - 640) * shrink, y: 400 + (y - 400) * shrink }
 }
 
-async function closeEditor() {
-  await page.locator('.p-drawer').getByRole('button', { name: 'Cancel', exact: true }).click()
-  await expect(page.locator('.p-drawer')).toBeHidden()
+const amberAlong = async (fractions, zoom = 14) => {
+  const samples = await Promise.all(
+    fractions.map(fraction => {
+      const point = memberPoint(fraction, zoom)
+      return amberAt(point.x, point.y)
+    }),
+  )
+  return samples.every(Boolean)
 }
 
 try {
   await page.goto(process.env.APP_URL ?? 'http://localhost:5173')
   await ready()
 
-  // Entering relation mode needs two members before the relation can be created.
-  await relationToggle.click()
-  await expect(relationToggle).toHaveAttribute('aria-pressed', 'true')
-  await expect(create).toBeDisabled()
+  // Edit mode places the relation's members; two placed nodes are connected
+  // by the dashed preview line.
+  await add.click()
+  await expect(add).toHaveAttribute('aria-pressed', 'true')
   await page.mouse.click(a.x, a.y)
-  await expect(page.getByText('1 nodes selected')).toBeVisible()
-  await expect(create).toBeDisabled()
+  await expect(dialog).toContainText('1 nodes placed')
   await page.mouse.click(b.x, b.y)
-  await expect(page.getByText('2 nodes selected')).toBeVisible()
-  await expect(create).toBeEnabled()
+  await expect(dialog).toContainText('2 nodes placed')
+  await expect.poll(() => {
+    // Dashed: some point along the line is amber (a solid check could pass
+    // while the dash covers a sampled point).
+    return Promise.all([0.25, 0.5, 0.75].map(fraction => {
+      const point = memberPoint(fraction)
+      return amberAt(point.x, point.y)
+    })).then(samples => samples.some(Boolean))
+  }).toBe(true)
 
-  // The collected members are connected by a dashed preview line.
-  await expect.poll(() => amberAt((a.x + b.x) / 2, (a.y + b.y) / 2)).toBe(true)
-
-  // Clicking a member again removes it from the pending relation.
-  await page.mouse.click(a.x, a.y)
-  await expect(page.getByText('1 nodes selected')).toBeVisible()
-  await page.mouse.click(a.x, a.y)
-  await expect(page.getByText('2 nodes selected')).toBeVisible()
-
-  await create.click()
+  // Saving the placed nodes creates the relation, which renders as the solid
+  // line through its members.
+  await dialog.getByLabel('Name', { exact: true }).fill('Hochallee north part')
+  await save.click()
+  await expect(dialog).toBeHidden()
   await expect(page.locator('.p-drawer')).toBeVisible()
-  // The saved street part renders its corridor area; the preview line
-  // through the members is replaced by the area polygon.
-  await expect.poll(() => amberAt((areaBox.x1 + areaBox.x2) / 2, areaBox.y1)).toBe(true)
-  await expect.poll(() => amberAt((a.x + b.x) / 2, (a.y + b.y) / 2)).toBe(false)
-  const created = requests.at(-1)
-  assert.equal(created.members.length, 2, 'the relation contains both clicked nodes')
-  // The first node was removed and re-added, so members keep the click order:
-  // the second click comes first.
-  assert.deepEqual(created.members[0], {
-    providerNodeId: 'n-fixture-1',
-    latitude: points[1].lat,
-    longitude: points[1].lng,
-  })
+  assert.equal(groupRequests.length, 1, 'saving two placed nodes creates one relation')
+  assert.deepEqual(
+    groupRequests[0].members.map(member => member.id),
+    nodes.map(node => node.id),
+    'the relation contains both placed nodes',
+  )
+  await expect.poll(() => amberAlong([0.3, 0.5, 0.7])).toBe(true)
 
-  // The new relation opens in its tag editor: tags save against its id.
-  await page.getByRole('button', { name: 'Add observation', exact: true }).click()
-  await page.getByPlaceholder('Key', { exact: true }).fill('surface')
-  await page.getByPlaceholder('Value', { exact: true }).fill('cobblestone')
-  await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect.poll(() => groups[0].tags.surface).toBe('cobblestone')
-  assert.equal(requests.at(-1).id, groups[0].id, 'tag saves update the relation instead of creating one')
-  await expect(page.getByRole('region', { name: 'Nodes', exact: true })).toContainText('n-fixture-0')
+  // While browsing, clicking the relation's line selects the relation and
+  // opens its editor (its header is the relation's name).
   await closeEditor()
+  const mid = memberPoint(0.5)
+  await page.mouse.click(mid.x, mid.y)
+  const relationDrawer = page.locator('.p-drawer').filter({ hasText: 'Hochallee north part' })
+  await expect(relationDrawer).toBeVisible()
+  await expect(relationDrawer.getByRole('region', { name: 'Nodes', exact: true })).toContainText('2 nodes')
+  await relationDrawer.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(page.locator('.p-drawer')).toBeHidden()
 
-  // Escape leaves relation mode without creating anything.
-  await relationToggle.click()
-  await expect(relationToggle).toHaveAttribute('aria-pressed', 'true')
-  await page.keyboard.press('Escape')
-  await expect(relationToggle).toHaveAttribute('aria-pressed', 'false')
-  assert.equal(requests.length, 2, 'escape does not save')
-
-  // After a reload the member node shows the relation and its tags, and the
-  // street part's corridor area is drawn from the listed relations.
+  // The member line's width is constant on screen: zooming out keeps the
+  // relation visible instead of thinning with the map's meters.
+  const zoomOut = page.locator('.leaflet-control-zoom-out')
+  await zoomOut.click()
+  await page.waitForTimeout(600)
+  await zoomOut.click()
+  await expect.poll(() => amberAlong([0.3, 0.5, 0.7], 12)).toBe(true)
+  // After a reload the relation renders from the listed relations.
   await page.reload()
   await ready()
-  await expect.poll(() => amberAt((areaBox.x1 + areaBox.x2) / 2, areaBox.y1)).toBe(true)
-  await page.mouse.click(a.x, a.y)
-  const nodeRelations = page.getByRole('region', { name: 'Node relations', exact: true })
-  await expect(nodeRelations).toContainText('2 nodes')
-  await expect(nodeRelations).toContainText('surface')
-  await expect(nodeRelations).toContainText('cobblestone')
-
-  // The edit button swaps the node editor for the relation editor; the node
-  // drawer can still be leaving, so scope to the relation drawer.
-  await nodeRelations.getByRole('button', { name: 'Edit relation', exact: true }).click()
-  const relationDrawer = page.locator('.p-drawer').filter({ hasText: 'Edit node relation' })
-  await expect(relationDrawer).toBeVisible()
-  await expect(relationDrawer.getByRole('region', { name: 'Nodes', exact: true })).toContainText('n-fixture-1')
-  await relationDrawer.getByRole('button', { name: 'Cancel', exact: true }).click()
-  await expect(relationDrawer).toBeHidden()
-  await page.screenshot({ path: '/tmp/map-node-relation.png' })
-  console.log('PASS: relation mode, member collection, relation creation, area lines, relation tags, member selection')
+  await expect.poll(() => amberAlong([0.3, 0.5, 0.7])).toBe(true)
+  console.log('PASS: relation creation, dashed preview, solid member line, line click, zoom-independent width, reload rendering')
 } finally {
   await browser.close()
 }

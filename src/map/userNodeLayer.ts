@@ -17,6 +17,12 @@ const USER_NODE_MARKER_OPTIONS: L.CircleMarkerOptions = {
   fillOpacity: 0.9,
 }
 
+const UNAPPROVED_NODE_MARKER_OPTIONS: L.CircleMarkerOptions = {
+  ...USER_NODE_MARKER_OPTIONS,
+  color: '#b45309',
+  fillColor: '#fbbf24',
+}
+
 // Renders the saved user nodes as markers on top of the OSM layer. Rebuilt
 // after every OSM layer render (so the markers are drawn and hit-tested last
 // on the shared canvas renderer) and whenever the store changes.
@@ -38,7 +44,10 @@ export class UserNodeLayer {
       Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id - b.id,
     )
     for (const node of ordered) {
-      const marker = L.circleMarker([node.latitude, node.longitude], USER_NODE_MARKER_OPTIONS)
+      const options = node.provider === 'local' && node.approved === false
+        ? UNAPPROVED_NODE_MARKER_OPTIONS
+        : USER_NODE_MARKER_OPTIONS
+      const marker = L.circleMarker([node.latitude, node.longitude], options)
 
       // Clicking a marker selects it (also when it is already selected);
       // only clicking somewhere else deselects.

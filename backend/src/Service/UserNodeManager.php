@@ -168,36 +168,42 @@ final class UserNodeManager
     /**
      * Replaces the current user's tag additions on the node with the request
      * tags. Tags added by other users are preserved, so the same tag can be
-     * attributed to multiple users on one node.
+     * attributed to multiple users on one node, and one user can keep
+     * several tags with the same key but different values.
      *
-     * @param array<string, string> $tags
+     * @param list<array{key: string, value: string}> $tags
      */
     private function assignTags(Node $node, array $tags): void
     {
         $user = $this->defaultUser();
+        $requested = SaveUserNodeRequest::tagEntryCounts($tags);
 
         foreach ($node->getNodeTags() as $nodeTag) {
             if ($nodeTag->getCreatedByUser() !== $user) {
                 continue;
             }
             $tag = $nodeTag->getTag();
-            if (($tags[$tag->getKey()] ?? null) === $tag->getValue()) {
-                unset($tags[$tag->getKey()]);
+            $pair = $tag->getKey()."\0".$tag->getValue();
+            if (($requested[$pair] ?? 0) > 0) {
+                $requested[$pair]--;
             } else {
                 $node->getNodeTags()->removeElement($nodeTag);
                 $this->entityManager->remove($nodeTag);
             }
         }
 
-        foreach ($tags as $key => $value) {
-            $nodeTag = $node->addTag($this->tagRepository->findOrCreate($key, $value), $user);
-            if ($nodeTag !== null) {
-                // Admins approve their own additions, but only on this node:
-                // the same value added elsewhere stays unapproved there.
-                if ($this->currentUserIsAdmin()) {
-                    $nodeTag->setApproved(true);
+        foreach ($requested as $pair => $count) {
+            [$key, $value] = explode("\0", $pair, 2);
+            for ($i = 0; $i < $count; $i++) {
+                $nodeTag = $node->addTag($this->tagRepository->findOrCreate($key, $value), $user);
+                if ($nodeTag !== null) {
+                    // Admins approve their own additions, but only on this node:
+                    // the same value added elsewhere stays unapproved there.
+                    if ($this->currentUserIsAdmin()) {
+                        $nodeTag->setApproved(true);
+                    }
+                    $this->entityManager->persist($nodeTag);
                 }
-                $this->entityManager->persist($nodeTag);
             }
         }
     }
@@ -205,7 +211,9 @@ final class UserNodeManager
     /**
      * Each user sees approved tags plus their own unapproved ones; tags
      * another user has not yet had approved stay invisible. Approval is per
-     * node, so a value approved elsewhere never shows up here.
+     * node, so a value approved elsewhere never shows up here. Tags are
+     * returned as key/value pairs: one node can carry several tags with the
+     * same key but different values.
      */
     private function toResponse(Node $node): UserNodeResponse
     {
@@ -218,10 +226,14 @@ final class UserNodeManager
                 continue;
             }
             $tag = $nodeTag->getTag();
-            $tags[$tag->getKey()] = $tag->getValue();
+            $tags[] = ['key' => $tag->getKey(), 'value' => $tag->getValue()];
             if (!$nodeTag->isApproved()) {
-                $observations[$tag->getKey()] = $tag->getValue();
-                $observationTranslations[$tag->getKey()] = $tag->getTranslations();
+                $observations[] = ['key' => $tag->getKey(), 'value' => $tag->getValue()];
+                $observationTranslations[] = [
+                    'key' => $tag->getKey(),
+                    'value' => $tag->getValue(),
+                    'translations' => $tag->getTranslations(),
+                ];
             }
         }
 
@@ -238,6 +250,7 @@ final class UserNodeManager
             $node->getLongitude(),
             $tags,
             $observations,
+            $node->isApproved(),
             $node->getCreatedAt(),
             $node->getUpdatedAt(),
             $node->getNodeProvider()->getName(),
@@ -259,8 +272,8 @@ final class UserNodeManager
                 continue;
             }
             $tag = $nodeTag->getTag();
-            $tags[$tag->getKey()] = $tag->getValue();
-            if ($tag->getKey() === 'name' && trim($tag->getValue()) !== '') {
+            $tags[] = ['key' => $tag->getKey(), 'value' => $tag->getValue()];
+            if ($tag->getKey() === 'name' && trim($tag->getValue()) !== '' && $name === null) {
                 $name = $tag->getValue();
             }
         }

@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { RelatedNode } from './userNodes'
+import type { RelatedNode, TagEntry } from './userNodes'
 
 // A group member summary carries the node's position so the map can draw the
 // line through the ordered members.
@@ -27,9 +27,12 @@ export interface NodeGroup {
   // Parents are returned independently of member visibility in /api/nodes.
   parents?: RelatedNode[]
   area: GroupArea | null
-  tags: Record<string, string>
+  tags: TagEntry[]
   // Tag key/value pairs not yet approved by an admin.
-  observations: Record<string, string>
+  observations: TagEntry[]
+  // True once one of the relation's tags was approved (see NodeGroupManager),
+  // like node approval.
+  approved: boolean
   createdAt: string
   updatedAt: string
 }
@@ -42,7 +45,7 @@ export interface SaveNodeGroupInput {
   // Names the relation; empty clears it, omitted keeps the current name.
   name?: string
   members?: GroupMemberReference[]
-  tags?: Record<string, string>
+  tags?: TagEntry[]
 }
 
 export const useNodeGroupsStore = defineStore('nodeGroups', () => {

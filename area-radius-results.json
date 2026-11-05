@@ -1,0 +1,1822 @@
+[
+  {
+    "id": "w5037732",
+    "name": "Hafendamm",
+    "len": 100,
+    "baseTime": 72,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w19066224",
+    "name": "Doktor-Todsen-Straße",
+    "len": 105,
+    "baseTime": 75,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w23416593",
+    "name": "Süderhofenden",
+    "len": 97,
+    "baseTime": 70,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w23482621",
+    "name": "Augustastraße",
+    "len": 93,
+    "baseTime": 67,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w23674478",
+    "name": "Knuthstraße",
+    "len": 94,
+    "baseTime": 68,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w23674480",
+    "name": "Rathausstraße",
+    "len": 127,
+    "baseTime": 92,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24398307",
+    "name": "Norderstraße",
+    "len": 103,
+    "baseTime": 74,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24421017",
+    "name": "Neue Straße",
+    "len": 97,
+    "baseTime": 70,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24421018",
+    "name": "Toosbüystraße",
+    "len": 191,
+    "baseTime": 138,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24482746",
+    "name": "Bismarckstraße",
+    "len": 163,
+    "baseTime": 117,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24486348",
+    "name": "Glücksburger Straße",
+    "len": 274,
+    "baseTime": 198,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24654499",
+    "name": "Sankt-Jürgen-Platz",
+    "len": 113,
+    "baseTime": 81,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24663213",
+    "name": "Karlstraße",
+    "len": 118,
+    "baseTime": 85,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24689375",
+    "name": "Heinrich-Hertz-Straße",
+    "len": 100,
+    "baseTime": 72,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24689379",
+    "name": "Clädenstraße",
+    "len": 179,
+    "baseTime": 129,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24689380",
+    "name": "Beselerstraße",
+    "len": 102,
+    "baseTime": 73,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24740386",
+    "name": "Hafermarkt",
+    "len": 116,
+    "baseTime": 83,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24971306",
+    "name": "Reepschlägerbahn",
+    "len": 145,
+    "baseTime": 104,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24971315",
+    "name": "Kanonenberg",
+    "len": 173,
+    "baseTime": 186,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24972350",
+    "name": "Friedrichstraße",
+    "len": 225,
+    "baseTime": 162,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24972405",
+    "name": "Burgstraße",
+    "len": 119,
+    "baseTime": 163,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w24972466",
+    "name": "Ritterstraße",
+    "len": 272,
+    "baseTime": 547,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25055692",
+    "name": "Boesselstraße",
+    "len": 106,
+    "baseTime": 77,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25075511",
+    "name": "Duburger Straße",
+    "len": 208,
+    "baseTime": 150,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25075545",
+    "name": "Am Nordertor",
+    "len": 84,
+    "baseTime": 121,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25075734",
+    "name": "Norderfischerstraße",
+    "len": 96,
+    "baseTime": 69,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25077171",
+    "name": "An der Reitbahn",
+    "len": 211,
+    "baseTime": 152,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25091460",
+    "name": "Süderhofenden",
+    "len": 191,
+    "baseTime": 138,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25117020",
+    "name": "Ulmenstraße",
+    "len": 123,
+    "baseTime": 89,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25150200",
+    "name": "Brixstraße",
+    "len": 371,
+    "baseTime": 267,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25248527",
+    "name": "Segelmacherstraße",
+    "len": 124,
+    "baseTime": 90,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25272621",
+    "name": "Friedhofstraße",
+    "len": 207,
+    "baseTime": 149,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25299721",
+    "name": "Schloßstraße",
+    "len": 116,
+    "baseTime": 83,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25299799",
+    "name": "Burgstraße",
+    "len": 148,
+    "baseTime": 106,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25299814",
+    "name": "Königstraße",
+    "len": 162,
+    "baseTime": 116,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25299956",
+    "name": "Am Schloßwall",
+    "len": 168,
+    "baseTime": 166,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25300140",
+    "name": "Lütke-Namens-Weg",
+    "len": 98,
+    "baseTime": 71,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25300141",
+    "name": "Holstengang",
+    "len": 86,
+    "baseTime": 62,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25300381",
+    "name": "Am Dammhof",
+    "len": 95,
+    "baseTime": 69,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25343811",
+    "name": "Am Burgfried",
+    "len": 203,
+    "baseTime": 223,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25343824",
+    "name": "Margarethenstraße",
+    "len": 180,
+    "baseTime": 130,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25343835",
+    "name": "Landsknechtstraße",
+    "len": 105,
+    "baseTime": 76,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25343859",
+    "name": "Turnierstraße",
+    "len": 98,
+    "baseTime": 71,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25429714",
+    "name": "Unterer Lautrupweg",
+    "len": 171,
+    "baseTime": 138,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w25429872",
+    "name": "Oberer Lautrupweg",
+    "len": 141,
+    "baseTime": 88,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w26928419",
+    "name": "Jürgensgaarder Straße",
+    "len": 126,
+    "baseTime": 91,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w26928555",
+    "name": "Sankt-Jürgen-Straße",
+    "len": 190,
+    "baseTime": 136,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w26928815",
+    "name": "Eichenstraße",
+    "len": 109,
+    "baseTime": 79,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w26948180",
+    "name": "Pilkentafel",
+    "len": 84,
+    "baseTime": 60,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w26948538",
+    "name": "Preußerstraße",
+    "len": 87,
+    "baseTime": 62,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w27091213",
+    "name": "Bachstraße",
+    "len": 110,
+    "baseTime": 79,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w27091446",
+    "name": "Sankt-Jürgen-Winkel",
+    "len": 130,
+    "baseTime": 94,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w27091502",
+    "name": "Ballastbrücke",
+    "len": 161,
+    "baseTime": 116,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w28248918",
+    "name": "Luisenstraße",
+    "len": 198,
+    "baseTime": 271,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w28248920",
+    "name": "Schervierstraße",
+    "len": 92,
+    "baseTime": 66,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w31286735",
+    "name": "Parsevalstraße",
+    "len": 180,
+    "baseTime": 129,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w31824526",
+    "name": "Rivesellstraße",
+    "len": 113,
+    "baseTime": 82,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w32721918",
+    "name": "Norderhofenden",
+    "len": 114,
+    "baseTime": 82,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w34953096",
+    "name": "Süderhofenden",
+    "len": 160,
+    "baseTime": 115,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w34958878",
+    "name": "Süderhofenden",
+    "len": 85,
+    "baseTime": 61,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w37695836",
+    "name": "Viktoriastraße",
+    "len": 100,
+    "baseTime": 198,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w37978829",
+    "name": "Nordstraße",
+    "len": 258,
+    "baseTime": 186,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w38196050",
+    "name": "Buchenstraße",
+    "len": 86,
+    "baseTime": 62,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w38196173",
+    "name": "Mommsenstraße",
+    "len": 128,
+    "baseTime": 92,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w41858278",
+    "name": "Süderhofenden",
+    "len": 156,
+    "baseTime": 113,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w51398046",
+    "name": "Junkerhohlweg",
+    "len": 189,
+    "baseTime": 272,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w51398047",
+    "name": "Jens-Due-Straße",
+    "len": 280,
+    "baseTime": 202,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w52640833",
+    "name": "An der Reitbahn",
+    "len": 144,
+    "baseTime": 200,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w52705470",
+    "name": "Bergstraße",
+    "len": 198,
+    "baseTime": 142,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w61334273",
+    "name": "Friesische Straße",
+    "len": 100,
+    "baseTime": 72,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w61413091",
+    "name": "Friedastraße",
+    "len": 185,
+    "baseTime": 133,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w61413092",
+    "name": "Angelburger Straße",
+    "len": 121,
+    "baseTime": 87,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w61413095",
+    "name": "Bismarckstraße",
+    "len": 327,
+    "baseTime": 235,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w61413098",
+    "name": "Süderfischerstraße",
+    "len": 146,
+    "baseTime": 113,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w67730786",
+    "name": "Marienhölzungsweg",
+    "len": 155,
+    "baseTime": 112,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w67806186",
+    "name": "Jürgensgaarder Straße",
+    "len": 124,
+    "baseTime": 89,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w67806187",
+    "name": "Jürgensgaarder Straße",
+    "len": 200,
+    "baseTime": 144,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w67806188",
+    "name": "Jürgensgaarder Straße",
+    "len": 162,
+    "baseTime": 117,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w68189804",
+    "name": "Wrangelstraße",
+    "len": 163,
+    "baseTime": 117,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w68189806",
+    "name": "Marienhölzungsweg",
+    "len": 108,
+    "baseTime": 106,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w68552513",
+    "name": "Roonstraße",
+    "len": 160,
+    "baseTime": 152,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w69844443",
+    "name": "Selckstraße",
+    "len": 128,
+    "baseTime": 92,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w72498441",
+    "name": "Ballastbrücke",
+    "len": 127,
+    "baseTime": 91,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w72498443",
+    "name": "Am Lautrupsbach",
+    "len": 95,
+    "baseTime": 68,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w72518672",
+    "name": "Duburger Straße",
+    "len": 84,
+    "baseTime": 60,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w72518730",
+    "name": "Gartenstraße",
+    "len": 133,
+    "baseTime": 96,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w110967983",
+    "name": "Ballastbrücke",
+    "len": 322,
+    "baseTime": 232,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w118499802",
+    "name": "Heinrichstraße",
+    "len": 81,
+    "baseTime": 58,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w120865361",
+    "name": "Süderhofenden",
+    "len": 177,
+    "baseTime": 127,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w127974853",
+    "name": "Neue Straße",
+    "len": 116,
+    "baseTime": 83,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w129021403",
+    "name": "Norderstraße",
+    "len": 141,
+    "baseTime": 135,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w129021407",
+    "name": "Schiffbrücke",
+    "len": 126,
+    "baseTime": 91,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w129025224",
+    "name": "Bismarckstraße",
+    "len": 155,
+    "baseTime": 111,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w129025231",
+    "name": "Wilhelmstraße",
+    "len": 98,
+    "baseTime": 71,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w136747313",
+    "name": "Bismarckstraße",
+    "len": 146,
+    "baseTime": 105,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w141048524",
+    "name": "Bachstraße",
+    "len": 274,
+    "baseTime": 197,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w158468840",
+    "name": "Schiffbrücke",
+    "len": 135,
+    "baseTime": 97,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w169235353",
+    "name": "Johannisstraße",
+    "len": 96,
+    "baseTime": 69,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w180446949",
+    "name": "Norderhofenden",
+    "len": 86,
+    "baseTime": 62,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w180446952",
+    "name": "Schiffbrücke",
+    "len": 107,
+    "baseTime": 77,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w221754945",
+    "name": "Duburger Straße",
+    "len": 81,
+    "baseTime": 59,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w272458276",
+    "name": "Südergraben",
+    "len": 362,
+    "baseTime": 267,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w295226543",
+    "name": "Am Wasserturm",
+    "len": 251,
+    "baseTime": 181,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w311582208",
+    "name": "Schiffbrücke",
+    "len": 110,
+    "baseTime": 79,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w367119687",
+    "name": "Süderhofenden",
+    "len": 130,
+    "baseTime": 94,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w377842048",
+    "name": "Am Lautrupsbach",
+    "len": 345,
+    "baseTime": 248,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w385913836",
+    "name": "Johannisstraße",
+    "len": 194,
+    "baseTime": 139,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w490646197",
+    "name": "Plankemai",
+    "len": 88,
+    "baseTime": 63,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w571962877",
+    "name": "Süderhofenden",
+    "len": 91,
+    "baseTime": 65,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w614482218",
+    "name": "Glücksburger Straße",
+    "len": 272,
+    "baseTime": 196,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w626441208",
+    "name": "Jürgensgaarder Straße",
+    "len": 87,
+    "baseTime": 63,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w640678480",
+    "name": "Hafendamm",
+    "len": 86,
+    "baseTime": 62,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w680438711",
+    "name": "Reepschlägerbahn",
+    "len": 194,
+    "baseTime": 139,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w680586653",
+    "name": "Schiffbrücke",
+    "len": 132,
+    "baseTime": 95,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w680586660",
+    "name": "Norderstraße",
+    "len": 244,
+    "baseTime": 417,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w938406196",
+    "name": "Kappelner Straße",
+    "len": 105,
+    "baseTime": 76,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1016872794",
+    "name": "Bismarckstraße",
+    "len": 101,
+    "baseTime": 73,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1155187530",
+    "name": "Südergraben",
+    "len": 96,
+    "baseTime": 69,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1156698013",
+    "name": "Nordergraben",
+    "len": 210,
+    "baseTime": 151,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1156700757",
+    "name": "Toosbüystraße",
+    "len": 169,
+    "baseTime": 122,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1157984735",
+    "name": "Jürgensgaarder Straße",
+    "len": 100,
+    "baseTime": 72,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1157984736",
+    "name": "Nordstraße",
+    "len": 291,
+    "baseTime": 209,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1244732499",
+    "name": "Am Lautrupsbach",
+    "len": 102,
+    "baseTime": 73,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1523993683",
+    "name": "Nordergraben",
+    "len": 111,
+    "baseTime": 80,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1523995416",
+    "name": "Knuthstraße",
+    "len": 87,
+    "baseTime": 62,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1523995957",
+    "name": "Knuthstraße",
+    "len": 92,
+    "baseTime": 66,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1524056377",
+    "name": "Marienstraße",
+    "len": 93,
+    "baseTime": 67,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1524087544",
+    "name": "Speicherlinie",
+    "len": 84,
+    "baseTime": 61,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1525262325",
+    "name": "Reepschlägerbahn",
+    "len": 122,
+    "baseTime": 88,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  },
+  {
+    "id": "w1525302982",
+    "name": "Schloßstraße",
+    "len": 187,
+    "baseTime": 135,
+    "radii": {
+      "1": "MATCH",
+      "2": "MATCH",
+      "0.5": "MATCH",
+      "0.25": "MATCH",
+      "0.1": "MATCH",
+      "0.05": "MATCH"
+    }
+  }
+]

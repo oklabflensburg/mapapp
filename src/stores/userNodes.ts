@@ -1,16 +1,29 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
+// A tag on a node or relation; a list instead of a record so one node can
+// carry several tags with the same key but different values.
+export interface TagEntry {
+  key: string
+  value: string
+}
+
+// Returns the first value stored for the key.
+export function tagValue(tags: TagEntry[] | undefined, key: string): string | undefined {
+  return tags?.find((tag) => tag.key === key)?.value
+}
+
 export interface RelatedNode {
   id: number
   provider: 'OSM' | 'local'
   providerNodeId: string
   name: string | null
-  tags: Record<string, string>
+  tags: TagEntry[]
 }
 
 export interface UserNode {
   id: number
+  approved: boolean
   provider: 'OSM' | 'local'
   // Kept as arrays in the API for compatibility; each contains at most one parent.
   parentIds: number[]
@@ -20,10 +33,11 @@ export interface UserNode {
   providerNodeId: string
   latitude: number
   longitude: number
-  tags: Record<string, string>
+  tags: TagEntry[]
   // Tag key/value pairs not yet approved by an admin.
-  observations: Record<string, string>
-  observationTranslations?: Record<string, Partial<Record<'en' | 'de', { keyTranslation?: string; valueTranslation?: string }>>>
+  observations: TagEntry[]
+  // Proposed translations for the observation pairs, matched by key and value.
+  observationTranslations?: { key: string; value: string; translations: Partial<Record<'en' | 'de', { keyTranslation?: string; valueTranslation?: string }>> }[]
   createdAt: string
   updatedAt: string
 }
@@ -53,7 +67,7 @@ export interface SaveUserNodeInput {
   providerNodeId: string
   latitude: number
   longitude: number
-  tags: Record<string, string>
+  tags: TagEntry[]
 }
 
 // User nodes include local map points and custom tag edits to OSM features.
@@ -111,7 +125,7 @@ export const useUserNodesStore = defineStore('userNodes', () => {
         id: saved.id,
         provider: saved.provider,
         providerNodeId: saved.providerNodeId,
-        name: saved.tags.name?.trim() ? saved.tags.name : null,
+        name: tagValue(saved.tags, 'name')?.trim() || null,
         tags: saved.tags,
       }
       nodes.value = nodes.value.map((node) => ({

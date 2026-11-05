@@ -5,7 +5,7 @@ import Button from 'primevue/button'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useUserNodesStore } from '../stores/userNodes'
-import { nodeKey, type NodeEditTarget, type SaveUserNodeInput, type UserNode } from '../stores/userNodes'
+import { nodeKey, tagValue, type NodeEditTarget, type SaveUserNodeInput, type TagEntry, type UserNode } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import '../map/leafletIcons'
@@ -13,6 +13,7 @@ import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   FOCUS_ZOOM,
+  MAP_MAX_ZOOM,
   MOVE_RENDER_DEBOUNCE_MS,
   OSM_TILE_URL,
   OSM_TILE_MAX_ZOOM,
@@ -102,7 +103,7 @@ function selectRelation(group: NodeGroup): void {
   selectedGroupId.value = group.id
 }
 
-// A click inside a relation's corridor selects the relation itself; tags
+// A click on a relation's line selects the relation itself; tags
 // edited then apply to the whole street part, not to a single node.
 function onSelectGroup(group: NodeGroup): void {
   clickOnFeature = true
@@ -171,7 +172,7 @@ function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
   const parent = existing?.parents[0] ?? existing ?? target
   if (parent) {
     placedParents.value[nodeKey(parent)] = ('name' in parent ? parent.name : undefined)
-      || ('tags' in parent ? parent.tags.name : undefined)
+      || ('tags' in parent ? tagValue(parent.tags, 'name') : undefined)
       || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name : undefined)
       || parent.providerNodeId
   }
@@ -189,9 +190,17 @@ function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
   pendingNodeLayer?.render(pendingNodes.value)
 }
 
+// The dialog name overrides any name tag on the node or relation; the other
+// tag entries pass through unchanged.
+function withNameTag(tags: TagEntry[] | undefined, name: string): TagEntry[] {
+  const others = (tags ?? []).filter((tag) => tag.key !== 'name')
+  return name !== '' ? [...others, { key: 'name', value: name }] : others
+}
+
 // Commits the batch: every pending node is saved, then a single node stays a
 // plain node (the dialog name becomes its name tag) while two or more become
-// members of a new node relation (the name names the relation). Saved nodes
+// members of a new node relation (the name both names the relation and is
+// stored as its name tag). Saved nodes
 // are kept on failure, so a retry never saves a node twice.
 async function savePendingNodes(input: NodeCreationInput): Promise<void> {
   if (creating.value) return
@@ -208,7 +217,7 @@ async function savePendingNodes(input: NodeCreationInput): Promise<void> {
         providerNodeId: node.providerNodeId,
         latitude: node.latitude,
         longitude: node.longitude,
-        tags: isSingle ? { ...input.tags, ...(name !== '' ? { name } : {}) } : {},
+        tags: isSingle ? withNameTag(input.tags, name) : [],
         ...(isSingle ? { translationLocale: input.translationLocale, translations: input.translations } : {}),
         ...(node.parent ? { parent: node.parent } : {}),
       })
@@ -235,7 +244,9 @@ async function savePendingNodes(input: NodeCreationInput): Promise<void> {
     const members = savedBatchNodes.value.map((node) => ({ id: node.id }))
     const group = await nodeGroups.save({
       members,
-      tags: input.tags,
+      // The dialog name also becomes a name tag, so it reaches the
+      // translation catalog like a node name does (see NodeGroupManager).
+      tags: withNameTag(input.tags, name),
       ...(name !== '' ? { name } : {}),
     })
     if (!group) {
@@ -285,13 +296,13 @@ const userNodes = useUserNodesStore()
 const nodeGroups = useNodeGroupsStore()
 const osmData = useOsmDataStore()
 
-// The observations map carries exactly the current user's unapproved tags,
-// so markers stay only for nodes with pending observations: once every tag
-// is approved the dot disappears. Nodes without any tags yet (just created,
-// awaiting their first observation) keep their dot so they stay selectable.
+// Local nodes remain selectable after approval. The API returns approved
+// nodes plus the current user's pending nodes. OSM overlays keep markers
+// only for pending observations or nodes awaiting their first tags.
 const visibleUserNodes = computed(() =>
   userNodes.nodes.filter((node) =>
-    Object.keys(node.observations).length > 0 || Object.keys(node.tags).length === 0))
+    node.provider === 'local' ||
+    node.observations.length > 0 || node.tags.length === 0))
 
 // "1.2 km · 14 min walk" style summary of the found route.
 const routeSummary = computed(() => {
@@ -313,8 +324,8 @@ let pendingNodeLayer: PendingNodeLayer | undefined
 let routingLayer: RoutingLayer | undefined
 let renderTimer: ReturnType<typeof setTimeout> | undefined
 
-// Areas are clickable only while browsing: in the create and routing modes
-// their clicks must reach the nodes and features beneath.
+// Relation lines are clickable only while browsing: in the create and
+// routing modes their clicks must reach the nodes and features beneath.
 const areasInteractive = computed(
   () =>
     !routing.mode &&
@@ -324,8 +335,8 @@ const areasInteractive = computed(
 
 // Live preview of the relation being formed: the pending (and already saved)
 // batch nodes in edit mode, where two or more nodes become a node relation
-// on save. NodeGroupLayer draws the corridor around them as soon as a second
-// node exists.
+// on save. NodeGroupLayer draws the dashed line through them as soon as a
+// second node exists.
 const relationPreviewPoints = computed(() => {
   if (createMode.value || creating.value) {
     return [...savedBatchNodes.value, ...pendingNodes.value].map(
@@ -415,11 +426,15 @@ onMounted(() => {
   // Canvas hit-testing is exact by default, so thin lines (e.g. 1.5px roads)
   // would need pixel-perfect clicks. tolerance widens the hit area around
   // every path without changing how it is drawn.
-  map = L.map(container.value, { renderer: L.canvas({ tolerance: 10 }) }).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
+  map = L.map(container.value, {
+    renderer: L.canvas({ tolerance: 10 }),
+    maxZoom: MAP_MAX_ZOOM,
+  }).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
   window.addEventListener('keydown', onKeydown)
 
   L.tileLayer(OSM_TILE_URL, {
-    maxZoom: OSM_TILE_MAX_ZOOM,
+    maxNativeZoom: OSM_TILE_MAX_ZOOM,
+    maxZoom: MAP_MAX_ZOOM,
     attribution: OSM_TILE_ATTRIBUTION,
   }).addTo(map)
 

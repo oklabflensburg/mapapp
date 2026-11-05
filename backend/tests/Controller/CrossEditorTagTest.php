@@ -56,19 +56,19 @@ final class CrossEditorTagTest extends WebTestCase
         // Editor2 creates the node with an unapproved tag.
         $client = static::createClient();
         $this->login($client, 'editor2@example.test');
-        $node = $this->save($client, ['provider' => 'local', 'providerNodeId' => $identity, 'latitude' => 54.791, 'longitude' => 9.437, 'tags' => ['name' => 'Editors2Place']]);
-        self::assertSame(['name' => 'Editors2Place'], $node['tags']);
-        self::assertSame(['name' => 'Editors2Place'], $node['observations']);
+        $node = $this->save($client, ['provider' => 'local', 'providerNodeId' => $identity, 'latitude' => 54.791, 'longitude' => 9.437, 'tags' => [['key' => 'name', 'value' => 'Editors2Place']]]);
+        self::assertSame([['key' => 'name', 'value' => 'Editors2Place']], $node['tags']);
+        self::assertSame([['key' => 'name', 'value' => 'Editors2Place']], $node['observations']);
         $client->getCookieJar()->clear();
         static::ensureKernelShutdown();
 
         // Editor1 saves the same node with a different value for the same key.
         $client2 = static::createClient();
         $this->login($client2, 'editor1@example.test');
-        $saved = $this->save($client2, ['provider' => 'local', 'providerNodeId' => $identity, 'latitude' => 54.791, 'longitude' => 9.437, 'tags' => ['name' => 'Editors1Place']], 200);
+        $saved = $this->save($client2, ['provider' => 'local', 'providerNodeId' => $identity, 'latitude' => 54.791, 'longitude' => 9.437, 'tags' => [['key' => 'name', 'value' => 'Editors1Place']]], 200);
 
         // Editor1 must not see or replace editor2's unapproved tag.
-        self::assertSame(['name' => 'Editors1Place'], $saved['tags']);
+        self::assertSame([['key' => 'name', 'value' => 'Editors1Place']], $saved['tags']);
 
         // Editor2's unapproved tag must be untouched.
         $manager = static::getContainer()->get('doctrine')->getManager();

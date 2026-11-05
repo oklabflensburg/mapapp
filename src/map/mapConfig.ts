@@ -14,6 +14,9 @@ export const MAX_VISIBLE_FEATURES = 20_000
 export const MOVE_RENDER_DEBOUNCE_MS = 150
 
 export const OSM_TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+// openstreetmap.org only serves tiles up to zoom 19; above that Leaflet
+// upscales the native tiles so the map can still zoom in deeper.
 export const OSM_TILE_MAX_ZOOM = 19
+export const MAP_MAX_ZOOM = 22
 export const OSM_TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

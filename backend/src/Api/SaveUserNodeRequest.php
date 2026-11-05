@@ -20,12 +20,13 @@ final class SaveUserNodeRequest
         #[Assert\Range(min: -180.0, max: 180.0)]
         public float $longitude = 0.0,
 
-        /** @var array<string, string> */
-        #[Assert\All([
-            new Assert\NotBlank(),
-            new Assert\Length(max: 255),
-        ])]
-        #[Assert\Callback([self::class, 'validateTagKeys'])]
+        /**
+         * Tag entries as key/value pairs, so one node can carry several tags
+         * with the same key but different values.
+         *
+         * @var list<array{key: string, value: string}>
+         */
+        #[Assert\Callback([self::class, 'validateTagEntries'])]
         public array $tags = [],
 
         #[Assert\Choice(choices: ['OSM', 'local'])]
@@ -51,23 +52,53 @@ final class SaveUserNodeRequest
     ) {
     }
 
-    /** @param mixed $payload */
-    public static function validateTagKeys($payload, ExecutionContextInterface $context): void
+    /**
+     * @param mixed $payload
+     */
+    public static function validateTagEntries($payload, ExecutionContextInterface $context): void
     {
         if (!\is_array($payload)) {
             return;
         }
 
-        foreach (array_keys($payload) as $key) {
-            if (!\is_string($key) || trim($key) === '') {
-                $context->addViolation('Tag keys must be non-empty strings.');
+        foreach ($payload as $index => $tag) {
+            if (!\is_array($tag)) {
+                $context->addViolation('Tags must be objects with a key and a value.');
                 break;
             }
 
-            if (mb_strlen($key) > 255) {
-                $context->addViolation('Tag keys must be at most 255 characters long.');
-                break;
+            foreach (['key', 'value'] as $field) {
+                $value = $tag[$field] ?? null;
+                if (!\is_string($value) || trim($value) === '') {
+                    $context->addViolation('Tag keys and values must be non-empty strings.');
+                    continue 2;
+                }
+                if (mb_strlen($value) > 255) {
+                    $context->addViolation('Tag keys and values must be at most 255 characters long.');
+                    continue 2;
+                }
             }
         }
+    }
+
+    /**
+     * Counts the tag entries per "key\0value" pair so duplicate-tolerant
+     * matching can consume one count per existing tag. The null byte cannot
+     * appear in XML text, so it never shows up in keys or values.
+     *
+     * @param list<array{key: string, value: string}> $tags
+     * @return array<string, int>
+     */
+    public static function tagEntryCounts(array $tags): array
+    {
+        $counts = [];
+        foreach ($tags as $tag) {
+            if (isset($tag['key'], $tag['value'])) {
+                $pair = $tag['key']."\0".$tag['value'];
+                $counts[$pair] = ($counts[$pair] ?? 0) + 1;
+            }
+        }
+
+        return $counts;
     }
 }

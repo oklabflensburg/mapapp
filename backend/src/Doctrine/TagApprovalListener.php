@@ -2,6 +2,7 @@
 
 namespace App\Doctrine;
 
+use App\Entity\Node;
 use App\Entity\NodeGroupTag;
 use App\Entity\NodeTag;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
@@ -13,7 +14,8 @@ use Doctrine\ORM\Events;
  * Once a tag is approved on a node or relation, unapproved tags with the same
  * key on that same node or relation are superseded and get removed. Approval
  * is per node/relation, so the cleanup only ever touches the entity the
- * approval happened on.
+ * approval happened on. Nodes have no separate approval step: a node becomes
+ * approved as soon as one of its tags is approved.
  */
 #[AsDoctrineListener(event: Events::onFlush)]
 final class TagApprovalListener
@@ -48,6 +50,7 @@ final class TagApprovalListener
 
         foreach ($approvedNodeTags as $nodeTag) {
             $this->removeSupersededTagsOnNode($nodeTag, $entityManager);
+            $this->approveNode($nodeTag, $entityManager);
         }
         foreach ($approvedGroupTags as $groupTag) {
             $this->removeSupersededTagsOnGroup($groupTag, $entityManager);
@@ -88,5 +91,22 @@ final class TagApprovalListener
             $group->getGroupTags()->removeElement($other);
             $entityManager->remove($other);
         }
+    }
+
+    /**
+     * Approval is derived, not a separate review step: the node publishes
+     * as soon as one of its tags is approved.
+     */
+    private function approveNode(NodeTag $approvedNodeTag, EntityManagerInterface $entityManager): void
+    {
+        $node = $approvedNodeTag->getNode();
+        if ($node->isApproved()) {
+            return;
+        }
+        $node->setApproved(true);
+        $entityManager->getUnitOfWork()->recomputeSingleEntityChangeSet(
+            $entityManager->getClassMetadata(Node::class),
+            $node
+        );
     }
 }

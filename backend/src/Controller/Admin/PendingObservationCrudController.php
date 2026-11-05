@@ -21,9 +21,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 /**
- * Review queue of unapproved nodes and nodes carrying unapproved tags.
- * The edit page shows node and tag approval actions without the node edit
- * form, and links to the node edit view.
+ * Review queue of nodes carrying unapproved tags. The edit page shows node
+ * and tag approval actions without the node edit form, and links to the
+ * node edit view.
  */
 final class PendingObservationCrudController extends AbstractCrudController
 {
@@ -78,8 +78,8 @@ final class PendingObservationCrudController extends AbstractCrudController
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         return parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters)
-            ->leftJoin('entity.nodeTags', 'pendingNodeTag')
-            ->andWhere('(entity.approved = false OR pendingNodeTag.approved = false)')
+            ->join('entity.nodeTags', 'pendingNodeTag')
+            ->andWhere('pendingNodeTag.approved = false')
             ->distinct()
             // Nodes without pending tags come first, then the latest pending tags. The
             // scalar subquery is HIDDEN because the DISTINCT select only
@@ -103,16 +103,17 @@ final class PendingObservationCrudController extends AbstractCrudController
         yield NumberField::new('latitude')->hideOnIndex();
         yield NumberField::new('longitude')->hideOnIndex();
         yield AssociationField::new('createdByUser');
-        // New nodes show all their custom tags, including already approved ones.
+        // Pending tags of the node; approval is derived from the tags, so
+        // this is what drives the review queue.
         yield AssociationField::new('nodeTags')
             ->hideOnForm()
             ->setLabel('Tags')
-            ->formatValue(static function ($nodeTags, Node $node): string {
+            ->formatValue(static function ($nodeTags): string {
                 $nodeTags = $nodeTags instanceof Collection ? $nodeTags->toArray() : [];
 
                 $unapproved = array_filter(
                     $nodeTags,
-                    static fn (NodeTag $nodeTag): bool => !$node->isApproved() || !$nodeTag->isApproved(),
+                    static fn (NodeTag $nodeTag): bool => !$nodeTag->isApproved(),
                 );
 
                 return implode(', ', array_map(

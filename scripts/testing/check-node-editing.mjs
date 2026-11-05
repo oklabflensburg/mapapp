@@ -136,7 +136,7 @@ console.log('panel stays open after save')
 // The user node must be persisted in the backend.
 const response = await fetch(`${API_URL}/api/nodes`)
 const nodes = await response.json()
-const saved = nodes.find((node) => node.tags.check === TAG_VALUE)
+const saved = nodes.find((node) => (node.tags ?? []).some((tag) => tag.key === 'check' && tag.value === TAG_VALUE))
 if (!saved) {
   console.error('saved user node not found via GET /api/nodes')
   await browser.close()
