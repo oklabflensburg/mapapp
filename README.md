@@ -1,5 +1,22 @@
 # AccessApp
 
+## What this project is
+
+AccessApp is a map service that helps you find the most **comfortable** way from
+A to B — a route that considers your special needs, not just the shortest
+distance. Special needs can come from a disability, for example when you use a
+wheelchair or are blind, or simply from preferences: you want a quiet way, a
+route with less car traffic, a comfortable bike route, and so on.
+
+You create a profile that configures your individual preferences; route
+suggestions take this profile into account.
+
+Another part of the app is an OpenStreetMap (OSM) editor, whose OSM tag
+structure is much more customized to allow very detailed descriptions of routes
+and buildings. Users help build that structure by submitting observations about
+locations. Admin users review those observations and approve them to become
+part of the map features.
+
 Starting point: Vue 3 + Vite frontend with a PHP 8.5.12 / Symfony 8.1 backend (FrankenPHP via Docker).
 
 ## Structure
