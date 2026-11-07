@@ -284,11 +284,9 @@ final class TagCrudController extends AbstractCrudController
                     }
                 }
                 if (!$form->get('approve')->isClicked()) {
-                    $tag->setKey($data['key']);
-                    $tag->setValue($data['value']);
-                    $tag->setTranslations($translations);
-                    $this->entityManager->flush();
-
+                    // Approve is the only submit button; an implicit
+                    // submission (Enter key) changes nothing and returns to
+                    // the review screen instead of creating drafts.
                     return $this->redirectAfterApproval($request);
                 }
                 $publishTag = $tag;

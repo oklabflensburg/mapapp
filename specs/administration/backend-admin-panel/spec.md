@@ -74,9 +74,8 @@ Admins need to manage who can contribute, review contributions before publicatio
 
 ### R7 — Reviewing proposed translations
 
-- Each grouped observation has editable raw key/value fields and German/English key/value translation fields, prefilled from proposals or published labels, plus **Save changes**, **Approve** and **Decline**.
-- Save changes stores identifiers and translation proposals on the shared tag without approving the observation or modifying published catalogs. Proposals are not runtime label overrides.
-- Approve saves reviewed fields and publishes translations to `tag-translations/tags.{de,en}.xlf` before approving the assignments. Clearing a reviewed translation removes that published label; renaming identifiers publishes under the new identities and preserves old catalog entries.
+- Each grouped observation has editable raw key/value fields and German/English key/value translation fields, prefilled from proposals or published labels, plus **Approve** and **Decline**. There is no separate draft-save button: Approve saves the reviewed fields, publishes their translations under the reviewed identities and approves the assignments in one step. An implicit form submission (Enter key) changes nothing and returns to the review screen.
+- Approve publishes translations to `tag-translations/tags.{de,en}.xlf` before approving the assignments. Proposals are not runtime label overrides; they become labels only through this approval. Clearing a reviewed translation removes that published label; renaming identifiers publishes under the new identities and preserves old catalog entries.
 - Raw key/value fields must be nonblank, at most 255 characters, XML-compatible and must not duplicate another tag's pair. Translation fields allow empty text and at most 20,000 XML-compatible characters.
 - Stale tag/proposal versions, changed catalog targets and invalid review fields prevent approval; the full review form responds with HTTP 422 and retains the draft with errors. Publication failure leaves the observation pending. Decline has an independent form and does not depend on draft translation validity.
 
@@ -105,7 +104,7 @@ Admins need to manage who can contribute, review contributions before publicatio
 - **AC5 (R5):** Next pending wraps within the current record kind; exhausting that kind returns to the queue with a warning. An entirely empty queue displays its empty message.
 - **AC6 (R6):** Approving a grouped value approves its contributors here, removes competing pending same-key values here and approves the node where applicable; approved values and assignments elsewhere survive.
 - **AC7 (R6):** Decline removes only grouped pending assignments here. Invalid tokens cannot mutate them; a stale decline after approval returns 409; a missing assignment returns 404.
-- **AC8 (R7):** Save changes retains a pending proposal without publishing labels; Approve publishes reviewed translations under edited identifiers. Duplicate identifiers, invalid fields, stale proposals or changed targets prevent approval and preserve the draft.
+- **AC8 (R7):** Approve saves the reviewed fields and publishes reviewed translations under edited identifiers; an implicit submission changes nothing without approval. Duplicate identifiers, invalid fields, stale proposals or changed targets prevent approval and retain the submitted form.
 - **AC9 (R8):** An admin-created route preference appears in its public metadata API.
 - **AC10 (R9):** A single catalog save publishes German/English edits and shared ignore flags; ignoring a key hides its values from Not ignored while runtime labels remain available. Filters survive pagination and saves.
 - **AC11 (R9):** A stale edit in either language rejects the whole changed batch, leaves both files unchanged and retains drafts. Invalid CSRF, unknown/duplicate units and invalid XML also reject the batch. Clearing targets restores fallback.

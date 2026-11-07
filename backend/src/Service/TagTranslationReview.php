@@ -71,8 +71,10 @@ final class TagTranslationReview
             }
             $builder->add($language);
         }
-        return $builder->add('save', SubmitType::class, ['label' => 'Save changes'])
-            ->add('approve', SubmitType::class, ['label' => 'Approve'])
+        // Approve is the only submit action: reviewing saves the fields and
+        // publishes them together with the approval. There is no separate
+        // draft save; an implicit submission (Enter) changes nothing.
+        return $builder->add('approve', SubmitType::class, ['label' => 'Approve'])
             ->setData($data)->getForm();
     }
 }

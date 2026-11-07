@@ -164,8 +164,7 @@ final class TagApprovalCleanupTest extends WebTestCase
 
     /**
      * Approves the relation tag through the review form on the relation
-     * review page. The form also offers a save draft button, so the
-     * submit must target its approve button explicitly.
+     * review page, explicitly targeting the approve button.
      */
     private function approveGroupTag(KernelBrowser $client, NodeGroupTag $groupTag): void
     {

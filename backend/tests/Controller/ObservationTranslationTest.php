@@ -110,7 +110,7 @@ final class ObservationTranslationTest extends WebTestCase
         self::assertArrayNotHasKey($this->key, json_decode($client->getResponse()->getContent(), true)['labels']);
 
         $crawler = $this->review($client);
-        $form = $crawler->selectButton('Save changes')->form();
+        $form = $crawler->filter('button[name$="[approve]"]')->form();
         $name = $form->getName();
         self::assertSame('Oberfläche & <Belag>', $form[$name.'[de][keyTranslation]']->getValue());
         self::assertSame('Rau', $form[$name.'[de][valueTranslation]']->getValue());
@@ -121,19 +121,11 @@ final class ObservationTranslationTest extends WebTestCase
         $form[$name.'[key]'] = $reviewedKey;
         $form[$name.'[value]'] = 'reviewed/raw/ü';
         $form[$name.'[de][valueTranslation]'] = 'Rauer Belag';
+        $form[$name.'[de][keyTranslation]'] = 'Geprüfte Oberfläche';
         $client->submit($form);
         self::assertResponseRedirects();
         $this->key = $reviewedKey;
         $this->value = 'reviewed/raw/ü';
-        self::assertSame($german, file_get_contents($this->directory.'/tags.de.xlf'));
-        $crawler = $this->review($client);
-        $form = $crawler->filter('button[name$="[approve]"]')->form();
-        self::assertSame($this->key, $form[$name.'[key]']->getValue());
-        self::assertSame($this->value, $form[$name.'[value]']->getValue());
-        self::assertSame('Rauer Belag', $form[$name.'[de][valueTranslation]']->getValue());
-        $form[$name.'[de][keyTranslation]'] = 'Geprüfte Oberfläche';
-        $client->submit($form);
-        self::assertResponseRedirects();
         $catalog = new TagTranslationCatalog($this->directory);
         self::assertArrayNotHasKey($originalKey, $catalog->labels('de')['labels']);
         self::assertSame('Geprüfte Oberfläche', $catalog->labels('de')['labels'][$this->key]);
@@ -162,10 +154,12 @@ final class ObservationTranslationTest extends WebTestCase
         self::assertSame($german, file_get_contents($this->directory.'/tags.de.xlf'));
         $crawler = $this->review($client);
         $stale = $crawler->filter('button[name$="[approve]"]')->form();
-        $save = $crawler->selectButton('Save changes')->form();
-        $save[$name.'[value]'] = $this->value.'_edited';
-        $client->submit($save);
-        self::assertResponseRedirects();
+        // The shared tag's value changes behind the reviewer's back (there
+        // is no draft save anymore), making the rendered form stale.
+        $manager = static::getContainer()->get('doctrine')->getManager();
+        $node = $manager->find(Node::class, $this->nodeId);
+        $node->getNodeTags()->first()->getTag()->setValue($this->value.'_edited');
+        $manager->flush();
         $this->value .= '_edited';
         $client->submit($stale);
         self::assertResponseStatusCodeSame(422);

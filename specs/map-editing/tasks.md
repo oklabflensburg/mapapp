@@ -66,3 +66,9 @@ No live GraphHopper route was requested; routing behavior is verified through co
 - Implemented the admin update-vs-add decision for pending structured observations in the relation review, per the [mapping spec](aspect-observation-mapping/spec.md): publish-target select per pending `way.*` row (approve as submitted by default, update of an existing same-type element otherwise), approved cross-section context table, effective-key publication with contributor attribution, replacement of the formerly approved value without history, proposed/effective-key supersession, 409 on stale targets and translation publishing under the effective key only.
 - **Passed:** new `AspectObservationMappingTest` (8 tests, 41 assertions); complete backend suite — 155 tests, 1194 assertions; `lint:container`, `lint:twig`, `git diff --check`.
 - **Not performed:** manual styling walkthrough and a live GraphHopper request; covered indirectly by markup assertions and existing corridor-matching tests.
+
+## Review form approve-only (2026-11-08)
+
+- Removed the "Save changes" draft button from the observation translation review (node and relation reviews): Approve now saves the reviewed fields, publishes translations under the reviewed identities and approves in one step. An implicit submission (Enter key) changes nothing and returns to the review screen — no more half-saved renames of the shared tag outside approvals.
+- Updated `ObservationTranslationTest` (single-step approval with edited identifiers; staleness now produced by an entity change) and the TagApprovalCleanup helper comment. Admin-panel spec R7/AC8 and the mapping spec R6 record the new behavior.
+- **Passed:** complete backend suite — 155 tests, 1187 assertions; `lint:twig`; real-browser replay against the dev backend: no Save button, mapped approve publishes under the effective key and supersedes the pending proposal.

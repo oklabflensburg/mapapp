@@ -48,7 +48,7 @@ The admin review must therefore let an admin decide, per pending structured obse
 
 ### R6 — Translation review interacts with the mapping
 - When the admin approves structured tags through the combined observation/translation review form, identifier and translation changes publish under the **effective** (mapped) key, never the proposed key. On an update, catalog entries for the proposed `way.<type>.<n>.<aspect>` key identity are not created.
-- Decline and Save changes remain independent of the mapping, as today.
+- The review form offers only Approve and Decline (no draft save): Approve saves the reviewed fields and publishes together with the approval, and an implicit submission changes nothing. Decline stays independent of the mapping and of field validity.
 
 ### R7 — Visibility after the decision
 - After approval (either mode), the contributor no longer sees their pending observation under the proposed key; everyone — anonymous included — sees the published tag under the effective key, subject to existing street-part visibility rules.
