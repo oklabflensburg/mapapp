@@ -3,7 +3,7 @@
 **Status:** As-built specification, reverse-engineered from the existing implementation.
 **Code:** `backend/src/Controller/Admin/`, `backend/templates/admin/`, `backend/src/Controller/SecurityController.php`, `backend/config/packages/security.yaml`; moderation and translation services under `backend/src/Service/` and `backend/src/Doctrine/TagApprovalListener.php`.
 **Scope:** The Symfony/EasyAdmin browser interface for access management, map records, observation moderation, tag configuration and bilingual translations.
-**Related:** [api-authentication](../api-authentication/spec.md), [editor-observations](../editor-observations/spec.md), [api-tag-settings](../api-tag-settings/spec.md), [api-routing](../api-routing/spec.md).
+**Related:** [api-authentication](../../authentication/api-authentication/spec.md), [editor-observations](../../map-editing/editor-observations/spec.md), [api-tag-settings](../../tag-settings/api-tag-settings/spec.md), [api-routing](../../routing/api-routing/spec.md).
 
 ## Problem / intent
 
@@ -67,7 +67,7 @@ Admins need to manage who can contribute, review contributions before publicatio
 ### R6 — Approving and declining observations
 
 - **Approve** approves every contributor's assignment of the selected shared tag on this node or area. Assignments on other nodes/areas retain their own approval state.
-- Approval removes other unapproved assignments with the same key on the same record, while retaining already-approved tags. Approving a node tag also approves its node. Published observations become visible to everyone, as specified in [editor-observations](../editor-observations/spec.md).
+- Approval removes other unapproved assignments with the same key on the same record, while retaining already-approved tags. Approving a node tag also approves its node. Published observations become visible to everyone, as specified in [editor-observations](../../map-editing/editor-observations/spec.md).
 - **Decline** deletes all unapproved assignments of the selected shared tag on this record. It preserves the shared tag itself, the node/area, approved assignments, other values and assignments elsewhere. There is no rejection-history record or reason field.
 - Approve and Decline are admin-only POST actions with CSRF protection. Missing assignment IDs return 404. Invalid action tokens are rejected; declining an assignment approved since rendering returns HTTP 409 without deleting it.
 - Successful actions return to the referring admin screen when accepted by the controller, otherwise to the combined queue. Resolving the last pending tag removes the record from the queue on reload.
@@ -82,9 +82,9 @@ Admins need to manage who can contribute, review contributions before publicatio
 
 ### R8 — Route preferences and observation vocabulary
 
-- **Route preference tags** manages unique raw tag keys and an optional GraphHopper road-class choice. Search matches the raw key. No class means the preference applies to app nodes; a mapped class also supports avoidance of matching OSM ways, as detailed in [api-routing](../api-routing/spec.md).
+- **Route preference tags** manages unique raw tag keys and an optional GraphHopper road-class choice. Search matches the raw key. No class means the preference applies to app nodes; a mapped class also supports avoidance of matching OSM ways, as detailed in [api-routing](../../routing/api-routing/spec.md).
 - **Default observation tags** manages unique raw tag keys and ordered default values. An empty value list permits free-form input. OSM and custom keys are both allowed. Lists use published key labels; forms/search retain raw keys.
-- These settings feed the public `/api/route-preference-tags` and `/api/default-observation-tags` contracts in [api-tag-settings](../api-tag-settings/spec.md). The existing panel provides a global suggestion vocabulary; per-feature-type vocabularies and aspect-based routing in later design specs are outside this as-built scope.
+- These settings feed the public `/api/route-preference-tags` and `/api/default-observation-tags` contracts in [api-tag-settings](../../tag-settings/api-tag-settings/spec.md). The existing panel provides a global suggestion vocabulary; per-feature-type vocabularies and aspect-based routing in later design specs are outside this as-built scope.
 
 ### R9 — Published translation catalog editor
 

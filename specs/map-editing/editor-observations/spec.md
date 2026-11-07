@@ -2,7 +2,7 @@
 
 **Status:** Step 2 of the node spec series. As-built, reverse-engineered from the existing implementation.
 **Code:** `src/components/NodeTagPanel.vue`, `src/views/HomeView.vue`, `src/components/OsmMap.vue`, `src/map/osmFeatureLayer.ts`, `src/stores/userNodes.ts`, `src/stores/defaultObservationTags.ts`; backend approval: `backend/src/Service/UserNodeManager.php`, `backend/src/Doctrine/TagApprovalListener.php`
-**Related:** builds on [flensburg-map](../flensburg-map/spec.md) (feature click and OSM tags data) and [api-authentication](../api-authentication/spec.md) (roles). Node/observation *persistence API* details will be a later step.
+**Related:** builds on [flensburg-map](../../map/flensburg-map/spec.md) (feature click and OSM tags data) and [api-authentication](../../authentication/api-authentication/spec.md) (roles). Node/observation *persistence API* details will be a later step.
 
 ## Problem / intent
 
@@ -22,13 +22,13 @@ A logged-in editor clicks an OSM feature on the map (a way node, but also ways, 
 - Anonymous users can open the panel and see everything read-only, but the editable sections show a login-required hint instead of inputs (editing requires `canEdit`: editor or admin role).
 
 ### R2 — OSM tags are shown read-only
-- The panel shows an "OSM tags" section listing the raw OSM tags of the selected feature from the static data export (see [osm-static-data](../osm-static-data/spec.md)).
+- The panel shows an "OSM tags" section listing the raw OSM tags of the selected feature from the static data export (see [osm-static-data](../../map/osm-static-data/spec.md)).
 - Keys and values display through the shared bilingual tag-key translations when available; otherwise they fall back to prettified keys and raw values.
 - OSM tags are never editable here.
 
 ### R3 — Adding observations
 - An editor sees the "Observations" section with an add control and can create observation rows as free-form key/value pairs.
-- Admin-exposed default observation tags (see [api-tag-settings](../api-tag-settings/spec.md)) appear as a searchable suggestion dropdown; picking one adds a row with that key. For keys with configured selectable values, the value is a dropdown; otherwise the value is free-form text.
+- Admin-exposed default observation tags (see [api-tag-settings](../../tag-settings/api-tag-settings/spec.md)) appear as a searchable suggestion dropdown; picking one adds a row with that key. For keys with configured selectable values, the value is a dropdown; otherwise the value is free-form text.
 - Each observation row can additionally carry a proposed translation for its key and value in the active app locale (`en`/`de`); the translation proposal is sent with the save. *(The full translation-proposal workflow is its own later spec step.)*
 - When the selected feature was saved before, the panel loads its existing state: the editor's own unapproved pairs populate the editable observations rows; approved custom tags are listed read-only (they are moderated — editors cannot change approved content, not even their own once approved).
 

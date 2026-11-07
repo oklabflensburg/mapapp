@@ -1,22 +1,28 @@
 # Specs
 
-Reverse-engineered as-built specifications for the existing behavior (frontend + Symfony backend) and the step-by-step rebuild of the node series starting from the basemap.
+Specifications are grouped by product feature. Each spec keeps its own requirement
+IDs (`R#`), acceptance criteria (`AC#`), open questions, and verification notes.
+Most describe existing behavior; future designs are marked explicitly.
 
-**Node spec series (built step by step from scratch):**
-1. [flensburg-map](flensburg-map/spec.md) — anonymous Leaflet map of Flensburg with the OSM data overlay and original OSM tags
-2. [editor-observations](editor-observations/spec.md) — editor clicks an OSM feature, sees its OSM tags, adds observations; admin approval and per-user visibility
-3. [way-observations](way-observations/spec.md) — observations on ways: tagging a street line as a whole (selection, whole-way identity, overlay markers) + NEW admin-controlled per-type (`highway`) observation vocabulary (design refinement R5)
-4. [street-part-aspects](street-part-aspects/spec.md) — **new feature design:** cross-section aspects on street parts (typed attributes, observation-style approval) and admin-defined aspect-based routing preferences (e.g. prefer sidewalk ≥ 2 m)
-5. *(next steps: buildings, areas, local node creation, parent relations, street-parts as-built spec, …)*
-
-**Other specs:**
-
-| Spec | Area |
+| Feature | Specs |
 | --- | --- |
-| [backend-admin-panel](backend-admin-panel/spec.md) | Backend EasyAdmin panel: access and map-data management, observation moderation, tag configuration and bilingual translation editing |
-| [osm-static-data](osm-static-data/spec.md) | Frontend: loading, indexing, and serving the static OSM GeoJSON export, and its failure behavior |
-| [api-authentication](api-authentication/spec.md) | JSON session login: `/api/login`, `/api/me`, `/api/logout`, roles |
-| [api-routing](api-routing/spec.md) | `/api/route`: GraphHopper walking-route proxy shaped by per-user tag priorities |
-| [api-tag-settings](api-tag-settings/spec.md) | Admin-exposed tag metadata and per-user priorities: `/api/route-preference-tags`, `/api/tag-priorities`, `/api/default-observation-tags`, `/api/i18n/tag-keys/{locale}` |
+| Map | [Flensburg basemap](map/flensburg-map/spec.md) — public map, rendering and OSM overlay; [OSM static data](map/osm-static-data/spec.md) — loading, indexing, original tags and failure behavior |
+| Map editing | [Editor observations](map-editing/editor-observations/spec.md) — selection, tagging, approval and visibility; [Way observations](map-editing/way-observations/spec.md) — whole-way identity and markers, plus a planned per-type vocabulary; [Street part aspects](map-editing/street-part-aspects/spec.md) — planned cross-sections and aspect-based routing preferences |
+| Authentication | [Authentication API](authentication/api-authentication/spec.md) — session login, current user, logout and roles |
+| Routing | [Routing API](routing/api-routing/spec.md) — GraphHopper walking routes shaped by user priorities |
+| Tag settings | [Tag settings and translations API](tag-settings/api-tag-settings/spec.md) — route preference metadata, per-user priorities, observation suggestions and shared translations |
+| Administration | [Backend admin panel](administration/backend-admin-panel/spec.md) — access, map-data management, moderation, tag configuration and translation editing |
 
-Each spec carries its own requirement IDs (`R#`), acceptance criteria (`AC#`), open questions, and a verification note pointing at the existing backend tests. Not covered yet (candidate follow-ups): node/group edit panels, PWA behavior.
+Keep frontend and backend contracts for the same feature together. Add new specs
+under `specs/<feature>/<spec-slug>/spec.md`; related task files belong beside their
+spec. Cross-cutting specs have one home and link to related features.
+
+The original map/editor rebuild reading order remains:
+
+1. [Flensburg basemap](map/flensburg-map/spec.md).
+2. [Editor observations](map-editing/editor-observations/spec.md).
+3. [Way observations](map-editing/way-observations/spec.md).
+4. [Street part aspects](map-editing/street-part-aspects/spec.md) (new feature design).
+
+Candidate follow-ups: buildings, areas, local node creation, parent relations,
+street parts as built, node/group edit panels, and PWA behavior.

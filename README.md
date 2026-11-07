@@ -23,6 +23,7 @@ Starting point: Vue 3 + Vite frontend with a PHP 8.5.12 / Symfony 8.1 backend (F
 
 ```
 ├── index.html, vite.config.ts, src/   # Vue frontend (root)
+├── specs/                            # Specifications grouped by feature
 ├── scripts/
 │   ├── testing/                      # Browser checks and frontend translation tests
 │   ├── production/                   # Production map and translation data generators
@@ -34,6 +35,8 @@ Starting point: Vue 3 + Vite frontend with a PHP 8.5.12 / Symfony 8.1 backend (F
     ├── tag-translations/              # Shared XLIFF tag key/value catalogs
     └── src/, config/, public/         # Symfony app
 ```
+
+See the [spec index](specs/README.md) for feature specifications and their status.
 
 ## Backend
 
