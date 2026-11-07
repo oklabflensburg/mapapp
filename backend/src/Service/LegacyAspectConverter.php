@@ -75,12 +75,23 @@ final class LegacyAspectConverter
         foreach ($this->connection->fetchAllAssociative('SELECT * FROM aspect_preferences ORDER BY id') as $preference) {
             $predicate = $attributes[$preference['attribute_id']] ?? throw new \RuntimeException('Unknown legacy preference attribute.');
             $key = 'aspect:'.$preference['id'];
-            $entry = ['key' => $key, 'label' => $preference['label'], ...$predicate, 'values' => array_map(self::token(...), json_decode($preference['attribute_values'], true, flags: JSON_THROW_ON_ERROR))];
+            // The legacy preference model matched any element of the aspect.
+            $entry = ['key' => $key, 'label' => $preference['label'], ...$predicate, 'values' => array_map(self::token(...), json_decode($preference['attribute_values'], true, flags: JSON_THROW_ON_ERROR)), 'match' => 'any_element'];
             if (isset($preferences[$key]) && $preferences[$key] !== $entry) {
                 throw new \RuntimeException('Legacy preference mapping collides at '.$key);
             }
             $preferences[$key] = $entry;
         }
+        // The deployed legacy definitions remain authoritative, so exported
+        // file preferences whose aspect the legacy deployment never defined
+        // are unrepresentable and leave the export instead of invalidating it.
+        $pairs = [];
+        foreach ($types as $name => $definition) {
+            foreach ($definition['attributes'] as $attribute) {
+                $pairs[$name."\0".$attribute['key']] = true;
+            }
+        }
+        $preferences = array_filter($preferences, static fn (array $entry): bool => isset($pairs[$entry['type']."\0".$entry['aspect']]));
         $planned = [];
         foreach ($this->connection->fetchAllAssociative('SELECT * FROM street_part_aspects ORDER BY id') as $row) {
             $type = $legacyTypes[$row['aspect_type_id']] ?? throw new \RuntimeException('Unknown legacy aspect type.');

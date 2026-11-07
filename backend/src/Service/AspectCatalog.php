@@ -89,6 +89,9 @@ final class AspectCatalog
                 throw new \RuntimeException('Duplicate or invalid preference predicate.');
             }
             self::values($preference['values'] ?? null);
+            if (!in_array($preference['match'] ?? null, ['any_element', 'no_alternative'], true)) {
+                throw new \RuntimeException('Expected a preference match mode any_element or no_alternative.');
+            }
             // Retired values are intentional predicates on existing tags.
             $keys[$key] = true;
         }

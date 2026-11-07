@@ -39,16 +39,16 @@ final class TagPriorityControllerTest extends WebTestCase
         $client->jsonRequest('PUT', '/api/tag-priorities', ['priorities' => ['stairs' => 'try_to_avoid']]);
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['priorities' => ['stairs' => 'try_to_avoid', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
+        self::assertSame(['priorities' => ['stairs' => 'try_to_avoid', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral', 'aspect:footwalk-asphalt' => 'neutral', 'aspect:footwalk-paving-stones' => 'neutral', 'aspect:footwalk-concrete' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
 
         $client->request('GET', '/api/tag-priorities');
         self::assertResponseIsSuccessful();
-        self::assertSame(['priorities' => ['stairs' => 'try_to_avoid', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
+        self::assertSame(['priorities' => ['stairs' => 'try_to_avoid', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral', 'aspect:footwalk-asphalt' => 'neutral', 'aspect:footwalk-paving-stones' => 'neutral', 'aspect:footwalk-concrete' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
 
         // Saving again updates the stored priority instead of duplicating it.
         $client->jsonRequest('PUT', '/api/tag-priorities', ['priorities' => ['stairs' => 'strongly_prefer']]);
         self::assertResponseIsSuccessful();
-        self::assertSame(['priorities' => ['stairs' => 'strongly_prefer', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
+        self::assertSame(['priorities' => ['stairs' => 'strongly_prefer', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral', 'aspect:footwalk-asphalt' => 'neutral', 'aspect:footwalk-paving-stones' => 'neutral', 'aspect:footwalk-concrete' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
     }
 
     public function testNeutralPriorityIsTheDefaultAndRemovesStoredPreferences(): void
@@ -58,7 +58,7 @@ final class TagPriorityControllerTest extends WebTestCase
 
         $client->request('GET', '/api/tag-priorities');
         self::assertResponseIsSuccessful();
-        self::assertSame(['priorities' => ['stairs' => 'neutral', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
+        self::assertSame(['priorities' => ['stairs' => 'neutral', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral', 'aspect:footwalk-asphalt' => 'neutral', 'aspect:footwalk-paving-stones' => 'neutral', 'aspect:footwalk-concrete' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
 
         $client->jsonRequest('PUT', '/api/tag-priorities', ['priorities' => ['stairs' => 'prefer']]);
         self::assertResponseIsSuccessful();
@@ -82,7 +82,7 @@ final class TagPriorityControllerTest extends WebTestCase
         $client->request('GET', '/api/tag-priorities');
 
         self::assertResponseIsSuccessful();
-        self::assertSame(['priorities' => ['stairs' => 'neutral', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
+        self::assertSame(['priorities' => ['stairs' => 'neutral', 'toilets' => 'neutral', 'aspect:footwalk-wide' => 'neutral', 'aspect:footwalk-asphalt' => 'neutral', 'aspect:footwalk-paving-stones' => 'neutral', 'aspect:footwalk-concrete' => 'neutral']], json_decode((string) $client->getResponse()->getContent(), true));
     }
 
     public function testInvalidLevelIsRejected(): void

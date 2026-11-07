@@ -51,6 +51,7 @@ The map computes walking routes between two coordinates. Users can declare per-t
 
 - The GraphHopper base URL comes from `GRAPHHOPPER_BASE_URL`; the profile name is fixed in `Routing::PROFILE`.
 - Priority semantics (which tags exist, their road-class mappings) are admin-managed and covered by `api-tag-settings`.
+- Aspect-preference corridor matching with alternative-aware match modes is specified separately in [aspect route preferences](../aspect-route-preferences/spec.md), extending R4.
 
 ## Verification
 

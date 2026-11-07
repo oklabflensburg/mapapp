@@ -116,6 +116,50 @@ final class MapEditingTest extends WebTestCase
         self::assertNotContains($miss['id'], $ids);
     }
 
+    public function testSurfacePreferencesOnlyMatchWithoutAnObservedAlternative(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->createUser('structured-surface-admin@example.test', ['admin']));
+        $preference = 'aspect:footwalk-paving-stones';
+        $onlyPaving = $this->createPart($client, [
+            ['key' => 'way.footwalk.1.surface', 'value' => 'paving_stones'],
+        ]);
+        $withAlternative = $this->createPart($client, [
+            ['key' => 'way.footwalk.1.surface', 'value' => 'paving_stones'],
+            ['key' => 'way.footwalk.2.surface', 'value' => 'asphalt'],
+        ]);
+        $withUnknown = $this->createPart($client, [
+            ['key' => 'way.footwalk.1.surface', 'value' => 'paving_stones'],
+            ['key' => 'way.footwalk.2.width', 'value' => '<1'],
+        ]);
+        $noFootwalk = $this->createPart($client, [
+            ['key' => 'way.roadway.1.surface', 'value' => 'paving_stones'],
+            ['key' => 'way.cycle_lane.2.surface', 'value' => 'paving_stones'],
+        ]);
+        $areas = static::getContainer()->get(StreetPartAspects::class)->routingAreas([$preference]);
+        $ids = array_column($areas[$preference] ?? [], 'id');
+        // Unknown values are no alternatives: only an explicitly observed
+        // non-selected surface, or no footwalk at all, exempts a part.
+        self::assertContains($onlyPaving['id'], $ids);
+        self::assertContains($withUnknown['id'], $ids);
+        self::assertNotContains($withAlternative['id'], $ids);
+        self::assertNotContains($noFootwalk['id'], $ids);
+        // The same part without the paving-stones surface but with a footwalk
+        // matches, and rating it avoid shapes the custom model like any
+        // aspect preference does.
+        $unknownOnly = $this->createPart($client, [
+            ['key' => 'way.footwalk.1.width', 'value' => '<1'],
+        ]);
+        $areas = static::getContainer()->get(StreetPartAspects::class)->routingAreas([$preference]);
+        self::assertContains($unknownOnly['id'], array_column($areas[$preference], 'id'));
+        $routing = static::getContainer()->get(Routing::class);
+        $avoid = $routing->customModelFor([$preference => 'avoid'], [], [], $areas);
+        self::assertSame('0.1', $avoid['priority'][0]['multiply_by']);
+        self::assertStringStartsWith('in_', $avoid['priority'][0]['if']);
+        $asphaltAreas = static::getContainer()->get(StreetPartAspects::class)->routingAreas(['aspect:footwalk-asphalt']);
+        self::assertNotContains($withAlternative['id'], array_column($asphaltAreas['aspect:footwalk-asphalt'], 'id'));
+    }
+
     public function testGrammarAndLegacyPayloadsAreRejectedAtomically(): void
     {
         $client = static::createClient();

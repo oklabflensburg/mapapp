@@ -100,20 +100,44 @@ final class StreetPartAspects
         if (!$preferences) {
             return [];
         }
+
+        // Approved structured tags per street part: which element types exist
+        // (any index, any aspect) and which values were observed for each
+        // type/aspect. Elements without an approved value for an aspect
+        // contribute the type but no value: unknown values never act as
+        // alternatives.
         $areas = [];
+        $groups = [];
+        $typesByGroup = [];
+        $valuesByGroup = [];
         $geometryByGroup = [];
         foreach ($this->em->getRepository(NodeGroupTag::class)->findBy(['approved' => true]) as $entry) {
-            $tag = $entry->getTag();
-            $parsed = self::parse($tag->getKey());
-            if (!$parsed) {
+            $parsed = self::parse($entry->getTag()->getKey());
+            if ($parsed === null) {
                 continue;
             }
-            foreach ($preferences as $preference) {
-                if ($parsed['type'] !== $preference['type'] || $parsed['aspect'] !== $preference['aspect'] || !in_array($tag->getValue(), $preference['values'], true)) {
+            $group = $entry->getGroup();
+            $id = $group->getId();
+            $groups[$id] = $group;
+            $typesByGroup[$id][$parsed['type']] = true;
+            $valuesByGroup[$id][$parsed['type']][$parsed['aspect']][$entry->getTag()->getValue()] = true;
+        }
+
+        foreach ($preferences as $preference) {
+            foreach ($groups as $id => $group) {
+                if (!isset($typesByGroup[$id][$preference['type']])) {
+                    // A part without any element of the type is unaffected:
+                    // the preference rates the quality of available elements,
+                    // not their absence.
                     continue;
                 }
-                $group = $entry->getGroup();
-                $id = $group->getId();
+                $observed = array_keys($valuesByGroup[$id][$preference['type']][$preference['aspect']] ?? []);
+                $matches = $preference['match'] === 'any_element'
+                    ? array_intersect($observed, $preference['values']) !== []
+                    : array_diff($observed, $preference['values']) === [];
+                if (!$matches) {
+                    continue;
+                }
                 if (!array_key_exists($id, $geometryByGroup)) {
                     $geometryByGroup[$id] = $this->area->areaGeometry(array_map(static fn ($member) => ['latitude' => $member->getNode()->getLatitude(), 'longitude' => $member->getNode()->getLongitude()], $group->getMembers()->toArray()));
                 }

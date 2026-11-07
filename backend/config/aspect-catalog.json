@@ -155,7 +155,38 @@
             "aspect": "width",
             "values": [
                 ">2"
-            ]
+            ],
+            "match": "any_element"
+        },
+        {
+            "key": "aspect:footwalk-asphalt",
+            "label": "Footwalk with asphalt surface",
+            "type": "footwalk",
+            "aspect": "surface",
+            "values": [
+                "asphalt"
+            ],
+            "match": "no_alternative"
+        },
+        {
+            "key": "aspect:footwalk-paving-stones",
+            "label": "Footwalk with paving stones",
+            "type": "footwalk",
+            "aspect": "surface",
+            "values": [
+                "paving_stones"
+            ],
+            "match": "no_alternative"
+        },
+        {
+            "key": "aspect:footwalk-concrete",
+            "label": "Footwalk with concrete surface",
+            "type": "footwalk",
+            "aspect": "surface",
+            "values": [
+                "concrete"
+            ],
+            "match": "no_alternative"
         }
     ]
 }

@@ -39,6 +39,8 @@ final class AspectCatalogTest extends TestCase
         yield ['{"types":[{"name":"footwalk","attributes":[]},{"name":"footwalk","attributes":[]}],"preferences":[]}'];
         yield ['{"types":[{"name":"footwalk","attributes":[{"key":"width","kind":"range","values":["<1","<1"]}]}],"preferences":[]}'];
         yield ['{"types":[],"preferences":[{"key":"aspect:x","label":"Bad","type":"missing","aspect":"width","values":[">2"]}]}'];
+        yield ['{"types":[{"name":"footwalk","attributes":[{"key":"width","kind":"range","values":[">2"]}]}],"preferences":[{"key":"aspect:x","label":"Bad","type":"footwalk","aspect":"width","values":[">2"]}]}'];
+        yield ['{"types":[{"name":"footwalk","attributes":[{"key":"width","kind":"range","values":[">2"]}]}],"preferences":[{"key":"aspect:x","label":"Bad","type":"footwalk","aspect":"width","values":[">2"],"match":"sometimes"}]}'];
     }
 
     #[DataProvider('invalidCatalogs')]

@@ -2,7 +2,7 @@
 
 **Status:** Implemented and verified (2026-11-07). This tag-based design supersedes the separate aspect-table model and its earlier verification results.
 **Builds on:** street parts (`NodeGroupManager`, `StreetPartArea`), existing tag storage and moderation, and routing via `Routing` custom models and `TagPriorityManager`.
-**Related:** [controlled vocabulary](../controlled-vocabulary/spec.md), [editor observations](../editor-observations/spec.md), [shared tasks and historical verification](../tasks.md).
+**Related:** [controlled vocabulary](../controlled-vocabulary/spec.md), [editor observations](../editor-observations/spec.md), [shared tasks and historical verification](../tasks.md), [aspect route preferences](../../routing/aspect-route-preferences/spec.md) (extends R5/R6 with match modes).
 
 ## Problem / intent
 

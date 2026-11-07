@@ -9,7 +9,7 @@ Most describe existing behavior; future designs are marked explicitly.
 | Map | [Flensburg basemap](map/flensburg-map/spec.md) — public map, rendering and OSM overlay; [OSM static data](map/osm-static-data/spec.md) — loading, indexing, original tags and failure behavior |
 | Map editing | [Editor observations](map-editing/editor-observations/spec.md) — selection, tagging, approval and visibility; [Way observations](map-editing/way-observations/spec.md) — whole-way identity and markers; [Controlled vocabulary](map-editing/controlled-vocabulary/spec.md) — file-based way definitions, later database/admin management; [Street part aspects](map-editing/street-part-aspects/spec.md) — revised tag-based cross-sections (`key.type.index.aspect`), no extra aspect tables |
 | Authentication | [Authentication API](authentication/api-authentication/spec.md) — session login, current user, logout and roles |
-| Routing | [Routing API](routing/api-routing/spec.md) — GraphHopper walking routes shaped by user priorities |
+| Routing | [Routing API](routing/api-routing/spec.md) — GraphHopper walking routes shaped by user priorities; [Aspect route preferences](routing/aspect-route-preferences/spec.md) — alternative-aware routing prios from controlled-vocabulary aspect observations |
 | Tag settings | [Tag settings and translations API](tag-settings/api-tag-settings/spec.md) — route preference metadata, per-user priorities, observation suggestions and shared translations |
 | Administration | [Backend admin panel](administration/backend-admin-panel/spec.md) — access, map-data management, moderation, tag configuration and translation editing |
 

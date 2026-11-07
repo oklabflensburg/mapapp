@@ -140031,6 +140031,33 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
         <target>Fahrbahn</target>
       </segment>
     </unit>
+    <unit id="t_79813cced7cef35191aca0d7ebadfe531ff4836c113ac0ecf5c97c9aff68b7b5" name="key:aspect:footwalk-asphalt" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect:footwalk-asphalt</note>
+      </notes>
+      <segment state="translated">
+        <source>aspect:footwalk-asphalt</source>
+        <target>Gehweg aus Asphalt</target>
+      </segment>
+    </unit>
+    <unit id="t_908fc39c194fe495ce08762b628033ba96737a6b24034c2145587e364074a7cc" name="key:aspect:footwalk-concrete" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect:footwalk-concrete</note>
+      </notes>
+      <segment state="translated">
+        <source>aspect:footwalk-concrete</source>
+        <target>Gehweg aus Beton</target>
+      </segment>
+    </unit>
+    <unit id="t_a7b7ecdc3a90fb13c828ef10c6ab213b1fe2ca18d53a90ec6bbc9b17225be82f" name="key:aspect:footwalk-paving-stones" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect:footwalk-paving-stones</note>
+      </notes>
+      <segment state="translated">
+        <source>aspect:footwalk-paving-stones</source>
+        <target>Gehweg aus Pflastersteinen</target>
+      </segment>
+    </unit>
     <unit id="t_5766a05f969f520f00273340bf6f8342ffc5a238dc6e84f167c99f1dcdffcfb5" name="key:aspect:footwalk-wide" tag:ignore="false" tag:category="custom">
       <notes>
         <note>Tag key: aspect:footwalk-wide</note>
