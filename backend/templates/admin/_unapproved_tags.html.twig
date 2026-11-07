@@ -78,6 +78,22 @@
                                                 <strong>{{ grouped_entry_tags|length }}</strong>
                                             </div>
                                         </div>
+                                        {% if aspect_target_options is defined and aspect_target_options[tag.id] is defined and aspect_target_options[tag.id]|length > 0 %}
+                                            {# Structured street-part observations: the approve action can
+                                               publish them as submitted (new element — default) or mapped
+                                               onto an existing same-type element (update). The choice rides
+                                               along the approve POST; the select's name stays outside the
+                                               translation form's namespace. #}
+                                            <div class="tag-review-row tag-review-mapping">
+                                                <span>Publish target</span>
+                                                <select name="target_index" aria-label="Publish target for {{ tag.key }}">
+                                                    <option value="">Add as new element ({{ tag.key }})</option>
+                                                    {% for option in aspect_target_options[tag.id] %}
+                                                        <option value="{{ option.payload }}">Update existing element: {{ option.label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        {% endif %}
                                         {% for locale in ['de', 'en'] %}
                                             <div class="tag-review-row tag-review-language" lang="{{ locale }}">
                                                 {{ form_row(review_form[locale].keyTranslation, {label: 'Key (' ~ locale|upper ~ ')'}) }}

@@ -60,3 +60,9 @@ No live GraphHopper route was requested; routing behavior is verified through co
 - Type choices, attribute labels, surfaces, range values and profile preference labels now use the existing shared tag translations; English/German targets are published in XLIFF. Exact indexed value translations take precedence over shared attribute translations and catalog fallbacks.
 - Translation sync collects file-backed definitions, including retired labels and preference keys, so complete syncs preserve these translations.
 - **Passed:** production build; XLIFF validation; 10 focused backend tests / 126 assertions (translation sync, label lookup and API); map-editing browser workflow including English/German labels and language switching; live translation API checks; `git diff --check`.
+
+## Aspect observation mapping (2026-11-08)
+
+- Implemented the admin update-vs-add decision for pending structured observations in the relation review, per the [mapping spec](aspect-observation-mapping/spec.md): publish-target select per pending `way.*` row (approve as submitted by default, update of an existing same-type element otherwise), approved cross-section context table, effective-key publication with contributor attribution, replacement of the formerly approved value without history, proposed/effective-key supersession, 409 on stale targets and translation publishing under the effective key only.
+- **Passed:** new `AspectObservationMappingTest` (8 tests, 41 assertions); complete backend suite — 155 tests, 1194 assertions; `lint:container`, `lint:twig`, `git diff --check`.
+- **Not performed:** manual styling walkthrough and a live GraphHopper request; covered indirectly by markup assertions and existing corridor-matching tests.

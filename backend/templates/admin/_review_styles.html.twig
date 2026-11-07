@@ -161,6 +161,50 @@
         gap: 0.375rem;
     }
 
+    /* Update-vs-add mapping for structured street-part observations. */
+    .tag-review-mapping {
+        grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 1fr);
+        margin-bottom: 0.5rem;
+    }
+
+    .tag-review-mapping span {
+        font-size: 0.75rem;
+    }
+
+    .tag-review-mapping select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .approved-cross-section {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+    }
+
+    .approved-cross-section h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .approved-cross-section table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .approved-cross-section th,
+    .approved-cross-section td {
+        text-align: left;
+        padding: 0.375rem 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .approved-cross-section th {
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
     .observation-translations input[type="text"],
     .observation-translations textarea {
         width: 100%;

@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\NodeGroup;
 use App\Entity\NodeGroupMember;
 use App\Entity\NodeGroupTag;
+use App\Service\AspectObservationApproval;
 use App\Service\TagTranslationReview;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,6 +37,7 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly TagTranslationReview $translationReview,
+        private readonly AspectObservationApproval $aspectObservationApproval,
     ) {
     }
 
@@ -43,14 +45,25 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
     {
         if ($responseParameters->get('pageName') === Crud::PAGE_EDIT) {
             $forms = [];
+            // Structured street-part observations carry an update-vs-add
+            // mapping (see specs/map-editing/aspect-observation-mapping/
+            // spec.md): the approved cross-section gives the reviewer the
+            // context, the options list the same-type target elements.
+            $targetOptions = [];
             $group = $responseParameters->get('entity')->getInstance();
             foreach ($group->getGroupTags() as $entry) {
                 if (!$entry->isApproved()) {
                     $id = $entry->getTag()->getId();
                     $forms[$id] ??= $this->translationReview->form($entry->getTag(), $entry->getId(), $this->generateUrl('app_admin_node_group_tag_approve', ['id' => $entry->getId()]))->createView();
+                    $targetOptions[$id] ??= $this->aspectObservationApproval->targetOptions($group, $entry->getTag());
                 }
             }
             $responseParameters->set('observation_translation_forms', $forms);
+            $responseParameters->set('aspect_target_options', $targetOptions);
+            $approvedCrossSection = $this->aspectObservationApproval->approvedCrossSection($group);
+            if ($approvedCrossSection !== []) {
+                $responseParameters->set('approved_cross_section', $approvedCrossSection);
+            }
         }
 
         return $responseParameters;

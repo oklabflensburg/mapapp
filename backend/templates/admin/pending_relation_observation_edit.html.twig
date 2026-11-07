@@ -27,6 +27,33 @@
                     {% endfor %}
                 </ul>
             </section>
+            {% if approved_cross_section is defined %}
+                {# Structured street-part context for the update-vs-add
+                   decision on pending aspect observations. #}
+                <section class="approved-cross-section">
+                    <h2>Approved cross-section</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Element</th>
+                                <th scope="col">Approved aspects</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for element in approved_cross_section %}
+                                <tr>
+                                    <td>{{ element.type }} {{ element.index }}</td>
+                                    <td>
+                                        {%- for aspect, value in element.aspects -%}
+                                            {{ aspect }}={{ value }}{% if not loop.last %}, {% endif %}
+                                        {%- endfor -%}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
             {% include 'admin/_unapproved_tags.html.twig' with { tags: group.groupTags, next_url: path('app_admin_node_group_next_pending', {id: group.id}), empty_message: 'No unapproved tags on this relation.' } %}
         </div>
         <aside class="node-edit-split-preview">

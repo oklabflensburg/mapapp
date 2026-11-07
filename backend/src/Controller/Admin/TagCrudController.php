@@ -5,6 +5,8 @@ namespace App\Controller\Admin;
 use App\Entity\NodeGroupTag;
 use App\Entity\NodeTag;
 use App\Entity\Tag;
+use App\Service\AspectObservationApproval;
+use App\Service\StreetPartAspects;
 use App\Service\TagKeyLabeler;
 use App\Service\TagTranslationReview;
 use App\Service\ObservationTranslations;
@@ -18,18 +20,26 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class TagCrudController extends AbstractCrudController
 {
+    /**
+     * The mapped (update-existing-element) approval's publish target for
+     * the request being handled, created lazily by the factory below.
+     */
+    private ?Tag $mappedEffectiveTag = null;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly TagKeyLabeler $tagKeyLabeler,
         private readonly TagTranslationReview $translationReview,
         private readonly ObservationTranslations $observationTranslations,
+        private readonly AspectObservationApproval $aspectObservationApproval,
     ) {
     }
     public static function getEntityFqcn(): string
@@ -101,6 +111,14 @@ final class TagCrudController extends AbstractCrudController
             throw new NotFoundHttpException('Node group tag not found.');
         }
 
+        // A selected mapping target turns the approval into the admin's
+        // update-vs-add decision; the empty/default option approves the
+        // observation as submitted (new element).
+        $targetPayload = $request->request->get('target_index');
+        if (\is_string($targetPayload) && $targetPayload !== '') {
+            return $this->approveMappedNodeGroupTag($request, $groupTag, $targetPayload);
+        }
+
         if ($response = $this->reviewTranslations($request, $groupTag->getTag(), $id)) {
             return $response;
         }
@@ -113,6 +131,57 @@ final class TagCrudController extends AbstractCrudController
                 $other->setApproved(true);
             }
         }
+        $this->entityManager->flush();
+
+        return $this->redirectAfterApproval($request);
+    }
+
+    /**
+     * Publishes a pending structured observation under an existing
+     * element's identity instead of its proposed new-element key (see
+     * specs/map-editing/aspect-observation-mapping/spec.md). Keeping the
+     * proposed key is the add case handled above.
+     */
+    private function approveMappedNodeGroupTag(Request $request, NodeGroupTag $groupTag, string $targetPayload): Response
+    {
+        $proposedTag = $groupTag->getTag();
+        $proposed = StreetPartAspects::parse($proposedTag->getKey());
+        if ($proposed === null) {
+            throw new BadRequestHttpException('Mapping targets apply to structured street-part observations only.');
+        }
+        $target = $this->aspectObservationApproval->decodeTarget($targetPayload);
+        $effectiveKey = 'way.'.$proposed['type'].'.'.$target['index'].'.'.$proposed['aspect'];
+
+        // The plain mapped post carries its CSRF token like a plain approve;
+        // the translation form path validates its token while handling.
+        if (!$request->request->has('translation_review_'.$groupTag->getId())) {
+            if (!$this->isCsrfTokenValid('approve'.$groupTag->getId(), $request->request->get('_token'))) {
+                throw $this->createAccessDeniedException('Invalid CSRF token.');
+            }
+        }
+
+        // Stale mapping: the target element's approved value of this aspect
+        // must still match the review screen's snapshot; 409 without any
+        // change, so the decision is re-made against fresh data.
+        if ($this->aspectObservationApproval->approvedAspectValue($groupTag->getGroup(), $effectiveKey) !== $target['aspectValue']) {
+            throw new ConflictHttpException('The selected target element changed since the review page loaded. Reload and approve again.');
+        }
+
+        $this->mappedEffectiveTag = null;
+        $effectiveTagFactory = function (string $value) use ($proposedTag, $effectiveKey): Tag {
+            return $this->mappedEffectiveTag ??= $this->aspectObservationApproval->effectiveTag($proposedTag, $effectiveKey, $value);
+        };
+
+        // Translation review, CSRF and publication failures behave exactly
+        // like a plain approval; publishing always targets the effective tag.
+        if ($response = $this->reviewTranslations($request, $proposedTag, $groupTag->getId(), $effectiveTagFactory)) {
+            return $response;
+        }
+
+        if ($this->mappedEffectiveTag === null) {
+            throw new \LogicException('The mapped publish target was never created.');
+        }
+        $this->aspectObservationApproval->apply($groupTag, $this->mappedEffectiveTag);
         $this->entityManager->flush();
 
         return $this->redirectAfterApproval($request);
@@ -164,13 +233,26 @@ final class TagCrudController extends AbstractCrudController
         return $this->redirectAfterApproval($request);
     }
 
-    private function reviewTranslations(Request $request, Tag $tag, int $id): ?Response
+    /**
+     * Handles the translation review around an approval. With a non-null
+     * $effectiveTagFactory (mapped update-of-existing approvals), approved
+     * identities and translations publish under the effective key/value the
+     * factory returns, never the proposed ones.
+     *
+     * @param ?\Closure(string $value): Tag $effectiveTagFactory
+     */
+    private function reviewTranslations(Request $request, Tag $tag, int $id, ?\Closure $effectiveTagFactory = null): ?Response
     {
         if (!$request->request->has('translation_review_'.$id)) {
             if (!$this->isCsrfTokenValid('approve'.$id, $request->request->get('_token'))) {
                 throw $this->createAccessDeniedException('Invalid CSRF token.');
             }
-            $this->observationTranslations->publish($tag);
+            if ($effectiveTagFactory === null) {
+                $this->observationTranslations->publish($tag);
+
+                return null;
+            }
+            $this->observationTranslations->publish($effectiveTagFactory($tag->getValue()));
 
             return null;
         }
@@ -184,6 +266,7 @@ final class TagCrudController extends AbstractCrudController
             } else {
                 $keyChanged = $tag->getKey() !== $data['key'];
                 $valueChanged = $tag->getValue() !== $data['value'];
+                $publishIdentityMapped = $effectiveTagFactory !== null;
                 $translations = $tag->getTranslations();
                 $expected = [];
                 foreach (TagKeyLabeler::SUPPORTED_LOCALES as $locale) {
@@ -195,21 +278,30 @@ final class TagCrudController extends AbstractCrudController
                             continue;
                         }
                         $translations[$locale][$field] = $data[$locale][$field];
-                        // A renamed identifier has a different catalog target. Do not
+                        // A renamed identity has a different catalog target. Do not
                         // reuse the old identifier's conflict snapshot for that target.
-                        $expected[$locale][$field] = $identityChanged ? '' : ($data[$locale]['previous'.ucfirst($field)] ?? '');
+                        $expected[$locale][$field] = ($identityChanged || $publishIdentityMapped) ? '' : ($data[$locale]['previous'.ucfirst($field)] ?? '');
                     }
                 }
-                $tag->setKey($data['key']);
-                $tag->setValue($data['value']);
-                $tag->setTranslations($translations);
                 if (!$form->get('approve')->isClicked()) {
+                    $tag->setKey($data['key']);
+                    $tag->setValue($data['value']);
+                    $tag->setTranslations($translations);
                     $this->entityManager->flush();
 
                     return $this->redirectAfterApproval($request);
                 }
+                $publishTag = $tag;
+                if ($publishIdentityMapped) {
+                    $publishTag = $effectiveTagFactory($data['value']);
+                    $publishTag->setTranslations($translations);
+                } else {
+                    $tag->setKey($data['key']);
+                    $tag->setValue($data['value']);
+                    $tag->setTranslations($translations);
+                }
                 try {
-                    $this->observationTranslations->publish($tag, $expected);
+                    $this->observationTranslations->publish($publishTag, $expected);
 
                     return null;
                 } catch (\DomainException|\OutOfBoundsException|\InvalidArgumentException $exception) {
