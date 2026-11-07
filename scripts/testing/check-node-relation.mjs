@@ -139,9 +139,8 @@ try {
   await add.click()
   await expect(add).toHaveAttribute('aria-pressed', 'true')
   await page.mouse.click(a.x, a.y)
-  await expect(dialog).toContainText('1 nodes placed')
+  await expect(save).toBeEnabled()
   await page.mouse.click(b.x, b.y)
-  await expect(dialog).toContainText('2 nodes placed')
   await expect.poll(() => {
     // Dashed: some point along the line is amber (a solid check could pass
     // while the dash covers a sampled point).

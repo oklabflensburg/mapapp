@@ -30,7 +30,6 @@ export default {
   map: {
     create: {
       add: 'Add node',
-      placed: '{count} nodes placed',
       pendingDialog: 'Placed nodes',
       name: 'Name',
       namePlaceholder: 'Name',

@@ -30,7 +30,6 @@ export default {
   map: {
     create: {
       add: 'Knoten hinzufügen',
-      placed: '{count} Knoten platziert',
       pendingDialog: 'Platzierte Knoten',
       name: 'Name',
       namePlaceholder: 'Name',

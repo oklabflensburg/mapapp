@@ -141,11 +141,11 @@ try {
   assert.ok(bounds.y >= 400 && bounds.height >= 350 && bounds.y + bounds.height <= 801, 'editor leaves the upper map clear')
   await page.mouse.click(400, 280)
   await expect(dialog).toBeVisible()
-  await expect(dialog).toContainText('1 nodes placed')
+  // Placing the first node enables Save (no placed-count line anymore).
+  await expect(save).toBeEnabled()
   // Without parents or a typed name the headline stays at its fallback.
   await expect(page.locator('.p-drawer-header')).toContainText('Add node')
   await page.mouse.click(430, 300)
-  await expect(dialog).toContainText('2 nodes placed')
   await expect(page.locator('.p-drawer-header')).toContainText('Add node')
   assert.equal(nodeRequests.length, 0, 'placed nodes are not saved yet')
 
@@ -296,7 +296,7 @@ try {
   await add.click()
   await page.mouse.click(400, 300)
   await page.mouse.click(430, 320)
-  await expect(dialog).toContainText('2 nodes placed')
+  await expect(save).toBeEnabled()
   await save.click()
   await expect(page.getByRole('alert')).toContainText('Could not save')
   const failed = nodeRequests.at(-1)
@@ -359,7 +359,7 @@ try {
     const point = pixel(lat, lng)
     await page.mouse.click(point.x, point.y)
   }
-  await expect(dialog).toContainText('4 nodes placed')
+  await expect(save).toBeEnabled()
   // The headline breadcrumb shows the parent names, then the typed name.
   await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta')
   await dialog.getByLabel('Name', { exact: true }).fill('Cross-street area')

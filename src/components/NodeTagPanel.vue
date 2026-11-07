@@ -379,7 +379,6 @@ async function save(): Promise<void> {
     </template>
     <DrawerResizeHandle />
     <div v-if="creation" role="form" :aria-label="t('map.create.pendingDialog')" class="creation-details">
-      <p role="status">{{ t('map.create.placed', { count: creation.count }) }}</p>
       <InputText
         id="pending-node-name"
         v-model="pendingName"
