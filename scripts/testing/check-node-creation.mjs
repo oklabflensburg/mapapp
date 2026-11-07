@@ -213,7 +213,7 @@ try {
   const tagSave = page.locator('.p-drawer').getByRole('button', { name: 'Save', exact: true })
   const beforeIncomplete = nodeRequests.length
   await expect(tagSave).toBeDisabled()
-  await expect(page.getByRole('alert')).toContainText('Every tag needs a key and a value.')
+  await expect(page.getByRole('alert')).toContainText('Key and value required.')
   await observation.getByLabel('Key translation', { exact: true }).pressSequentially('Surface')
   await expect(observation.getByRole('textbox', { name: 'Key', exact: true })).toHaveValue('surface')
   await expect(tagSave).toBeDisabled()

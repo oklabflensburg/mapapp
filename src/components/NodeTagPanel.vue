@@ -9,6 +9,7 @@ import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import { useOsmDataStore } from '../stores/osmData'
 import ParentNodeTags from './ParentNodeTags.vue'
+import DrawerResizeHandle from './DrawerResizeHandle.vue'
 import { nodeKey, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
@@ -283,9 +284,9 @@ async function save(): Promise<void> {
     :header="t(creation ? 'map.create.add' : 'nodeEditor.title')"
     @update:visible="emit('update:visible', $event)"
   >
+    <DrawerResizeHandle />
     <div v-if="creation" role="form" :aria-label="t('map.create.pendingDialog')" class="creation-details">
       <p role="status">{{ t('map.create.placed', { count: creation.count }) }}</p>
-      <p v-if="creation.count === 0" class="empty-hint">{{ t('map.create.placeHint') }}</p>
       <label for="pending-node-name">{{ t('map.create.name') }}</label>
       <InputText id="pending-node-name" v-model="pendingName" :disabled="creation.saving" :placeholder="t('map.create.namePlaceholder')" />
       <p class="empty-hint">{{ t('nodeEditor.parents') }}: {{ creation.parentNames.join(', ') || t('map.create.noParent') }}</p>
@@ -294,9 +295,6 @@ async function save(): Promise<void> {
     <fieldset :disabled="creation?.saving" class="editor-fields">
       <section v-if="savedNode && !creation" class="relations-section" :aria-label="t('nodeEditor.relations')">
         <h4 class="section-title">{{ t('nodeEditor.relations') }}</h4>
-        <p v-if="!savedNode.parents.length && !savedNode.children.length" class="empty-hint">
-          {{ t('nodeEditor.noRelations') }}
-        </p>
         <template v-for="group in relationGroups" :key="group.label">
           <div v-if="group.nodes.length" class="relation-group">
             <h5 class="relation-heading">{{ t(group.label) }}</h5>
@@ -313,15 +311,12 @@ async function save(): Promise<void> {
 
       <section v-if="!creation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
         <h4 class="section-title">{{ t('nodeEditor.nodeRelations') }}</h4>
-        <p v-if="nodeRelations.length === 0" class="empty-hint">
-          {{ t('nodeEditor.noNodeRelations') }}
-        </p>
         <div v-for="group in nodeRelations" :key="group.id" class="node-relation">
           <div class="node-relation-heading">
             <span>{{ relationLabel(group) }}</span>
             <Button
               v-if="auth.canEdit"
-              :label="t('nodeEditor.editRelation')"
+              :aria-label="t('nodeEditor.editRelation')"
               icon="pi pi-pencil"
               text
               severity="secondary"
@@ -352,9 +347,6 @@ async function save(): Promise<void> {
       </section>
 
       <section class="custom-tags-section">
-        <p v-if="rows.length === 0 && observationRows.length === 0 && auth.canEdit" class="empty-hint">
-          {{ t('nodeEditor.empty') }}
-        </p>
         <p v-if="!auth.canEdit" class="empty-hint">{{ t('nodeEditor.loginRequired') }}</p>
         <!-- Approved tags are managed by admins, so they are read-only here. -->
         <div v-if="rows.length > 0" class="tag-table-scroll">
@@ -394,11 +386,10 @@ async function save(): Promise<void> {
           />
           <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
             <div class="observation-field">
-              <label :for="`observation-key-translation-${index}`">{{ t('nodeEditor.keyTranslation') }}</label>
               <InputText
-                :id="`observation-key-translation-${index}`"
                 :model-value="translationText(row, 'key')"
                 :placeholder="t('nodeEditor.keyTranslation')"
+                :aria-label="t('nodeEditor.keyTranslation')"
                 @update:model-value="editTranslation(row, 'key', $event)"
               />
               <InputText
@@ -412,11 +403,10 @@ async function save(): Promise<void> {
               />
             </div>
             <div class="observation-field">
-              <label :for="`observation-value-translation-${index}`">{{ t('nodeEditor.valueTranslation') }}</label>
               <InputText
-                :id="`observation-value-translation-${index}`"
                 :model-value="translationText(row, 'value')"
                 :placeholder="t('nodeEditor.valueTranslation')"
+                :aria-label="t('nodeEditor.valueTranslation')"
                 @update:model-value="editTranslation(row, 'value', $event)"
               />
               <Select
@@ -446,7 +436,7 @@ async function save(): Promise<void> {
           </div>
           <Button
             v-if="!isWay"
-            :label="t('nodeEditor.addObservation')"
+            :aria-label="t('nodeEditor.addObservation')"
             icon="pi pi-plus"
             text
             severity="secondary"
@@ -492,8 +482,8 @@ async function save(): Promise<void> {
 
 .creation-details {
   display: grid;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .creation-details p {
@@ -501,14 +491,16 @@ async function save(): Promise<void> {
 }
 
 .creation-details label {
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   color: var(--p-text-muted-color);
 }
 
 .section-title {
-  margin: 0 0 0.375rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.65rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--p-text-muted-color);
 }
 
@@ -516,18 +508,21 @@ async function save(): Promise<void> {
 .relations-section,
 .observations-section,
 .custom-tags-section {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 /* A small gap sets the read-only custom tag table apart from the OSM tags above. */
 .custom-tags-section {
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .relation-heading {
-  margin: 0.5rem 0 0.25rem;
-  font-size: 0.8rem;
+  margin: 0.375rem 0 0.125rem;
+  font-size: 0.65rem;
   font-weight: 600;
+  color: var(--p-text-muted-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .relation-list {
@@ -540,20 +535,19 @@ async function save(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  padding: 0.375rem 0;
+  padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
-  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 
 .relation-item small {
   color: var(--p-text-muted-color);
+  font-size: 0.65rem;
 }
 
 .node-relations-section .node-relation {
-  padding: 0.375rem 0;
+  padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
-  font-size: 0.875rem;
 }
 
 .node-relation-heading {
@@ -564,9 +558,14 @@ async function save(): Promise<void> {
   color: var(--p-text-muted-color);
 }
 
+.node-relation-heading .p-button {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 /* Fixed layout keeps the key/value columns aligned across all tag tables. */
 .tag-table-scroll {
-  max-height: 12rem;
+  max-height: 9rem;
   overflow-y: auto;
 }
 
@@ -580,7 +579,7 @@ async function save(): Promise<void> {
 .tag-table td {
   text-align: left;
   padding: 0.1rem 0.4rem 0.1rem 0;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   vertical-align: top;
   border-bottom: 1px solid var(--p-content-border-color);
   overflow-wrap: anywhere;
@@ -593,16 +592,21 @@ async function save(): Promise<void> {
 }
 
 .empty-hint {
-  margin: 0 0 0.375rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.25rem;
   color: var(--p-text-muted-color);
 }
 
 .tag-row {
   display: flex;
-  gap: 0.375rem;
+  gap: 0.25rem;
   align-items: center;
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.tag-row .p-button {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
 }
 
 /* The searchable suggestion dropdown fills the panel width, like the tag
@@ -610,20 +614,15 @@ async function save(): Promise<void> {
 .suggestion-select {
   display: flex;
   width: 100%;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 
 .observation-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
   flex: 1;
   min-width: 0;
-}
-
-.observation-field label {
-  font-size: 0.75rem;
-  color: var(--p-text-muted-color);
 }
 
 .observation-field > * {
@@ -631,15 +630,15 @@ async function save(): Promise<void> {
   min-width: 0;
 }
 
+/* The raw identifier below the translation is secondary metadata. */
 .observation-field .raw-tag-input {
-  font-size: 0.7rem;
-  padding: 0.25rem 0.375rem;
+  font-size: 0.65rem;
+  padding: 0.1875rem 0.375rem;
   color: var(--p-text-muted-color);
 }
 
 .save-error {
-  margin: 0.5rem 0 0;
-  font-size: 0.875rem;
+  margin: 0.375rem 0 0;
   color: var(--p-red-500);
 }
 </style>

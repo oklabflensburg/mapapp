@@ -56,9 +56,11 @@ onMounted(() => {
 }
 
 h6 {
-  margin: 0.375rem 0 0.125rem;
-  font-size: 0.75rem;
+  margin: 0.25rem 0 0.125rem;
+  font-size: 0.65rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--p-text-muted-color);
 }
 
@@ -66,7 +68,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 th,
@@ -85,6 +87,6 @@ th {
 .tag-hint {
   margin: 0;
   color: var(--p-text-muted-color);
-  font-size: 0.8rem;
+  font-size: 0.65rem;
 }
 </style>

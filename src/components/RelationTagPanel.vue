@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import CrossSectionComposer from './CrossSectionComposer.vue'
+import DrawerResizeHandle from './DrawerResizeHandle.vue'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import { crossSectionRows, crossSectionTags, parseAspectKey, type AspectRow } from '../lib/crossSection'
 import { useI18n } from 'vue-i18n'
@@ -164,6 +165,7 @@ async function save(): Promise<void> {
     :header="group?.name || t('relationEditor.title')"
     @update:visible="emit('update:visible', $event)"
   >
+    <DrawerResizeHandle />
     <section v-if="group" class="members-section" :aria-label="t('nodeEditor.parents')">
       <h4 class="section-title">{{ t('nodeEditor.parents') }}</h4>
       <p class="empty-hint">{{ parentNames.join(', ') || t('map.create.noParent') }}</p>
@@ -258,7 +260,7 @@ async function save(): Promise<void> {
           />
         </div>
         <Button
-          :label="t('nodeEditor.addObservation')"
+          :aria-label="t('nodeEditor.addObservation')"
           icon="pi pi-plus"
           text
           severity="secondary"
@@ -294,44 +296,46 @@ async function save(): Promise<void> {
 
 <style scoped>
 .section-title {
-  margin: 0 0 0.375rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.65rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--p-text-muted-color);
 }
 
 .members-section,
 .observations-section,
 .custom-tags-section {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .custom-tags-section {
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .member-list {
   list-style: none;
   padding: 0;
-  margin: 0.25rem 0 0;
+  margin: 0.125rem 0 0;
 }
 
 .member-item {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  padding: 0.375rem 0;
+  padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
-  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 
 .member-item small {
   color: var(--p-text-muted-color);
+  font-size: 0.65rem;
 }
 
 .tag-table-scroll {
-  max-height: 12rem;
+  max-height: 9rem;
   overflow-y: auto;
 }
 
@@ -345,7 +349,7 @@ async function save(): Promise<void> {
 .tag-table td {
   text-align: left;
   padding: 0.1rem 0.4rem 0.1rem 0;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   vertical-align: top;
   border-bottom: 1px solid var(--p-content-border-color);
   overflow-wrap: anywhere;
@@ -358,16 +362,21 @@ async function save(): Promise<void> {
 }
 
 .empty-hint {
-  margin: 0 0 0.375rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.25rem;
   color: var(--p-text-muted-color);
 }
 
 .tag-row {
   display: flex;
-  gap: 0.375rem;
+  gap: 0.25rem;
   align-items: center;
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.tag-row .p-button {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
 }
 
 /* The searchable suggestion dropdown fills the panel width, like the tag
@@ -375,7 +384,7 @@ async function save(): Promise<void> {
 .suggestion-select {
   display: flex;
   width: 100%;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 
 .tag-key {
@@ -393,8 +402,7 @@ async function save(): Promise<void> {
 }
 
 .save-error {
-  margin: 0.5rem 0 0;
-  font-size: 0.875rem;
+  margin: 0.375rem 0 0;
   color: var(--p-red-500);
 }
 </style>
