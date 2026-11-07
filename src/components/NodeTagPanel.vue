@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { NodeCreationState, NodeCreationInput } from '../map/nodeCreation'
+import type { AspectRow } from '../lib/crossSection'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -10,6 +11,7 @@ import Select from 'primevue/select'
 import { useOsmDataStore } from '../stores/osmData'
 import ParentNodeTags from './ParentNodeTags.vue'
 import DrawerResizeHandle from './DrawerResizeHandle.vue'
+import CrossSectionComposer from './CrossSectionComposer.vue'
 import { nodeKey, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
@@ -58,8 +60,13 @@ watch(() => props.visible, visible => { if (visible) void catalog.load() }, { im
 const pendingName = ref('')
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
+// Cross-section draft for the relation that two or more placed nodes form;
+// the create panel is the relation editor while the batch is being placed.
+const aspectRows = ref<AspectRow[]>([])
+const isRelationDraft = computed(() => (props.creation?.count ?? 0) > 1)
 const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
-  .some(row => !row.key.trim() || !row.value.trim()))
+  .some(row => !row.key.trim() || !row.value.trim())
+  || (isRelationDraft.value && aspectRows.value.some(row => !Object.values(row.values).some(value => value))))
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
@@ -118,6 +125,7 @@ watch(
       pendingName.value = ''
       rows.value = []
       observationRows.value = []
+      aspectRows.value = []
       return
     }
     if (!visible || !node) {
@@ -256,7 +264,7 @@ async function save(): Promise<void> {
     }),
   }
   if (props.creation) {
-    emit('create', { ...draft, name: pendingName.value })
+    emit('create', { ...draft, name: pendingName.value, crossSection: aspectRows.value })
     return
   }
   const saved = await userNodes.save({
@@ -293,6 +301,13 @@ async function save(): Promise<void> {
       <p v-if="creation.failed" class="save-error" role="alert">{{ t('map.create.failed') }}</p>
     </div>
     <fieldset :disabled="creation?.saving" class="editor-fields">
+      <!-- Two or more placed nodes form a node relation, so its edit
+           options are available here instantly: the cross-section draft is
+           saved with the relation, no second editing view is needed. -->
+      <section v-if="creation && isRelationDraft" class="cross-section-section" :aria-label="t('crossSection.title')">
+        <h4 class="section-title">{{ t('crossSection.title') }}</h4>
+        <CrossSectionComposer v-model="aspectRows" />
+      </section>
       <section v-if="savedNode && !creation" class="relations-section" :aria-label="t('nodeEditor.relations')">
         <h4 class="section-title">{{ t('nodeEditor.relations') }}</h4>
         <template v-for="group in relationGroups" :key="group.label">
@@ -436,7 +451,7 @@ async function save(): Promise<void> {
           </div>
           <Button
             v-if="!isWay"
-            :aria-label="t('nodeEditor.addObservation')"
+            :aria-label="t('nodeEditor.addTag')"
             icon="pi pi-plus"
             text
             severity="secondary"

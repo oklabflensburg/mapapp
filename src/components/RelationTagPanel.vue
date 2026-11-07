@@ -260,7 +260,7 @@ async function save(): Promise<void> {
           />
         </div>
         <Button
-          :aria-label="t('nodeEditor.addObservation')"
+          :aria-label="t('nodeEditor.addTag')"
           icon="pi pi-plus"
           text
           severity="secondary"

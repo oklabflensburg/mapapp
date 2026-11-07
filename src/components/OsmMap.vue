@@ -25,6 +25,7 @@ import { UserNodeLayer } from '../map/userNodeLayer'
 import { NodeGroupLayer } from '../map/nodeGroupLayer'
 import { PendingNodeLayer } from '../map/pendingNodeLayer'
 import type { NodeCreationInput } from '../map/nodeCreation'
+import { crossSectionTags } from '../lib/crossSection'
 import { RoutingLayer } from '../map/routingLayer'
 import { useRoutingStore } from '../stores/routing'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
@@ -246,7 +247,9 @@ async function savePendingNodes(input: NodeCreationInput): Promise<void> {
       members,
       // The dialog name also becomes a name tag, so it reaches the
       // translation catalog like a node name does (see NodeGroupManager).
-      tags: withNameTag(input.tags, name),
+      // The cross-section draft from the create panel travels along as
+      // structured way.* tags, so the relation is complete in one save.
+      tags: withNameTag([...input.tags, ...crossSectionTags(input.crossSection)], name),
       ...(name !== '' ? { name } : {}),
     })
     if (!group) {
