@@ -45,7 +45,6 @@ final class DashboardController extends AbstractDashboardController
         // Nodes and areas with unapproved tags share one review queue.
         yield MenuItem::linkToRoute('Pending observations', 'fa fa-clock', 'app_admin_pending_observations');
         yield MenuItem::linkTo(TagCrudController::class, 'Tags', 'fa fa-tags');
-        yield MenuItem::linkTo(DefaultObservationTagCrudController::class, 'Default observation tags', 'fa fa-list-check');
         yield MenuItem::linkTo(NodeTagCrudController::class, 'Node tags', 'fa fa-user-tag');
         yield MenuItem::linkTo(NodeTypeCrudController::class, 'Node types', 'fa fa-shapes');
         yield MenuItem::linkTo(NodeProviderCrudController::class, 'Node providers', 'fa fa-server');

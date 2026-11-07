@@ -15,7 +15,6 @@ import { nodeKey, tagValue, useUserNodesStore, type NodeEditTarget, type TagEntr
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
-import { useDefaultObservationTagsStore } from '../stores/defaultObservationTags'
 import { useSettingsStore } from '../stores/settings'
 
 interface TagRow {
@@ -45,7 +44,6 @@ const nodeGroups = useNodeGroupsStore()
 const auth = useAuthStore()
 const settings = useSettingsStore()
 const tagKeyLabels = useTagKeyLabelsStore()
-const defaultObservationTags = useDefaultObservationTagsStore()
 
 const catalog = useEditingCatalogStore()
 const osmData = useOsmDataStore()
@@ -58,9 +56,12 @@ const isWay = computed(() => {
   const feature = osmData.data?.features.find(entry => String(entry.feature.id) === props.node!.providerNodeId)?.feature
   return !feature || !!feature.properties?.highway || ['LineString', 'MultiLineString'].includes(feature.geometry.type)
 })
+// Ways offer the editing catalog's controlled vocabulary; every other
+// element uses free-form observations (structured cross-section data lives
+// in the aspects system).
 const observationChoices = computed(() => isWay.value
   ? (catalog.wayVocabularies[props.node?.osmTags.highway ?? ''] ?? [])
-  : defaultObservationTags.tags)
+  : [])
 watch(() => props.visible, visible => { if (visible) void catalog.load() }, { immediate: true })
 const pendingName = ref('')
 const rows = ref<TagRow[]>([])
@@ -241,14 +242,10 @@ function addSuggestedObservation(key: unknown): void {
   }
 }
 
-// Suggested keys keep their raw key fixed and offer configured value choices.
-// Derive this from the key so it also holds after reloading saved rows.
-function isDefaultObservationTag(key: string): boolean {
-  return isWay.value || defaultObservationTags.keys.includes(key.trim())
-}
-
+// Way observations use the catalog's controlled vocabulary; their keys are
+// fixed and their values come from the configured choices.
 function defaultValuesFor(key: string): string[] {
-  return isWay.value ? observationChoices.value.find(entry => entry.key === key.trim())?.values ?? [] : defaultObservationTags.valuesFor(key.trim())
+  return isWay.value ? observationChoices.value.find(entry => entry.key === key.trim())?.values ?? [] : []
 }
 
 // Keep language drafts separate and use raw identifiers for catalog lookups.
@@ -500,7 +497,7 @@ async function save(): Promise<void> {
                 <InputText
                   :model-value="row.key"
                   @update:model-value="editRawTag(row, 'key', $event)"
-                  :readonly="isWay || (isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined)"
+                  :readonly="isWay"
                   :invalid="!row.key.trim()"
                   :placeholder="t('nodeEditor.key')"
                   :aria-label="t('nodeEditor.key')"
@@ -515,7 +512,7 @@ async function save(): Promise<void> {
                   @update:model-value="editTranslation(row, 'value', $event)"
                 />
                 <Select
-                  v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
+                  v-if="defaultValuesFor(row.key).length > 0"
                   :model-value="row.value === '' ? null : row.value"
                   :invalid="!row.value.trim()"
                   :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
@@ -541,36 +538,11 @@ async function save(): Promise<void> {
             </div>
           </template>
           <template v-else>
+            <!-- Relation observations are plain key/value pairs; structured
+                 relation data lives in the aspects system instead. -->
             <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
-              <!-- Keys picked from the suggested-tag dropdown are fixed: the
-                   translated label shows read-only (raw key in the tooltip),
-                   the free-form rows keep the editable key input. -->
-              <InputText
-                v-if="isDefaultObservationTag(row.key)"
-                :model-value="tagKeyLabels.label(row.key)"
-                :title="row.key"
-                readonly
-                class="tag-key"
-              />
-              <InputText v-else v-model="row.key" :invalid="!row.key.trim()" :placeholder="t('nodeEditor.key')" :aria-label="t('nodeEditor.key')" class="tag-key" />
-              <!-- Keys with admin-configured values pick from a dropdown, but a
-                   user may also propose an own value by typing it (editable
-                   input); clearing it empties the value again. -->
-              <Select
-                v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
-                :model-value="row.value === '' ? null : row.value"
-                :invalid="!row.value.trim()"
-                :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
-                option-label="label"
-                option-value="value"
-                :placeholder="t('nodeEditor.value')"
-                :aria-label="t('nodeEditor.value')"
-                :editable="true"
-                show-clear
-                class="tag-value"
-                @update:model-value="editRawTag(row, 'value', $event)"
-              />
-              <InputText v-else v-model="row.value" :invalid="!row.value.trim()" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="tag-value" />
+              <InputText v-model="row.key" :invalid="!row.key.trim()" :placeholder="t('nodeEditor.key')" :aria-label="t('nodeEditor.key')" class="tag-key" />
+              <InputText v-model="row.value" :invalid="!row.value.trim()" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="tag-value" />
               <Button
                 :aria-label="t('nodeEditor.removeTag')"
                 icon="pi pi-times"

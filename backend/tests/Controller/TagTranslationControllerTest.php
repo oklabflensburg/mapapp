@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Command\SyncTagTranslationsCommand;
+use App\Service\AspectCatalog;
 use App\Service\TagTranslationCatalog;
 use App\Service\TagTranslationCatalogEditor;
 use Doctrine\ORM\EntityManagerInterface;
@@ -178,6 +179,7 @@ final class TagTranslationControllerTest extends WebTestCase
             static::getContainer()->get(EntityManagerInterface::class),
             static::getContainer()->get(TagTranslationCatalog::class),
             static::getContainer()->get(TagTranslationCatalogEditor::class),
+            static::getContainer()->get(AspectCatalog::class),
         ));
         self::assertSame(0, $tester->execute(['--pairs' => $pairs]));
 

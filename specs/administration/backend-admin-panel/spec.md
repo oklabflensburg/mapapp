@@ -80,11 +80,10 @@ Admins need to manage who can contribute, review contributions before publicatio
 - Raw key/value fields must be nonblank, at most 255 characters, XML-compatible and must not duplicate another tag's pair. Translation fields allow empty text and at most 20,000 XML-compatible characters.
 - Stale tag/proposal versions, changed catalog targets and invalid review fields prevent approval; the full review form responds with HTTP 422 and retains the draft with errors. Publication failure leaves the observation pending. Decline has an independent form and does not depend on draft translation validity.
 
-### R8 — Route preferences and observation vocabulary
+### R8 — Route preferences
 
 - **Route preference tags** manages unique raw tag keys and an optional GraphHopper road-class choice. Search matches the raw key. No class means the preference applies to app nodes; a mapped class also supports avoidance of matching OSM ways, as detailed in [api-routing](../../routing/api-routing/spec.md).
-- **Default observation tags** manages unique raw tag keys and ordered default values. An empty value list permits free-form input. OSM and custom keys are both allowed. Lists use published key labels; forms/search retain raw keys.
-- These settings feed the public `/api/route-preference-tags` and `/api/default-observation-tags` contracts in [api-tag-settings](../../tag-settings/api-tag-settings/spec.md). The existing panel provides a global suggestion vocabulary; per-feature-type vocabularies and aspect-based routing in later design specs are outside this as-built scope.
+- These settings feed the public `/api/route-preference-tags` contract in [api-tag-settings](../../tag-settings/api-tag-settings/spec.md). Structured observation vocabularies live in the aspects catalog (see [street-part-aspects](../../map-editing/street-part-aspects/spec.md)).
 
 ### R9 — Published translation catalog editor
 
@@ -107,7 +106,7 @@ Admins need to manage who can contribute, review contributions before publicatio
 - **AC6 (R6):** Approving a grouped value approves its contributors here, removes competing pending same-key values here and approves the node where applicable; approved values and assignments elsewhere survive.
 - **AC7 (R6):** Decline removes only grouped pending assignments here. Invalid tokens cannot mutate them; a stale decline after approval returns 409; a missing assignment returns 404.
 - **AC8 (R7):** Save changes retains a pending proposal without publishing labels; Approve publishes reviewed translations under edited identifiers. Duplicate identifiers, invalid fields, stale proposals or changed targets prevent approval and preserve the draft.
-- **AC9 (R8):** An admin-created route preference appears in its public metadata API; a default observation key with values appears in its API, while an empty value list leaves input free-form.
+- **AC9 (R8):** An admin-created route preference appears in its public metadata API.
 - **AC10 (R9):** A single catalog save publishes German/English edits and shared ignore flags; ignoring a key hides its values from Not ignored while runtime labels remain available. Filters survive pagination and saves.
 - **AC11 (R9):** A stale edit in either language rejects the whole changed batch, leaves both files unchanged and retains drafts. Invalid CSRF, unknown/duplicate units and invalid XML also reject the batch. Clearing targets restores fallback.
 
@@ -130,7 +129,7 @@ Code and existing tests were inspected; runtime acceptance criteria were **not e
 | AC4–AC5 | `Controller/PendingObservationListTest.php`, `PendingObservationCrudTest.php`, `PendingRelationObservationCrudTest.php`, `NodeCrudTest.php` (navigation also inspected in code) |
 | AC6–AC7 | `Controller/TagApprovalCleanupTest.php`, `CrossEditorTagTest.php`, `ModerationDeclineTest.php` |
 | AC8 | `Controller/ObservationTranslationTest.php` |
-| AC9 | `Controller/RoutePreferenceTagCrudTest.php`, `DefaultObservationTagCrudTest.php` |
+| AC9 | `Controller/RoutePreferenceTagCrudTest.php` |
 | AC10–AC11 | `Controller/TagTranslationControllerTest.php`, `Service/TagTranslationCatalogEditorTest.php` |
 
 For runtime verification, run `docker compose exec php vendor/bin/phpunit` from `backend/` with the test database available, then manually check the UI and coverage gaps above. Test-file references indicate existing coverage, not a passing run or proof of every listed scenario.

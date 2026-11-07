@@ -30,7 +30,6 @@ await page.route('**/api/**', async route => {
   const path = new URL(route.request().url()).pathname
   if (path === '/api/me') return route.fulfill({ json: { user: { name: 'Editor', email: 'editor@test.example', roles: ['ROLE_EDITOR'] } } })
   if (path === '/api/editing-catalog') return route.fulfill({ status: failCatalog ? 503 : 200, json: failCatalog ? {error: 'editing_vocabulary_unavailable'} : catalog })
-  if (path === '/api/default-observation-tags') return route.fulfill({ json: { tags: [{tag: 'global_only', values: []}] } })
   if (path.startsWith('/api/i18n/')) return route.fulfill({ json: translations[path.endsWith('/de') ? 'de' : 'en'] })
   if (path === '/api/nodes') {
     if (route.request().method() === 'GET') return route.fulfill({ json: [] })

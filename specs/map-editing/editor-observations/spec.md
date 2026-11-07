@@ -30,7 +30,7 @@ Street-part cross-section attributes also use ordinary observation tags, with ke
 
 ### R3 — Adding observations
 - An editor sees the "Observations" section with an add control and can create observation rows as free-form key/value pairs.
-- Admin-exposed default observation tags (see [api-tag-settings](../../tag-settings/api-tag-settings/spec.md)) appear as a searchable suggestion dropdown; picking one adds a row with that key. For keys with configured selectable values, the value is a dropdown; otherwise the value is free-form text.
+- Ways with a controlled vocabulary (see [way-observations](../way-observations/spec.md)) offer the catalog's tag choices in a searchable suggestion dropdown with fixed keys and pickable values; every other element is free-form. Structured relation observations come from the aspects system instead (see [street-part-aspects](../street-part-aspects/spec.md)).
 - Each observation row can additionally carry a proposed translation for its key and value in the active app locale (`en`/`de`); the translation proposal is sent with the save. *(The full translation-proposal workflow is its own later spec step.)*
 - When the selected feature was saved before, the panel loads its existing state: the editor's own unapproved pairs populate the editable observations rows; approved custom tags are listed read-only (they are moderated — editors cannot change approved content, not even their own once approved).
 
@@ -54,7 +54,7 @@ Street-part cross-section attributes also use ordinary observation tags, with ke
 - **AC1 (R1):** Given a logged-in editor, clicking a way node on the map opens the node editor for that OSM feature; the same click position with no feature hit closes the panel.
 - **AC2 (R1):** Given an anonymous visitor, the panel opens read-only with a login hint instead of the add-observation inputs.
 - **AC3 (R2):** The "OSM tags" section shows exactly the feature's OSM tags from the export, with translated labels when the catalog provides them.
-- **AC4 (R3):** Given the admin exposed `wheelchair` with values `yes`/`no` as a default observation tag, picking it offers a yes/no value dropdown; a key not in the list can be typed free-form.
+- **AC4 (R3):** Observations are free-form key/value pairs; a way's controlled vocabulary offers fixed keys with pickable values, while any other key can be typed free-form.
 - **AC5 (R4):** After a successful save the panel stays open and the editor's saved pairs remain in the Observations section (unapproved).
 - **AC6 (R5):** Given the editor saved `surface=uneven` on a feature, no other user's API response contains it until an admin approves it.
 - **AC7 (R5):** Given an admin approves the editor's `surface=paving_stones` observation, another editor's still-unapproved `surface=asphalt` on the **same node** is removed; the same unapproved pair on a different node is untouched.

@@ -2,7 +2,6 @@
 
 namespace App\Command;
 
-use App\Entity\DefaultObservationTag;
 use App\Entity\RoutePreferenceTag;
 use App\Entity\TagKeyLabel;
 use App\Service\TagKeyLabeler;
@@ -73,12 +72,6 @@ final class SyncTagTranslationsCommand extends Command
             // Stream scalar pairs: imports can contain many distinct tags.
             foreach ($this->manager->createQuery('SELECT t.key, t.value FROM App\\Entity\\Tag t')->toIterable() as $tag) {
                 $addPair($tag['key'], $tag['value'], 'custom');
-            }
-            foreach ($this->manager->getRepository(DefaultObservationTag::class)->findAll() as $tag) {
-                $addKey($tag->getTag(), 'custom');
-                foreach ($tag->getDefaultValues() as $value) {
-                    $addPair($tag->getTag(), $value, 'custom');
-                }
             }
             foreach ($this->manager->getRepository(RoutePreferenceTag::class)->findAll() as $tag) {
                 $addKey($tag->getTag(), 'custom');
