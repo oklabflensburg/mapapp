@@ -124,8 +124,8 @@ legend {
 }
 
 .type-select {
-  flex: 1;
-  min-width: 11rem;
+  flex: 0 1 auto;
+  min-width: 8rem;
 }
 
 .observation-row .p-button {
