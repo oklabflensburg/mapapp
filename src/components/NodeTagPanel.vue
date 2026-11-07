@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { NodeCreationState, NodeCreationInput } from '../map/nodeCreation'
-import { crossSectionRows, crossSectionTags, parseAspectKey, type AspectRow } from '../lib/crossSection'
+import { crossSectionRows, crossSectionTags, isAspectRowEditable, parseAspectKey, type AspectRow } from '../lib/crossSection'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -11,7 +11,7 @@ import Select from 'primevue/select'
 import { useOsmDataStore } from '../stores/osmData'
 import DrawerResizeHandle from './DrawerResizeHandle.vue'
 import CrossSectionComposer from './CrossSectionComposer.vue'
-import { nodeKey, tagValue, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
+import { nodeKey, tagValue, useUserNodesStore, type NodeEditTarget, type RelatedNode, type TagEntry } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
@@ -73,20 +73,38 @@ const isRelationDraft = computed(() => (props.creation?.count ?? 0) > 1)
 const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
   .some(row => !row.key.trim() || !row.value.trim())
   || ((isRelationDraft.value || isRelation.value) && aspectRows.value.some(row => !Object.values(row.values).some(value => value))))
+// The required-fields message only appears once a save was attempted;
+// a freshly added observation row is not an error yet.
+const saveAttempted = ref(false)
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
 
 // Prefer refreshed node details after a parent is edited in this session.
-const relationParentNames = computed(() => {
-  const parents = props.relation?.parents ?? props.relation?.members.flatMap(member =>
-    userNodes.byIdentity.get(nodeKey(member))?.parents ?? []) ?? []
-  return [...new Set(parents.map(parent => {
-    const saved = userNodes.byIdentity.get(nodeKey(parent))
-    return tagValue(saved?.tags, 'name')?.trim() || parent.name?.trim()
-      || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
-  }))]
+const relationParents = computed(() => {
+  const parents = props.relation?.parents
+    ?? props.relation?.members.flatMap(member => userNodes.byIdentity.get(nodeKey(member))?.parents ?? [])
+    ?? []
+  return [...new Map(parents.map(parent => [nodeKey(parent), parent])).values()]
 })
+
+const relationParentName = (parent: RelatedNode): string | undefined => {
+  const saved = userNodes.byIdentity.get(nodeKey(parent))
+  return tagValue(saved?.tags, 'name')?.trim() || parent.name?.trim()
+    || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
+}
+
+const relationParentNames = computed(() => [...new Set(relationParents.value.map(relationParentName))])
+
+// Selecting a relation also shows the parent node's tags (e.g. the street
+// the street part covers): every parent shows its own tags, an OSM parent
+// additionally its original OSM tags.
+const relationParentTagGroups = computed(() => relationParents.value.map(parent => ({
+  key: nodeKey(parent),
+  name: relationParentName(parent) ?? parent.providerNodeId,
+  osmTagEntries: Object.entries(parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId) ?? {} : {}),
+  customTags: userNodes.byIdentity.get(nodeKey(parent))?.tags ?? parent.tags,
+})).filter(group => group.osmTagEntries.length > 0 || group.customTags.length > 0))
 
 // One breadcrumb line names the edited element in its hierarchy context, also
 // while the name is still typed.
@@ -131,6 +149,11 @@ const nodeRelations = computed(() =>
 // Only members with a name are listed; unnamed ones have no display text.
 const namedMembers = computed(() => (props.relation?.members ?? []).filter(member => !!member.name?.trim()))
 
+// The composer hides approved aspects (they show as tag info); without any
+// editable content left, read-only visitors do not see the section at all.
+const hasEditableAspects = computed(() =>
+  aspectRows.value.some(row => isAspectRowEditable(row, catalog.aspectTypes)))
+
 // The observations pairs hold exactly the current user's unapproved tags
 // (the backend hides other users' pending tags), so membership of the pair —
 // not a key comparison against the merged tags list, which can carry several
@@ -166,15 +189,22 @@ function splitRows(node: NonNullable<typeof savedNode.value>): void {
 // Mirrors the node split: approved tags are read-only for editors, and the
 // observations pairs decide which entries are the current user's own pending
 // ones, matched by key and value so several values of a key can coexist.
-// Structured cross-section keys are grouped into the composer instead.
+// Approved structured cross-section keys show as tags too; pending ones are
+// edited only through the composer, which owns the structured draft.
 function splitRelationRows(group: NodeGroup): void {
   aspectRows.value = crossSectionRows(group.tags, group.observations)
   rows.value = []
   observationRows.value = []
   const observationKeys = new Set(group.observations.map((observation) => `${observation.key}\0${observation.value}`))
   for (const { key, value } of group.tags) {
-    if (parseAspectKey(key)) continue
-    if (observationKeys.has(`${key}\0${value}`)) {
+    const observation = observationKeys.has(`${key}\0${value}`)
+    if (parseAspectKey(key)) {
+      if (!observation) {
+        rows.value.push({ key, value })
+      }
+      continue
+    }
+    if (observation) {
       observationRows.value.push({ key, value })
     } else {
       rows.value.push({ key, value })
@@ -186,6 +216,7 @@ function splitRelationRows(group: NodeGroup): void {
 watch(
   [() => props.visible, () => props.node, () => props.relation, () => !!props.creation],
   ([visible, node, relation, creating]) => {
+    saveAttempted.value = false
     if (visible && creating) {
       pendingName.value = ''
       rows.value = []
@@ -198,7 +229,8 @@ watch(
     }
     if (relation && !node) {
       splitRelationRows(relation)
-      if (relation.members.some(member => userNodes.byIdentity.get(nodeKey(member))?.parents.some(parent => parent.provider === 'OSM'))) {
+      if (relation.parents?.some(parent => parent.provider === 'OSM')
+        || relation.members.some(member => userNodes.byIdentity.get(nodeKey(member))?.parents.some(parent => parent.provider === 'OSM'))) {
         void osmData.load()
       }
       return
@@ -217,6 +249,8 @@ watch(
 )
 
 function addObservationRow(): void {
+  // A fresh row is not a validation error yet, so reset the attempt flag.
+  saveAttempted.value = false
   observationRows.value.push({ key: '', value: '' })
 }
 
@@ -304,10 +338,19 @@ function close(): void {
 
 async function save(): Promise<void> {
   if ((!props.node && !props.creation && !props.relation) || hasIncompleteTags.value) {
+    saveAttempted.value = true
     return
   }
   const tags: TagEntry[] = []
-  for (const row of [...rows.value, ...observationRows.value]) {
+  for (const row of rows.value) {
+    const key = row.key.trim()
+    // Approved aspects are read-only tag rows; the composer draft owns the
+    // structured way.* keys on save, so the rows never resubmit them.
+    if (key !== '' && !(isRelation.value && parseAspectKey(key))) {
+      tags.push({ key, value: row.value })
+    }
+  }
+  for (const row of observationRows.value) {
     const key = row.key.trim()
     if (key !== '') {
       tags.push({ key, value: row.value })
@@ -396,8 +439,9 @@ async function save(): Promise<void> {
       </section>
 
       <!-- The relation editor shares the panel style: members on a compact
-           list, then the cross-section composer, then the tag sections.
-           Unnamed members are not listed at all. -->
+           list, then the parent's tag tables and the relation's approved
+           tags, then the cross-section draft. Unnamed members are not
+           listed at all. -->
       <section v-if="isRelation" class="relations-section members-section" :aria-label="t('relationEditor.members')">
         <ul class="member-list">
           <li v-for="member in namedMembers" :key="member.id" class="member-item">
@@ -405,9 +449,38 @@ async function save(): Promise<void> {
           </li>
         </ul>
       </section>
-      <section v-if="isRelation" class="cross-section-section" :aria-label="t('crossSection.title')">
-        <h4 class="section-title">{{ t('crossSection.title') }}</h4>
-        <CrossSectionComposer v-model="aspectRows" :readonly="!auth.canEdit" />
+      <!-- The parent node's tags name the element (e.g. the street) the
+           relation belongs to; OSM parents show their original OSM tags.
+           The parent's name above its tables replaces a section heading. -->
+      <section
+        v-if="isRelation && relationParentTagGroups.length > 0"
+        class="relations-section parent-tags-section"
+        :aria-label="t('relationEditor.parentTags')"
+      >
+        <div v-for="group in relationParentTagGroups" :key="group.key" class="parent-node">
+          <span class="parent-node-name" :title="group.name">{{ group.name }}</span>
+          <div v-if="group.osmTagEntries.length > 0">
+            <details class="collapsible-tags">
+              <summary class="section-title">{{ t('nodeEditor.osmTags') }}</summary>
+              <div class="tag-table-scroll">
+                <table class="tag-table">
+                  <tr v-for="[key, value] in group.osmTagEntries" :key="key">
+                    <th>{{ tagKeyLabels.label(key) }}</th>
+                    <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+          </div>
+          <div v-if="group.customTags.length > 0" class="tag-table-scroll">
+            <table class="tag-table">
+              <tr v-for="(tag, index) in group.customTags" :key="index">
+                <th>{{ tagKeyLabels.label(tag.key) }}</th>
+                <td>{{ tagKeyLabels.valueLabel(tag.key, tag.value) }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
       </section>
 
       <section v-if="!creation && !isRelation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
@@ -435,15 +508,18 @@ async function save(): Promise<void> {
       </section>
 
       <section v-if="osmTagEntries.length > 0" class="osm-tags-section">
-        <h4 class="section-title">{{ t('nodeEditor.osmTags') }}</h4>
-        <div class="tag-table-scroll">
-          <table class="tag-table">
-            <tr v-for="[key, value] in osmTagEntries" :key="key">
-              <th>{{ tagKeyLabels.label(key) }}</th>
-              <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
-            </tr>
-          </table>
-        </div>
+        <!-- Raw OSM tags are secondary, so the section starts collapsed. -->
+        <details class="collapsible-tags">
+          <summary class="section-title">{{ t('nodeEditor.osmTags') }}</summary>
+          <div class="tag-table-scroll">
+            <table class="tag-table">
+              <tr v-for="[key, value] in osmTagEntries" :key="key">
+                <th>{{ tagKeyLabels.label(key) }}</th>
+                <td>{{ tagKeyLabels.valueLabel(key, value) }}</td>
+              </tr>
+            </table>
+          </div>
+        </details>
       </section>
 
       <section class="custom-tags-section">
@@ -460,6 +536,14 @@ async function save(): Promise<void> {
         <p v-if="!creation && (userNodes.saveFailed || nodeGroups.saveFailed)" class="save-error" role="alert">
           {{ t(userNodes.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
         </p>
+      </section>
+
+      <!-- The cross-section draft follows the read-only tag sections: like
+           the observations below, it collects the editor's own pending
+           changes; approved aspects already show in the tag tables above. -->
+      <section v-if="isRelation && (auth.canEdit || hasEditableAspects)" class="cross-section-section" :aria-label="t('crossSection.title')">
+        <h4 class="section-title">{{ t('crossSection.title') }}</h4>
+        <CrossSectionComposer v-model="aspectRows" :readonly="!auth.canEdit" />
       </section>
 
       <section v-if="auth.canEdit || observationRows.length > 0" class="observations-section">
@@ -576,13 +660,14 @@ async function save(): Promise<void> {
     </fieldset>
 
     <template #footer>
-      <p v-if="auth.canEdit && hasIncompleteTags" class="save-error" role="alert">{{ t('nodeEditor.requiredTagFields') }}</p>
+      <!-- Incomplete rows only surface as an error once a save was attempted. -->
+      <p v-if="auth.canEdit && saveAttempted && hasIncompleteTags" class="save-error" role="alert">{{ t('nodeEditor.requiredTagFields') }}</p>
       <Button :label="t(creation ? 'map.create.abort' : 'nodeEditor.cancel')" :disabled="creation?.saving" text severity="secondary" @click="close" />
       <Button
         v-if="auth.canEdit"
         :label="t(creation?.failed ? 'map.create.retry' : 'nodeEditor.save')"
         :loading="creation ? creation.saving : isRelation ? nodeGroups.saving : userNodes.saving"
-        :disabled="hasIncompleteTags || (creation !== null && creation !== undefined && creation.count === 0)"
+        :disabled="creation?.count === 0"
         icon="pi pi-check"
         @click="save"
       />
@@ -630,6 +715,36 @@ async function save(): Promise<void> {
   margin-top: 0.25rem;
 }
 
+/* Collapsible tag tables (native details) start collapsed; the summary
+   reads like a section title with a chevron that turns when expanded. */
+.collapsible-tags summary {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.collapsible-tags summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-tags summary::after {
+  content: '›';
+  line-height: 1;
+  color: var(--p-text-muted-color);
+  transition: rotate 0.15s ease;
+}
+
+.collapsible-tags[open] summary::after {
+  rotate: 90deg;
+}
+
+.collapsible-tags .tag-table-scroll {
+  margin-top: 0.25rem;
+}
+
 .node-relations-section .node-relation {
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
@@ -659,6 +774,18 @@ async function save(): Promise<void> {
   flex-direction: column;
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
+  overflow-wrap: anywhere;
+}
+
+/* One block per parent node: the parent's name above its tag tables. */
+.parent-node {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+.parent-node-name {
+  display: block;
+  color: var(--p-text-muted-color);
   overflow-wrap: anywhere;
 }
 

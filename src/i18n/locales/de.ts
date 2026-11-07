@@ -78,6 +78,7 @@ export default {
   relationEditor: {
     title: 'Knotenbeziehung bearbeiten',
     members: 'Knoten',
+    parentTags: 'Tags des übergeordneten Knotens',
   },
   profile: {
     title: 'Profil',

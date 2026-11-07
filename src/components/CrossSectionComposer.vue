@@ -5,6 +5,7 @@ import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { AspectRow } from '../lib/crossSection'
+import { isAspectRowEditable } from '../lib/crossSection'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 const rows = defineModel<AspectRow[]>({ required: true })
 const props = defineProps<{ readonly?: boolean }>()
@@ -13,6 +14,17 @@ const labels = useTagKeyLabelsStore()
 const { t } = useI18n()
 const types = computed(() => catalog.aspectTypes)
 const typeOptions = computed(() => types.value.map(type => ({ ...type, label: labels.label(type.name) })))
+// Approved aspects show as tag info in the panel, not as locked selects; a
+// row without any editable content left is not rendered at all.
+const visibleRows = computed(() => rows.value
+  .map((row, index) => ({ row, index }))
+  .filter(({ row }) => isAspectRowEditable(row, types.value)))
+// The row's catalog attributes that are still editable; approved ones are
+// covered by the tag table.
+function editableAttributes(row: AspectRow) {
+  return (types.value.find(type => type.name === row.type)?.attributes ?? [])
+    .filter(attribute => !row.approvedKeys.includes(attribute.key))
+}
 const structureLocked = computed(() => props.readonly || rows.value.some(row => row.approvedKeys.length > 0))
 const unavailable = computed(() => catalog.failed || catalog.loading)
 function changeType(row: AspectRow, type: string): void {
@@ -50,7 +62,7 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
     <p v-if="catalog.failed" role="alert">{{ t('crossSection.loadFailed') }}</p>
     <p v-else-if="!catalog.loading && !types.length" role="status">{{ t('crossSection.noTypes') }}</p>
     <Button v-if="!readonly && (catalog.failed || !types.length)" :label="t('crossSection.reload')" :loading="catalog.loading" text @click="catalog.reload()" />
-    <div v-for="(row, index) in rows" :key="`${row.type}-${row.index}`" class="observation">
+    <div v-for="{ row, index } in visibleRows" :key="`${row.type}-${row.index}`" class="observation">
       <label class="type-label">
         {{ t('crossSection.type') }}
         <Select
@@ -64,7 +76,7 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           @change="changeType(row, row.type)"
         />
       </label>
-      <label v-for="attribute in types.find(type => type.name === row.type)?.attributes ?? []" :key="attribute.key">
+      <label v-for="attribute in editableAttributes(row)" :key="attribute.key">
         {{ labels.label(attribute.key) }}
         <Select
           v-model="row.values[attribute.key]"
@@ -72,14 +84,15 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           :options="attribute.values.map(value => ({ value, label: valueLabel(row, attribute.key, value) }))"
           option-label="label"
           option-value="value"
-          :disabled="readonly || row.approvedKeys.includes(attribute.key) || unavailable"
+          :disabled="readonly || unavailable"
           :aria-label="labels.label(attribute.key)"
           show-clear
         />
         <small v-if="row.values[attribute.key] && !attribute.values.includes(row.values[attribute.key]!)">{{ valueLabel(row, attribute.key, row.values[attribute.key]!) }}</small>
       </label>
       <template v-for="(value, key) in row.values" :key="key">
-        <span v-if="!types.find(type => type.name === row.type)?.attributes.some(attribute => attribute.key === key)">{{ labels.label(key) }}: {{ valueLabel(row, key, value) }}</span>
+        <span v-if="!types.find(type => type.name === row.type)?.attributes.some(attribute => attribute.key === key)
+          && !row.approvedKeys.includes(String(key))">{{ labels.label(key) }}: {{ valueLabel(row, key, value) }}</span>
       </template>
       <Button
         v-if="!readonly"

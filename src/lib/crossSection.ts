@@ -1,4 +1,5 @@
 import type { TagEntry } from '../stores/userNodes'
+import type { AspectType } from '../stores/editingCatalog'
 
 export interface AspectRow {
   type: string
@@ -34,4 +35,14 @@ export function crossSectionTags(rows: AspectRow[]): TagEntry[] {
   return rows.flatMap(row => Object.entries(row.values)
     .filter(([, value]) => typeof value === 'string' && value.length > 0)
     .map(([aspect, value]) => ({ key: `way.${row.type}.${row.index}.${aspect}`, value })))
+}
+
+// Whether the composer still shows content for the row: an editable (not
+// yet approved) catalog attribute or a pending value outside the catalog.
+// Fully approved rows appear as tag info in the panel instead.
+export function isAspectRowEditable(row: AspectRow, types: AspectType[]): boolean {
+  const attributes = types.find(type => type.name === row.type)?.attributes ?? []
+  return attributes.some(attribute => !row.approvedKeys.includes(attribute.key))
+    || Object.keys(row.values).some(key => !row.approvedKeys.includes(key)
+      && !attributes.some(attribute => attribute.key === key))
 }

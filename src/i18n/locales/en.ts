@@ -78,6 +78,7 @@ export default {
   relationEditor: {
     title: 'Edit node relation',
     members: 'Nodes',
+    parentTags: 'Parent node tags',
   },
   profile: {
     title: 'Profile',
