@@ -106,6 +106,7 @@ fieldset {
 }
 
 legend {
+  flex-basis: 100%;
   padding: 0 0.25rem;
   font-size: 0.65rem;
   font-weight: 600;
@@ -114,32 +115,37 @@ legend {
   color: var(--p-text-muted-color);
 }
 
-/* The type selector is the row's leading control: it gets the room, the
-   remove action sits next to it, the attribute selects wrap below. */
+/* The observation flows in one row when it fits (type select, remove
+   action and attribute selects share the flex line and wrap only when
+   the viewport runs out of room). */
 .observation-row {
   display: flex;
-  flex-basis: 100%;
   align-items: center;
   gap: 0.25rem;
+  flex: 0 1 auto;
+  min-width: 7rem;
 }
 
 .type-select {
-  flex: 0 1 auto;
-  min-width: 8rem;
+  min-width: 7rem;
 }
 
 .observation-row .p-button {
   width: 1.5rem;
   height: 1.5rem;
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  flex: 1 1 7.5rem;
-  min-width: 6rem;
+  flex: 1 1 5rem;
+  min-width: 4.5rem;
+}
+
+label .p-select {
+  width: 100%;
 }
 
 label small {
