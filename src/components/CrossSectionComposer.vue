@@ -50,12 +50,11 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
     <p v-if="catalog.failed" role="alert">{{ t('crossSection.loadFailed') }}</p>
     <p v-else-if="!catalog.loading && !types.length" role="status">{{ t('crossSection.noTypes') }}</p>
     <Button v-if="!readonly && (catalog.failed || !types.length)" :label="t('crossSection.reload')" :loading="catalog.loading" text @click="catalog.reload()" />
-    <fieldset v-for="(row, index) in rows" :key="`${row.type}-${row.index}`">
-      <legend>{{ t('crossSection.observation', { position: row.index }) }}</legend>
-      <div class="observation-row">
+    <div v-for="(row, index) in rows" :key="`${row.type}-${row.index}`" class="observation">
+      <label class="type-label">
+        {{ t('crossSection.type') }}
         <Select
           v-model="row.type"
-          class="type-select"
           size="small"
           :options="typeOptions"
           option-label="label"
@@ -64,16 +63,7 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           :aria-label="t('crossSection.type')"
           @change="changeType(row, row.type)"
         />
-        <Button
-          v-if="!readonly"
-          icon="pi pi-times"
-          :aria-label="t('crossSection.remove')"
-          :disabled="row.approvedKeys.length > 0 || unavailable"
-          severity="danger"
-          text
-          @click="remove(index)"
-        />
-      </div>
+      </label>
       <label v-for="attribute in types.find(type => type.name === row.type)?.attributes ?? []" :key="attribute.key">
         {{ labels.label(attribute.key) }}
         <Select
@@ -91,49 +81,32 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
       <template v-for="(value, key) in row.values" :key="key">
         <span v-if="!types.find(type => type.name === row.type)?.attributes.some(attribute => attribute.key === key)">{{ labels.label(key) }}: {{ valueLabel(row, key, value) }}</span>
       </template>
-    </fieldset>
+      <Button
+        v-if="!readonly"
+        class="remove-observation"
+        icon="pi pi-times"
+        :aria-label="t('crossSection.remove')"
+        :disabled="row.approvedKeys.length > 0 || unavailable"
+        severity="danger"
+        text
+        @click="remove(index)"
+      />
+    </div>
     <Button v-if="!readonly" :label="t('crossSection.add')" icon="pi pi-plus" :disabled="!types.length || unavailable" text @click="add()" />
   </div>
 </template>
 <style scoped>
-fieldset {
+/* No fieldset box around an observation: it flows in one slim row
+   whenever it fits (labelled type select, attribute selects, remove
+   action) and wraps only when the panel runs out of width. */
+.observation {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  margin: 0.375rem 0;
-  padding: 0.375rem;
-  border: 1px solid var(--p-content-border-color);
-}
-
-legend {
-  flex-basis: 100%;
-  padding: 0 0.25rem;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--p-text-muted-color);
-}
-
-/* The observation flows in one row when it fits (type select, remove
-   action and attribute selects share the flex line and wrap only when
-   the viewport runs out of room). */
-.observation-row {
-  display: flex;
-  align-items: center;
   gap: 0.25rem;
-  flex: 0 1 auto;
-  min-width: 7rem;
-}
-
-.type-select {
-  min-width: 7rem;
-}
-
-.observation-row .p-button {
-  width: 1.5rem;
-  height: 1.5rem;
-  flex: 0 0 auto;
+  margin: 0.25rem 0;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+  align-items: flex-end;
 }
 
 label {
@@ -142,6 +115,8 @@ label {
   gap: 0.25rem;
   flex: 1 1 5rem;
   min-width: 4.5rem;
+  font-size: 0.65rem;
+  color: var(--p-text-muted-color);
 }
 
 label .p-select {
@@ -151,6 +126,12 @@ label .p-select {
 label small {
   font-size: 0.65rem;
   color: var(--p-text-muted-color);
+}
+
+.remove-observation {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
 }
 
 span {
