@@ -84,7 +84,6 @@ export default {
   relationEditor: {
     title: 'Knotenbeziehung bearbeiten',
     members: 'Knoten',
-    memberCount: '{count} Knoten',
     empty: 'Noch keine Tags. Füge den ersten hinzu.',
   },
   profile: {

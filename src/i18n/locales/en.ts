@@ -84,7 +84,6 @@ export default {
   relationEditor: {
     title: 'Edit node relation',
     members: 'Nodes',
-    memberCount: '{count} nodes',
     empty: 'No tags yet. Add your first one.',
   },
   profile: {

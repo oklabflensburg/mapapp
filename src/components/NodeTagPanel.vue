@@ -106,8 +106,7 @@ const nodeRelations = computed(() =>
   props.node ? nodeGroups.byMember.get(nodeKey(props.node)) ?? [] : [])
 
 function relationLabel(group: NodeGroup): string {
-  const count = t('relationEditor.memberCount', { count: group.members.length })
-  return group.name ? `${group.name} · ${count}` : count
+  return group.name ?? ''
 }
 
 // The observations pairs hold exactly the current user's unapproved tags
@@ -341,7 +340,6 @@ async function save(): Promise<void> {
       </section>
 
       <section v-if="!creation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
-        <h4 class="section-title">{{ t('nodeEditor.nodeRelations') }}</h4>
         <div v-for="group in nodeRelations" :key="group.id" class="node-relation">
           <div class="node-relation-heading">
             <span>{{ relationLabel(group) }}</span>

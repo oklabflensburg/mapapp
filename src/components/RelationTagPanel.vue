@@ -171,8 +171,6 @@ async function save(): Promise<void> {
       <p class="empty-hint">{{ parentNames.join(', ') || t('map.create.noParent') }}</p>
     </section>
     <section v-if="group" class="members-section" :aria-label="t('relationEditor.members')">
-      <h4 class="section-title">{{ t('relationEditor.members') }}</h4>
-      <p class="empty-hint">{{ t('relationEditor.memberCount', { count: group.members.length }) }}</p>
       <ul class="member-list">
         <li v-for="member in group.members" :key="member.id" class="member-item">
           <span>{{ member.name || member.providerNodeId }}</span>
