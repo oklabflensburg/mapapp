@@ -127,6 +127,9 @@ const headerLabel = computed(() => {
 const nodeRelations = computed(() =>
   props.node ? nodeGroups.byMember.get(nodeKey(props.node)) ?? [] : [])
 
+// Only members with a name are listed; unnamed ones have no display text.
+const namedMembers = computed(() => (props.relation?.members ?? []).filter(member => !!member.name?.trim()))
+
 // The observations pairs hold exactly the current user's unapproved tags
 // (the backend hides other users' pending tags), so membership of the pair —
 // not a key comparison against the merged tags list, which can carry several
@@ -396,13 +399,12 @@ async function save(): Promise<void> {
       </section>
 
       <!-- The relation editor shares the panel style: members on a compact
-           list, then the cross-section composer, then the tag sections. -->
+           list, then the cross-section composer, then the tag sections.
+           Unnamed members are not listed at all. -->
       <section v-if="isRelation" class="relations-section members-section" :aria-label="t('relationEditor.members')">
         <ul class="member-list">
-          <!-- Only member names are shown; unnamed members appear as a
-               neutral marker instead of their generated provider id. -->
-          <li v-for="member in relation?.members" :key="member.id" class="member-item">
-            <span :class="{ 'member-unnamed': !member.name }">{{ member.name || '·' }}</span>
+          <li v-for="member in namedMembers" :key="member.id" class="member-item">
+            <span>{{ member.name }}</span>
           </li>
         </ul>
       </section>
@@ -686,10 +688,6 @@ async function save(): Promise<void> {
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
   overflow-wrap: anywhere;
-}
-
-.member-unnamed {
-  color: var(--p-text-muted-color);
 }
 
 /* Fixed layout keeps the key/value columns aligned across all tag tables. */

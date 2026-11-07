@@ -171,8 +171,8 @@ try {
   await page.mouse.click(mid.x, mid.y)
   const relationDrawer = page.locator('.p-drawer').filter({ hasText: 'Hochallee north part' })
   await expect(relationDrawer).toBeVisible()
-  // The members section lists both nodes without a heading or count line.
-  await expect(relationDrawer.getByRole('region', { name: 'Nodes', exact: true }).locator('.member-item')).toHaveCount(2)
+  // Members without names (only generated ids) are not listed at all.
+  await expect(relationDrawer.getByRole('region', { name: 'Nodes', exact: true }).locator('.member-item')).toHaveCount(0)
   await relationDrawer.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(page.locator('.p-drawer')).toBeHidden()
 
