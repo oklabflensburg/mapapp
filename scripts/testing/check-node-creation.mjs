@@ -374,8 +374,8 @@ try {
   const crossStreetRequests = nodeRequests.slice(crossStreetStart)
   assert.deepEqual(crossStreetRequests[1], crossStreetRequests[0], 'retry retains the original parent')
   assert.deepEqual(crossStreetRequests.slice(1).map(node => node.parent.providerNodeId), ['w-street-a', 'w-street-a', 'w-street-b', 'w-street-b'])
-  const parentsSection = page.getByRole('region', { name: 'Parents', exact: true })
-  await expect(parentsSection).toHaveText('ParentsStreet Alpha, Street Beta')
+  // The relation's parents sit in the headline breadcrumb, not a section.
+  await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta')
   const crossStreetGroup = groups.at(-1)
   await closeEditor()
   await page.reload()
@@ -385,7 +385,7 @@ try {
   await page.mouse.click(memberPoint.x, memberPoint.y)
   await page.getByRole('button', { name: 'Edit relation', exact: true }).click()
   await expect(page.locator('.p-drawer')).toHaveCount(1)
-  await expect(parentsSection).toHaveText('ParentsStreet Alpha, Street Beta')
+  await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta')
   assert.equal(crossStreetGroup.members.length, 4)
   await closeEditor()
 

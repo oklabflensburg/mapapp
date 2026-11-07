@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { NodeCreationState, NodeCreationInput } from '../map/nodeCreation'
-import type { AspectRow } from '../lib/crossSection'
+import { crossSectionRows, crossSectionTags, parseAspectKey, type AspectRow } from '../lib/crossSection'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -28,6 +28,7 @@ interface TagRow {
 const props = defineProps<{
   visible: boolean
   node: NodeEditTarget | null
+  relation?: NodeGroup | null
   creation?: NodeCreationState | null
 }>()
 
@@ -35,6 +36,7 @@ const emit = defineEmits<{
   (event: 'update:visible', visible: boolean): void
   (event: 'edit-relation', group: NodeGroup): void
   (event: 'create', input: NodeCreationInput): void
+  (event: 'saved-relation', group: NodeGroup): void
 }>()
 
 const { t } = useI18n()
@@ -47,6 +49,10 @@ const defaultObservationTags = useDefaultObservationTagsStore()
 
 const catalog = useEditingCatalogStore()
 const osmData = useOsmDataStore()
+
+// One panel covers creating nodes, editing a node, and editing the node
+// relation a node belongs to; the view keeps the targets mutually exclusive.
+const isRelation = computed(() => !props.creation && !!props.relation && !props.node)
 const isWay = computed(() => {
   if (props.node?.provider !== 'OSM' || !/^w\d+$/.test(props.node.providerNodeId)) return false
   const feature = osmData.data?.features.find(entry => String(entry.feature.id) === props.node!.providerNodeId)?.feature
@@ -59,22 +65,37 @@ watch(() => props.visible, visible => { if (visible) void catalog.load() }, { im
 const pendingName = ref('')
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
-// Cross-section draft for the relation that two or more placed nodes form;
-// the create panel is the relation editor while the batch is being placed.
+// Cross-section draft; while creating it belongs to the relation that two or
+// more placed nodes form, and while editing it mirrors the relation's tags.
 const aspectRows = ref<AspectRow[]>([])
 const isRelationDraft = computed(() => (props.creation?.count ?? 0) > 1)
 const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
   .some(row => !row.key.trim() || !row.value.trim())
-  || (isRelationDraft.value && aspectRows.value.some(row => !Object.values(row.values).some(value => value))))
+  || ((isRelationDraft.value || isRelation.value) && aspectRows.value.some(row => !Object.values(row.values).some(value => value))))
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
 
-// One breadcrumb line replaces the former parents/children section: it names
-// the node in its hierarchy context, also while the name is still typed.
+// Prefer refreshed node details after a parent is edited in this session.
+const relationParentNames = computed(() => {
+  const parents = props.relation?.parents ?? props.relation?.members.flatMap(member =>
+    userNodes.byIdentity.get(nodeKey(member))?.parents ?? []) ?? []
+  return [...new Set(parents.map(parent => {
+    const saved = userNodes.byIdentity.get(nodeKey(parent))
+    return tagValue(saved?.tags, 'name')?.trim() || parent.name?.trim()
+      || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
+      || parent.providerNodeId
+  }))]
+})
+
+// One breadcrumb line names the edited element in its hierarchy context, also
+// while the name is still typed.
 const parentLabel = computed(() => {
   if (props.creation) {
     return props.creation.parentNames.filter(Boolean).join(', ')
+  }
+  if (isRelation.value) {
+    return relationParentNames.value.join(', ')
   }
   const parent = savedNode.value?.parents[0]
   if (!parent) {
@@ -88,6 +109,9 @@ const nodeLabel = computed(() => {
   if (props.creation) {
     return pendingName.value
   }
+  if (isRelation.value) {
+    return props.relation?.name?.trim() ?? ''
+  }
   return (tagValue(savedNode.value?.tags, 'name')?.trim()
     || (props.node?.provider === 'OSM' ? osmData.tagsById?.get(props.node.providerNodeId)?.name?.trim() : undefined)
     || '')
@@ -95,7 +119,7 @@ const nodeLabel = computed(() => {
 const headerLabel = computed(() => {
   const parts = [parentLabel.value, nodeLabel.value].map(part => part.trim()).filter(Boolean)
   if (parts.length === 0) {
-    return t(props.creation ? 'map.create.add' : 'nodeEditor.title')
+    return t(props.creation ? 'map.create.add' : isRelation.value ? 'relationEditor.title' : 'nodeEditor.title')
   }
   return parts.join(' > ')
 })
@@ -104,10 +128,6 @@ const headerLabel = computed(() => {
 // node or OSM feature is looked up by its provider identity.
 const nodeRelations = computed(() =>
   props.node ? nodeGroups.byMember.get(nodeKey(props.node)) ?? [] : [])
-
-function relationLabel(group: NodeGroup): string {
-  return group.name ?? ''
-}
 
 // The observations pairs hold exactly the current user's unapproved tags
 // (the backend hides other users' pending tags), so membership of the pair —
@@ -141,10 +161,29 @@ function splitRows(node: NonNullable<typeof savedNode.value>): void {
   }
 }
 
+// Mirrors the node split: approved tags are read-only for editors, and the
+// observations pairs decide which entries are the current user's own pending
+// ones, matched by key and value so several values of a key can coexist.
+// Structured cross-section keys are grouped into the composer instead.
+function splitRelationRows(group: NodeGroup): void {
+  aspectRows.value = crossSectionRows(group.tags, group.observations)
+  rows.value = []
+  observationRows.value = []
+  const observationKeys = new Set(group.observations.map((observation) => `${observation.key}\0${observation.value}`))
+  for (const { key, value } of group.tags) {
+    if (parseAspectKey(key)) continue
+    if (observationKeys.has(`${key}\0${value}`)) {
+      observationRows.value.push({ key, value })
+    } else {
+      rows.value.push({ key, value })
+    }
+  }
+}
+
 // Placement counts and save progress must not reset the editor draft.
 watch(
-  [() => props.visible, () => props.node, () => !!props.creation],
-  ([visible, node, creating]) => {
+  [() => props.visible, () => props.node, () => props.relation, () => !!props.creation],
+  ([visible, node, relation, creating]) => {
     if (visible && creating) {
       pendingName.value = ''
       rows.value = []
@@ -152,7 +191,17 @@ watch(
       aspectRows.value = []
       return
     }
-    if (!visible || !node) {
+    if (!visible) {
+      return
+    }
+    if (relation && !node) {
+      splitRelationRows(relation)
+      if (relation.members.some(member => userNodes.byIdentity.get(nodeKey(member))?.parents.some(parent => parent.provider === 'OSM'))) {
+        void osmData.load()
+      }
+      return
+    }
+    if (!node) {
       return
     }
     const existing = userNodes.byIdentity.get(nodeKey(node))
@@ -169,7 +218,7 @@ function addObservationRow(): void {
   observationRows.value.push({ key: '', value: '' })
 }
 
-// The admin-exposed default tags not yet on this node (neither as an
+// The admin-exposed default tags not yet on the element (neither as an
 // approved tag nor as an observation), offered as a searchable dropdown.
 // The dropdown shows the readable label; the raw key is the value that is
 // added as an observation row. Searching matches both.
@@ -256,7 +305,7 @@ function close(): void {
 }
 
 async function save(): Promise<void> {
-  if ((!props.node && !props.creation) || hasIncompleteTags.value) {
+  if ((!props.node && !props.creation && !props.relation) || hasIncompleteTags.value) {
     return
   }
   const tags: TagEntry[] = []
@@ -272,7 +321,7 @@ async function save(): Promise<void> {
   const draft = {
     tags,
     translationLocale: settings.locale,
-    translations: observationRows.value.flatMap((row) => {
+    translations: isRelation.value ? [] : observationRows.value.flatMap((row) => {
       const key = row.key.trim()
       if (!key) return []
       const keyDraft = row.translations?.[translationId(row, 'key')]
@@ -289,6 +338,16 @@ async function save(): Promise<void> {
   }
   if (props.creation) {
     emit('create', { ...draft, name: pendingName.value, crossSection: aspectRows.value })
+    return
+  }
+  if (isRelation.value) {
+    // The relation save carries the structured cross-section draft as
+    // ordinary tags; relation tags currently have no translation proposals.
+    const saved = await nodeGroups.save({ id: props.relation!.id, tags: [...tags, ...crossSectionTags(aspectRows.value)] })
+    if (saved) {
+      splitRelationRows(saved)
+      emit('saved-relation', saved)
+    }
     return
   }
   const saved = await userNodes.save({
@@ -339,10 +398,25 @@ async function save(): Promise<void> {
         <CrossSectionComposer v-model="aspectRows" />
       </section>
 
-      <section v-if="!creation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
+      <!-- The relation editor shares the panel style: members on a compact
+           list, then the cross-section composer, then the tag sections. -->
+      <section v-if="isRelation" class="relations-section members-section" :aria-label="t('relationEditor.members')">
+        <ul class="member-list">
+          <li v-for="member in relation?.members" :key="member.id" class="member-item">
+            <span>{{ member.name || member.providerNodeId }}</span>
+            <small>{{ member.provider }}<template v-if="member.name"> · {{ member.providerNodeId }}</template></small>
+          </li>
+        </ul>
+      </section>
+      <section v-if="isRelation" class="cross-section-section" :aria-label="t('crossSection.title')">
+        <h4 class="section-title">{{ t('crossSection.title') }}</h4>
+        <CrossSectionComposer v-model="aspectRows" :readonly="!auth.canEdit" />
+      </section>
+
+      <section v-if="!creation && !isRelation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
         <div v-for="group in nodeRelations" :key="group.id" class="node-relation">
           <div class="node-relation-heading">
-            <span>{{ relationLabel(group) }}</span>
+            <span>{{ group.name ?? '' }}</span>
             <Button
               v-if="auth.canEdit"
               :aria-label="t('nodeEditor.editRelation')"
@@ -386,13 +460,12 @@ async function save(): Promise<void> {
             </tr>
           </table>
         </div>
-        <p v-if="!creation && userNodes.saveFailed" class="save-error" role="alert">
+        <p v-if="!creation && (userNodes.saveFailed || nodeGroups.saveFailed)" class="save-error" role="alert">
           {{ t(userNodes.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
         </p>
       </section>
 
       <section v-if="auth.canEdit || observationRows.length > 0" class="observations-section">
-        <h4 class="section-title">{{ t('nodeEditor.observations') }}</h4>
         <template v-if="auth.canEdit">
           <p v-if="isWay && catalog.failed" role="alert">{{ t('crossSection.loadFailed') }}
             <Button :label="t('crossSection.retry')" text @click="catalog.load()" />
@@ -413,31 +486,76 @@ async function save(): Promise<void> {
             :aria-label="t('nodeEditor.suggestedTags')"
             @update:model-value="addSuggestedObservation"
           />
-          <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
-            <div class="observation-field">
-              <InputText
-                :model-value="translationText(row, 'key')"
-                :placeholder="t('nodeEditor.keyTranslation')"
-                :aria-label="t('nodeEditor.keyTranslation')"
-                @update:model-value="editTranslation(row, 'key', $event)"
-              />
-              <InputText
-                :model-value="row.key"
-                @update:model-value="editRawTag(row, 'key', $event)"
-                :readonly="isWay || (isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined)"
-                :invalid="!row.key.trim()"
-                :placeholder="t('nodeEditor.key')"
-                :aria-label="t('nodeEditor.key')"
-                class="raw-tag-input"
+          <!-- Node and creation rows carry translation proposals; relation
+               rows are plain key/value pairs (no translation API yet). -->
+          <template v-if="!isRelation">
+            <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
+              <div class="observation-field">
+                <InputText
+                  :model-value="translationText(row, 'key')"
+                  :placeholder="t('nodeEditor.keyTranslation')"
+                  :aria-label="t('nodeEditor.keyTranslation')"
+                  @update:model-value="editTranslation(row, 'key', $event)"
+                />
+                <InputText
+                  :model-value="row.key"
+                  @update:model-value="editRawTag(row, 'key', $event)"
+                  :readonly="isWay || (isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined)"
+                  :invalid="!row.key.trim()"
+                  :placeholder="t('nodeEditor.key')"
+                  :aria-label="t('nodeEditor.key')"
+                  class="raw-tag-input"
+                />
+              </div>
+              <div class="observation-field">
+                <InputText
+                  :model-value="translationText(row, 'value')"
+                  :placeholder="t('nodeEditor.valueTranslation')"
+                  :aria-label="t('nodeEditor.valueTranslation')"
+                  @update:model-value="editTranslation(row, 'value', $event)"
+                />
+                <Select
+                  v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
+                  :model-value="row.value === '' ? null : row.value"
+                  :invalid="!row.value.trim()"
+                  :options="defaultValuesFor(row.key).map(value => ({ value, label: tagKeyLabels.valueLabel(row.key, value) }))"
+                  option-label="label"
+                  option-value="value"
+                  :placeholder="t('nodeEditor.value')"
+                  :aria-label="t('nodeEditor.value')"
+                  :editable="!isWay"
+                  show-clear
+                  size="small"
+                  class="raw-tag-input"
+                  @update:model-value="editRawTag(row, 'value', $event)"
+                />
+                <InputText v-else :model-value="row.value" :invalid="!row.value.trim()" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
+              </div>
+              <Button
+                :aria-label="t('nodeEditor.removeTag')"
+                icon="pi pi-times"
+                text
+                severity="danger"
+                @click="removeObservationRow(index)"
               />
             </div>
-            <div class="observation-field">
+          </template>
+          <template v-else>
+            <div v-for="(row, index) in observationRows" :key="index" class="tag-row">
+              <!-- Keys picked from the suggested-tag dropdown are fixed: the
+                   translated label shows read-only (raw key in the tooltip),
+                   the free-form rows keep the editable key input. -->
               <InputText
-                :model-value="translationText(row, 'value')"
-                :placeholder="t('nodeEditor.valueTranslation')"
-                :aria-label="t('nodeEditor.valueTranslation')"
-                @update:model-value="editTranslation(row, 'value', $event)"
+                v-if="isDefaultObservationTag(row.key)"
+                :model-value="tagKeyLabels.label(row.key)"
+                :title="row.key"
+                readonly
+                class="tag-key"
               />
+              <InputText v-else v-model="row.key" :invalid="!row.key.trim()" :placeholder="t('nodeEditor.key')" :aria-label="t('nodeEditor.key')" class="tag-key" />
+              <!-- Keys with admin-configured values pick from a dropdown, but a
+                   user may also propose an own value by typing it (editable
+                   input); clearing it empties the value again. -->
               <Select
                 v-if="isDefaultObservationTag(row.key) && defaultValuesFor(row.key).length > 0"
                 :model-value="row.value === '' ? null : row.value"
@@ -447,22 +565,21 @@ async function save(): Promise<void> {
                 option-value="value"
                 :placeholder="t('nodeEditor.value')"
                 :aria-label="t('nodeEditor.value')"
-                :editable="!isWay"
+                :editable="true"
                 show-clear
-                size="small"
-                class="raw-tag-input"
+                class="tag-value"
                 @update:model-value="editRawTag(row, 'value', $event)"
               />
-              <InputText v-else :model-value="row.value" :invalid="!row.value.trim()" @update:model-value="editRawTag(row, 'value', $event)" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="raw-tag-input" />
+              <InputText v-else v-model="row.value" :invalid="!row.value.trim()" :placeholder="t('nodeEditor.value')" :aria-label="t('nodeEditor.value')" class="tag-value" />
+              <Button
+                :aria-label="t('nodeEditor.removeTag')"
+                icon="pi pi-times"
+                text
+                severity="danger"
+                @click="removeObservationRow(index)"
+              />
             </div>
-            <Button
-              :aria-label="t('nodeEditor.removeTag')"
-              icon="pi pi-times"
-              text
-              severity="danger"
-              @click="removeObservationRow(index)"
-            />
-          </div>
+          </template>
           <Button
             v-if="!isWay"
             :aria-label="t('nodeEditor.addTag')"
@@ -492,7 +609,7 @@ async function save(): Promise<void> {
       <Button
         v-if="auth.canEdit"
         :label="t(creation?.failed ? 'map.create.retry' : 'nodeEditor.save')"
-        :loading="creation ? creation.saving : userNodes.saving"
+        :loading="creation ? creation.saving : isRelation ? nodeGroups.saving : userNodes.saving"
         :disabled="hasIncompleteTags || (creation !== null && creation !== undefined && creation.count === 0)"
         icon="pi pi-check"
         @click="save"
@@ -530,6 +647,7 @@ async function save(): Promise<void> {
 
 .osm-tags-section,
 .relations-section,
+.cross-section-section,
 .observations-section,
 .custom-tags-section {
   margin-bottom: 0.5rem;
@@ -556,6 +674,26 @@ async function save(): Promise<void> {
 .node-relation-heading .p-button {
   width: 1.5rem;
   height: 1.5rem;
+}
+
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.member-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--p-content-border-color);
+  overflow-wrap: anywhere;
+}
+
+.member-item small {
+  color: var(--p-text-muted-color);
+  font-size: 0.65rem;
 }
 
 /* Fixed layout keeps the key/value columns aligned across all tag tables. */
@@ -630,6 +768,20 @@ async function save(): Promise<void> {
   font-size: 0.65rem;
   padding: 0.1875rem 0.375rem;
   color: var(--p-text-muted-color);
+}
+
+.tag-key {
+  flex: 1;
+}
+
+/* The translated label of a suggested tag reads as inert, not editable. */
+.tag-key[readonly] {
+  color: var(--p-text-muted-color);
+  background: var(--p-content-background);
+}
+
+.tag-value {
+  flex: 1.5;
 }
 
 .save-error {

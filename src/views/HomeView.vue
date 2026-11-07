@@ -6,7 +6,6 @@ import OsmMap from '../components/OsmMap.vue'
 import UserBar from '../components/UserBar.vue'
 import type { MapStatus } from '../map/geolocation'
 import NodeTagPanel from '../components/NodeTagPanel.vue'
-import RelationTagPanel from '../components/RelationTagPanel.vue'
 import type { NodeGroup } from '../stores/nodeGroups'
 import { nodeKey, type NodeEditTarget } from '../stores/userNodes'
 const { t } = useI18n()
@@ -63,32 +62,29 @@ function deselectNode(): void {
   mapRef.value?.clearSelection()
 }
 
+function deselectRelation(): void {
+  relationTarget.value = null
+  mapRef.value?.clearSelection()
+}
+
+// One panel edits nodes and relations alike; node and relation targets swap
+// within it without a second view.
 function onPanelVisible(visible: boolean): void {
   if (!visible) {
     mapRef.value?.abortCreation()
     deselectNode()
+    deselectRelation()
   }
 }
 
-// Editing a relation closes the node panel and highlights its whole area on
-// the map. Re-selecting the open relation keeps the panel's unsaved edits.
+// Editing a relation re-targets the shared panel and highlights its whole
+// area on the map. Re-selecting the open relation keeps unsaved edits.
 function onEditRelation(group: NodeGroup): void {
   if (!relationTarget.value || relationTarget.value.id !== group.id) {
     relationTarget.value = group
   }
   editTarget.value = null
   mapRef.value?.selectRelation(group)
-}
-
-function deselectRelation(): void {
-  relationTarget.value = null
-  mapRef.value?.clearSelection()
-}
-
-function onRelationPanelVisible(visible: boolean): void {
-  if (!visible) {
-    deselectRelation()
-  }
 }
 </script>
 
@@ -106,18 +102,14 @@ function onRelationPanelVisible(visible: boolean): void {
       @deselect-relation="deselectRelation"
     />
     <NodeTagPanel
-      :visible="editTarget !== null || !!mapRef?.creation"
+      :visible="editTarget !== null || relationTarget !== null || !!mapRef?.creation"
       :creation="mapRef?.creation ?? null"
       :node="editTarget"
+      :relation="relationTarget"
       @update:visible="onPanelVisible"
       @create="mapRef?.savePendingNodes($event)"
       @edit-relation="onEditRelation"
-    />
-    <RelationTagPanel
-      :visible="relationTarget !== null"
-      :group="relationTarget"
-      @update:visible="onRelationPanelVisible"
-      @saved="relationTarget = $event"
+      @saved-relation="relationTarget = $event"
     />
   </main>
 </template>

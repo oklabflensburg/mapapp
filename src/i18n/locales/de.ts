@@ -34,7 +34,6 @@ export default {
       pendingDialog: 'Platzierte Knoten',
       name: 'Name',
       namePlaceholder: 'Name',
-      noParent: 'Keiner',
       save: 'Speichern',
       abort: 'Abbrechen',
       failed: 'Die Knoten konnten nicht gespeichert werden.',
@@ -84,7 +83,6 @@ export default {
   relationEditor: {
     title: 'Knotenbeziehung bearbeiten',
     members: 'Knoten',
-    empty: 'Noch keine Tags. Füge den ersten hinzu.',
   },
   profile: {
     title: 'Profil',

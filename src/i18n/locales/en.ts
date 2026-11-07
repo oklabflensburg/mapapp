@@ -34,7 +34,6 @@ export default {
       pendingDialog: 'Placed nodes',
       name: 'Name',
       namePlaceholder: 'Name',
-      noParent: 'None',
       save: 'Save',
       abort: 'Abort',
       failed: 'Could not save the nodes.',
@@ -84,7 +83,6 @@ export default {
   relationEditor: {
     title: 'Edit node relation',
     members: 'Nodes',
-    empty: 'No tags yet. Add your first one.',
   },
   profile: {
     title: 'Profile',
