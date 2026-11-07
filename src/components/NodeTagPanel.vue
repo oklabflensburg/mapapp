@@ -9,10 +9,9 @@ import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import { useOsmDataStore } from '../stores/osmData'
-import ParentNodeTags from './ParentNodeTags.vue'
 import DrawerResizeHandle from './DrawerResizeHandle.vue'
 import CrossSectionComposer from './CrossSectionComposer.vue'
-import { nodeKey, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
+import { nodeKey, tagValue, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
@@ -70,10 +69,36 @@ const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.valu
 
 const osmTagEntries = computed(() => Object.entries(props.node?.osmTags ?? {}))
 const savedNode = computed(() => props.node ? userNodes.byIdentity.get(nodeKey(props.node)) : undefined)
-const relationGroups = computed(() => [
-  { label: 'nodeEditor.parents', nodes: savedNode.value?.parents ?? [] },
-  { label: 'nodeEditor.children', nodes: savedNode.value?.children ?? [] },
-])
+
+// One breadcrumb line replaces the former parents/children section: it names
+// the node in its hierarchy context, also while the name is still typed.
+const parentLabel = computed(() => {
+  if (props.creation) {
+    return props.creation.parentNames.filter(Boolean).join(', ')
+  }
+  const parent = savedNode.value?.parents[0]
+  if (!parent) {
+    return ''
+  }
+  return parent.name?.trim()
+    || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
+    || parent.providerNodeId
+})
+const nodeLabel = computed(() => {
+  if (props.creation) {
+    return pendingName.value
+  }
+  return (tagValue(savedNode.value?.tags, 'name')?.trim()
+    || (props.node?.provider === 'OSM' ? osmData.tagsById?.get(props.node.providerNodeId)?.name?.trim() : undefined)
+    || '')
+})
+const headerLabel = computed(() => {
+  const parts = [parentLabel.value, nodeLabel.value].map(part => part.trim()).filter(Boolean)
+  if (parts.length === 0) {
+    return t(props.creation ? 'map.create.add' : 'nodeEditor.title')
+  }
+  return parts.join(' > ')
+})
 
 // Relations (e.g. tagged parts of a road) that contain the selected node; the
 // node or OSM feature is looked up by its provider identity.
@@ -289,15 +314,21 @@ async function save(): Promise<void> {
     :close-on-escape="!creation?.saving"
     :modal="false"
     :dismissable="false"
-    :header="t(creation ? 'map.create.add' : 'nodeEditor.title')"
     @update:visible="emit('update:visible', $event)"
   >
+    <template #header>
+      <div class="panel-title" :title="headerLabel">{{ headerLabel }}</div>
+    </template>
     <DrawerResizeHandle />
     <div v-if="creation" role="form" :aria-label="t('map.create.pendingDialog')" class="creation-details">
       <p role="status">{{ t('map.create.placed', { count: creation.count }) }}</p>
-      <label for="pending-node-name">{{ t('map.create.name') }}</label>
-      <InputText id="pending-node-name" v-model="pendingName" :disabled="creation.saving" :placeholder="t('map.create.namePlaceholder')" />
-      <p class="empty-hint">{{ t('nodeEditor.parents') }}: {{ creation.parentNames.join(', ') || t('map.create.noParent') }}</p>
+      <InputText
+        id="pending-node-name"
+        v-model="pendingName"
+        :disabled="creation.saving"
+        :aria-label="t('map.create.name')"
+        :placeholder="t('map.create.namePlaceholder')"
+      />
       <p v-if="creation.failed" class="save-error" role="alert">{{ t('map.create.failed') }}</p>
     </div>
     <fieldset :disabled="creation?.saving" class="editor-fields">
@@ -307,21 +338,6 @@ async function save(): Promise<void> {
       <section v-if="creation && isRelationDraft" class="cross-section-section" :aria-label="t('crossSection.title')">
         <h4 class="section-title">{{ t('crossSection.title') }}</h4>
         <CrossSectionComposer v-model="aspectRows" />
-      </section>
-      <section v-if="savedNode && !creation" class="relations-section" :aria-label="t('nodeEditor.relations')">
-        <h4 class="section-title">{{ t('nodeEditor.relations') }}</h4>
-        <template v-for="group in relationGroups" :key="group.label">
-          <div v-if="group.nodes.length" class="relation-group">
-            <h5 class="relation-heading">{{ t(group.label) }}</h5>
-            <ul class="relation-list">
-              <li v-for="related in group.nodes" :key="related.id" class="relation-item">
-                <span>{{ related.name || related.providerNodeId }}</span>
-                <small>{{ related.provider }}<template v-if="related.name"> · {{ related.providerNodeId }}</template></small>
-                <ParentNodeTags v-if="group.label === 'nodeEditor.parents'" :parent="related" />
-              </li>
-            </ul>
-          </div>
-        </template>
       </section>
 
       <section v-if="!creation" class="relations-section node-relations-section" :aria-label="t('nodeEditor.nodeRelations')">
@@ -505,11 +521,6 @@ async function save(): Promise<void> {
   margin: 0;
 }
 
-.creation-details label {
-  font-size: 0.7rem;
-  color: var(--p-text-muted-color);
-}
-
 .section-title {
   margin: 0 0 0.25rem;
   font-size: 0.65rem;
@@ -529,35 +540,6 @@ async function save(): Promise<void> {
 /* A small gap sets the read-only custom tag table apart from the OSM tags above. */
 .custom-tags-section {
   margin-top: 0.25rem;
-}
-
-.relation-heading {
-  margin: 0.375rem 0 0.125rem;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--p-text-muted-color);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.relation-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.relation-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid var(--p-content-border-color);
-  overflow-wrap: anywhere;
-}
-
-.relation-item small {
-  color: var(--p-text-muted-color);
-  font-size: 0.65rem;
 }
 
 .node-relations-section .node-relation {

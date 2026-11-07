@@ -19,9 +19,19 @@
   flex-shrink: 0;
 }
 
-.map-editor .p-drawer-header .p-drawer-title {
+.map-editor .p-drawer-header .p-drawer-title,
+.map-editor .panel-title {
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+/* The breadcrumb header line: parent name > current node name, one line. */
+.map-editor .panel-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .map-editor .p-drawer-header .p-button {

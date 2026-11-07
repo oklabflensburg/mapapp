@@ -68,7 +68,8 @@ try {
     child.parents = [summary(parent)]
     const { page, requests } = await setup([child, parent])
     await expectChild(page)
-    await expect(page.getByRole('region', { name: 'Relations', exact: true })).toContainText('Saved parent')
+    // The parent shows in the headline breadcrumb instead of a relations list.
+    await expect(page.locator('.p-drawer-header')).toContainText('Saved parent')
     await closeEditor(page)
     // A parent edited after its child must not become the topmost marker.
     parent.tags = [{ key: 'name', value: 'Recently edited parent' }]
@@ -92,7 +93,7 @@ try {
   const { page } = await setup([child], [building])
   async function highlightParent() {
     await page.mouse.click(700, 400)
-    await expect(page.locator('.p-drawer')).toContainText('OSM parent')
+    await expect(page.locator('.p-drawer-header')).toContainText('OSM parent')
     await expect(page.getByPlaceholder('Value', { exact: true })).toHaveCount(0)
   }
   await highlightParent()

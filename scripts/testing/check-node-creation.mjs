@@ -142,10 +142,11 @@ try {
   await page.mouse.click(400, 280)
   await expect(dialog).toBeVisible()
   await expect(dialog).toContainText('1 nodes placed')
-  await expect(dialog).toContainText('None')
+  // Without parents or a typed name the headline stays at its fallback.
+  await expect(page.locator('.p-drawer-header')).toContainText('Add node')
   await page.mouse.click(430, 300)
   await expect(dialog).toContainText('2 nodes placed')
-  await expect(dialog).toContainText('None')
+  await expect(page.locator('.p-drawer-header')).toContainText('Add node')
   assert.equal(nodeRequests.length, 0, 'placed nodes are not saved yet')
 
   // Escape discards the placed nodes and leaves edit mode.
@@ -279,10 +280,11 @@ try {
   }])
   await closeEditor()
 
-  // Clicking a feature places a child of that feature.
+  // Clicking a feature places a child of that feature; its parent name
+  // shows in the headline breadcrumb.
   await add.click()
   await page.mouse.click(644, 400)
-  await expect(dialog).toContainText('Fixture point')
+  await expect(page.locator('.p-drawer-header')).toContainText('Fixture point')
   await save.click()
   await expect(dialog).toBeHidden()
   await expect(page.locator('.p-drawer')).toBeVisible()
@@ -358,13 +360,15 @@ try {
     await page.mouse.click(point.x, point.y)
   }
   await expect(dialog).toContainText('4 nodes placed')
-  await expect(dialog).toContainText('Parents: Street Alpha, Street Beta')
+  // The headline breadcrumb shows the parent names, then the typed name.
+  await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta')
   await dialog.getByLabel('Name', { exact: true }).fill('Cross-street area')
+  await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta > Cross-street area')
   const crossStreetStart = nodeRequests.length
   failNext = true
   await save.click()
   await expect(page.getByRole('alert')).toContainText('Could not save')
-  await expect(dialog).toContainText('Parents: Street Alpha, Street Beta')
+  await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta > Cross-street area')
   await page.getByRole('button', { name: 'Retry', exact: true }).click()
   await expect(dialog).toBeHidden()
   const crossStreetRequests = nodeRequests.slice(crossStreetStart)
@@ -409,7 +413,8 @@ try {
   await page.screenshot({ path: '/tmp/map-bottom-editor-mobile.png' })
   await save.click()
   await expect(dialog).toBeHidden()
-  await expect(page.locator('.p-drawer')).toContainText('Edit node')
+  // The saved node's own name replaces the "Edit node" fallback headline.
+  await expect(page.locator('.p-drawer-header')).toContainText('Mobile node')
   assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'surface', value: 'smooth' }, { key: 'name', value: 'Mobile node' }])
   assert.equal(nodeRequests.at(-1).translations[0].valueTranslation, 'Smooth')
   await closeEditor()
