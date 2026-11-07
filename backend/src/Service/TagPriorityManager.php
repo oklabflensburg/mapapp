@@ -48,6 +48,7 @@ final class TagPriorityManager
         private readonly EntityManagerInterface $entityManager,
         private readonly UserTagPriorityRepository $userTagPriorityRepository,
         private readonly RoutePreferenceTagRepository $routePreferenceTagRepository,
+        private readonly StreetPartAspects $aspects,
     ) {
     }
 
@@ -58,7 +59,7 @@ final class TagPriorityManager
      */
     public function tags(): array
     {
-        return $this->routePreferenceTagRepository->findAllTagKeys();
+        return array_values(array_unique([...$this->routePreferenceTagRepository->findAllTagKeys(), ...array_keys($this->aspects->preferences())]));
     }
 
     /**

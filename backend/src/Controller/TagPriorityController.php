@@ -22,12 +22,12 @@ final class TagPriorityController extends AbstractController
     }
 
     #[Route('/api/route-preference-tags', name: 'app_route_preference_tags', methods: ['GET'])]
-    public function tags(): JsonResponse
+    public function tags(\App\Service\StreetPartAspects $aspects): JsonResponse
     {
         // The tags an admin exposed as route preference settings; public so
         // the settings page can render the choices for anonymous visitors
         // too (their priorities stay in localStorage).
-        return $this->json(['tags' => $this->tagPriorityManager->tags()]);
+        return $this->json(['tags' => $this->tagPriorityManager->tags(), 'labels' => $aspects->preferences()]);
     }
 
     #[Route('/api/tag-priorities', name: 'app_tag_priorities_show', methods: ['GET'])]

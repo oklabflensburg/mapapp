@@ -1,0 +1,14 @@
+{
+  "wayVocabularies": {
+    "footway": [
+      { "key": "surface", "values": ["asphalt", "paving_stones", "gravel"] },
+      { "key": "tactile_paving", "values": ["yes", "no"] },
+      { "key": "note", "values": [] }
+    ],
+    "residential": [
+      { "key": "surface", "values": ["asphalt", "concrete"] },
+      { "key": "lit", "values": ["yes", "no"] }
+    ],
+    "motorway": []
+  }
+}

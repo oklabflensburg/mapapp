@@ -926,9 +926,9 @@
       </segment>
     </unit>
     <unit id="k_3ac156eead4a" name="key:parking" tag:valueRefs="t_294d1206cbdb54ed16bf1b0961283aeb51d89a4b7086a5e69f74bf4cfdf7f213 t_408a7a5f8bbe16125904aceef110cb41a328ccb9fe53c5f45cdf3bcf34008223 t_486ba4ef56b19240b966ee990efe66a3b0257d30a2a5da7a3d2b0588a301bba4 t_6cfe3f61156a4a6939a9fa2faf490cfe9ebc63803e76e0df7ef78866fbdd558d t_714e0ecac22f705de206535885c0b5bfd5471bebdeb371c34f5040594f42b22e t_832a12aae495e437396372c86ba0cf762864c7cf5d4b2e17254627b341cfe2d4" tag:category="osm" tag:ignore="false">
-      <segment>
+      <segment state="translated">
         <source>parking</source>
-        <target>parking</target>
+        <target>Parking</target>
       </segment>
     </unit>
     <unit id="k_4698bac7fdbf" name="key:short_name" tag:valueRefs="t_1b297e6c18320c65ca12a6c40bcced1158bc057ededcfd2ac4e18ef1aab78dde t_1db78081a57ccee9520b07d52d147d18ac3a5d2a389d908b29bc015fe4584c45 t_1f364fbcdf00ca70fd6d0b50316abb10207b667e0bd0be3070bf44d2103d6734 t_21bf9ac49f4f864e8d55c471b8cf6a428f550978fedfc9246d955ff2b12738d4 t_3c7b7ba01794ea1e3b4dbc28fc470e8193b4cc0510cf7a9b6edd35e2629aafb5 t_4fa0ac5b6965e20b72ba21451d56f2681aaf1236ddc77d0904b827967fe38fb3 t_5213bf03f5712014e3c2bcc3d60265636df010cc542636a707b528b1015f8084 t_539bd21bc32d352bf33f99b549c5fbd3b77fb9ea2136f7cee71a395421337925 t_5d054042157c4edc53c48f98ac27e92cbb2b0f7e06a9c578d2a502a42258d46f t_68c7f058ffaf87de6aea3bf8f9428cec6ed9a124eec9a74bcd33cbc36c9f4360 t_719566390bc46e23ee804446b4c54daba058e2f2b07f5197897e70b4ad80a46c t_7820fd64f47b99a509358e270a5f7a99262bc3088e14768be8ff9d3459c9a6e1 t_7bcc244904b32e1fd67fc42f98087567555a25c9eceb1e75d63379f059cf48f9 t_82cb3760c74e33f82b9dd416433df34b1a69e3b8e56f5382b4a6a35204f6ddb6 t_8fa55bfa33a4a0381d9ed8bc41f1497b86b709b221d454e89b5c610264a4e528 t_97b2298a5934c010ea3cf9b38c8fe270d53b5dd587d379bfe423dd442e4cdb6c t_98204a2edd1c400e7184f192bbe050f4b21c571f0e05ae9d8c0e3ef11be3c607 t_a5d9c4fb09559bcaafefbf7bebdbd069c1313410c154fc3bda7033704c7cfeb6 t_a6e06a258d40908f046535d328ed0c21d41587e346a0d739b3f75866e3eb5929 t_a7f01d471ce56a284a319527005ccf31c8452babdd3f94573b7595e0e871492b t_aa5ef8d0a44325ecb4cb606d89b1a6fa4c2c364aabf3e648e469c866dfa71699 t_b2de9d9175320c6fe56a90fbed060d966af43c1f33dfe901f677913f39d5346b t_b7f161687749f45aa0aba4214d91947e10a9e11909fe0924a5ec2cd8e6aaf577 t_bd57d2bb829ea7129eeb51eda5b7eed3af7dccd3583cd6172f1f3e4b355112f3 t_c0101a1d24cd9837604df92550b6459e06d452489501e8b193301d087aad58a5 t_c300b277e45ad16bc6eabf60c24d7b35cd19c157c796dd6f2c744bfcc9e1fce2 t_c3ee8f2ce3a4183db720236c944f719d2d4611d5f502b3fb52d3725d48747357 t_cafe7597dd36cb344cd7c96b6626eb6ad66f6018480a2066645a5b1aeafc3ac9 t_e1d66b60a023c92a6546a08af2344bf5e39c42f57079af86c6b6bf0f7a7e7914 t_ea476dcc0ccbc0a3220530583ae35ddb0e53656f437c6a1b4c6d678432222d7a t_eb707a2dc5875cc9df3f2fd8910a884d75b9a5fc3c0674b2c24e09f3e2b3df4a t_f32cd7329705291fd248f3eaa74ca5dbc40e449d5875c86ca47f43fafd84c55d" tag:category="osm" tag:ignore="false">
@@ -1250,9 +1250,9 @@
       </segment>
     </unit>
     <unit id="k_d302e976c9dd" name="key:surface" tag:valueRefs="t_0688adaffd20d65d02e23f8dda720dfbacba728f95595b725ad2b5aab3646afd t_0a6debad89d4387dbe8888f4fa06fcb94355989ccc1cded196a1e0d485e1ede2 t_11bf1a664c3b7f51afc865d70dcf3103322ff5a7816683640881dc4602e0d549 t_140e9e1a7292406d7a46349ad7b005f9a00acb8fa61480c2e19a3a993eba447d t_1437ded044b97e81770f97e5ee8660574bea7c3df69be21c1a9f077d7af32946 t_1a1b269026cb7c72a460c2ade4f60adab3847af724ecde439c3872a0266999c2 t_218f3190bdcac835f03f89eee5473f11daeb724e5e72b86b2fbdd726b4a3d8a3 t_23c057b2f9a5dc308f64103061e69e60f126869b9f5489393973c2d7be0808ef t_27e19e84f57b650d2f8057abf10f1ccf3559ca87f1464c595825c7f192a2d179 t_2dde23afa2ebbd7b4a1478a8db9e521a8329c0f5b63155e97dcbe5aa572b3791 t_3d75ecdcdbec5c897a8ab8815a75975fbe4e76e682bedbad0ed0e9602f9aa9ec t_3ed4f74a7bf8cf51be0901f5717c4c1f124fbb5ab6404cc82309bfe51552abb8 t_4c8858bc7fe7eeddb6a90765a335e70b62855b100a3811a8e80a57ee712aa88b t_515af94579cfc5be5a56f70af2720bd95882eda341165b5b1bce751d9a28be05 t_5d738c369d34aa53fa74f023d16de415b8ba2e301d79d02607b1b4c67fb95757 t_618aa4b04748ffd379fbdb05bbfb27229126d834068be612f42f0dda35eba58f t_67bea562d1cb0a955c92833b906f259ca09dbe44f21dee3f2cfed5caed083fb7 t_6b14ab60f4ef6f5975805cce66a2899a1707345ac83eda1d15b9c115246df9a0 t_7139d0d9b9603ca46a2052b62ce5dfdc028f0ca63dcb076d51962cae58e58850 t_7a71ce641ee47fb433f61aa9d6d4db7296364ec8a43a27778eb7bc3ddd3442af t_7ae029a10ff46a125402a1629a11298c1c0722502fd420b33b005a1f14ed61d6 t_8e3ef5a0efc7e2110f97006be63095357ec2459d0cad69840ef5a21fdf0a60a3 t_b0daddc203f188d986bb490a5e8f19b8a93c9d816783499bcff9b4f341558d4a t_b206a1f8d73816d866bef0f359ef7757f9aabbf4a2636a7d8a7ffdfbe9f41ac7 t_b703fd01b891061621a0075732a18a36b55fe754cb65c8d55354ac992dc912a1 t_c8a086b63ae2deb68e537b23cf9be52d54ad831b4ce6b818aa54243505f819de t_e2f3b95fd5a9c547d04241cf706019585c5c6b2c7f2084f5a28bcc9adbfa7db1 t_e5fa250eea697730cc93a6058f4faf1938306ded244e3a2baaa7bbda0e051256 t_ea9a5fc6cee1e24969ad026bbf9621699ed6450f744386811357e3267efcec58 t_ec6ebdd38855dae90a7f3cc3e4bd0d3aa544fa6ed8ebeea9ab742ccadab17630 t_f1c63d052152b406d0ac656292912bafcf238d376af4527d14712f0d242a21c1 t_f2709d6e5ed028b3abce7916cd344895473eb0cb13b3ed55a36867ed2f49182d t_f2b506b55ec103d850222470143a233e8f22db6e83dadfc069223cf5e79f605d t_f455baa026a8e035dcaee71b43ddbd919c4b7416b5541d3664413209604c42e6 t_fd999fa27dc85f266a53f2b8f835ec2ea2f6e875e9b952a75e4119fd4936479f" tag:category="osm" tag:ignore="false">
-      <segment>
+      <segment state="translated">
         <source>surface</source>
-        <target>surface</target>
+        <target>Surface</target>
       </segment>
     </unit>
     <unit id="k_abbf9730a688" name="key:parcel_mail_in" tag:valueRefs="t_11a201c69763dc41b41164cecb2ae2185816d5c3b652ea85a965465769bfc665 t_4231a4ab983f9bbf46904fba2b531227f059d03f29cf6c87139901b40ec6503d" tag:category="osm" tag:ignore="false">
@@ -68820,9 +68820,9 @@ Errichtet A.D. 1888</source>
       </segment>
     </unit>
     <unit id="t_ea9a5fc6cee1e24969ad026bbf9621699ed6450f744386811357e3267efcec58" name="value:[&quot;surface&quot;,&quot;asphalt&quot;]" tag:keyRef="k_d302e976c9dd" tag:category="osm" tag:ignore="false">
-      <segment state="initial">
+      <segment state="translated">
         <source>asphalt</source>
-        <target/>
+        <target>Asphalt</target>
       </segment>
     </unit>
     <unit id="t_11bf1a664c3b7f51afc865d70dcf3103322ff5a7816683640881dc4602e0d549" name="value:[&quot;surface&quot;,&quot;paved&quot;]" tag:keyRef="k_d302e976c9dd" tag:category="osm" tag:ignore="false">
@@ -68832,9 +68832,9 @@ Errichtet A.D. 1888</source>
       </segment>
     </unit>
     <unit id="t_3ed4f74a7bf8cf51be0901f5717c4c1f124fbb5ab6404cc82309bfe51552abb8" name="value:[&quot;surface&quot;,&quot;paving_stones&quot;]" tag:keyRef="k_d302e976c9dd" tag:category="osm" tag:ignore="false">
-      <segment state="initial">
+      <segment state="translated">
         <source>paving_stones</source>
-        <target/>
+        <target>Paving stones</target>
       </segment>
     </unit>
     <unit id="t_c8a086b63ae2deb68e537b23cf9be52d54ad831b4ce6b818aa54243505f819de" name="value:[&quot;surface&quot;,&quot;sand&quot;]" tag:keyRef="k_d302e976c9dd" tag:category="osm" tag:ignore="false">
@@ -78935,13 +78935,13 @@ Errichtet A.D. 1888</source>
         <target/>
       </segment>
     </unit>
-    <unit id="t_e8498698b750bab2cf3c4837a8454658a6dbbd0cbc85424dfac5f13ace34fc51" name="key:lanes" tag:ignore="false" tag:category="osm" tag:valueRefs="t_09c661df98b61ffa6128da4294b461783852f9f6f7a9ba8c48e1de980e7ebd8b t_12d664ca1250c48eb167bf72fc102f90bda9f311785caf5880048718da3ed71b t_1e74922f7747716c37b3dea5584320c00f6b994754d908323d0fe580fa62d5bc t_88277769699fadbeb725911a35207d0167ce64ddd0ec7272df9e711bb77adf3f t_aaa58e512312db8151b803be063bd52fa9c18c71d76056e3f38bf99008d68c81 t_c71c794de964e30db02d5c3b1753e17ad975a9ffa4cd9345dc8d50a8bfe00f97 t_f15a4088dc64ff00321f456b0b412ac47bb054eb3a27148b6c98fc03fa64e1c3">
+    <unit id="t_e8498698b750bab2cf3c4837a8454658a6dbbd0cbc85424dfac5f13ace34fc51" name="key:lanes" tag:ignore="false" tag:category="osm" tag:valueRefs="t_09c661df98b61ffa6128da4294b461783852f9f6f7a9ba8c48e1de980e7ebd8b t_12d664ca1250c48eb167bf72fc102f90bda9f311785caf5880048718da3ed71b t_1e74922f7747716c37b3dea5584320c00f6b994754d908323d0fe580fa62d5bc t_88277769699fadbeb725911a35207d0167ce64ddd0ec7272df9e711bb77adf3f t_aaa58e512312db8151b803be063bd52fa9c18c71d76056e3f38bf99008d68c81 t_c71c794de964e30db02d5c3b1753e17ad975a9ffa4cd9345dc8d50a8bfe00f97 t_dc8bc872f97ad6ac9c318eeef5201f27f205954e22e37fb204a824eeb084ac19 t_f15a4088dc64ff00321f456b0b412ac47bb054eb3a27148b6c98fc03fa64e1c3">
       <notes>
         <note>Tag key: lanes</note>
       </notes>
-      <segment state="initial">
+      <segment state="translated">
         <source>lanes</source>
-        <target/>
+        <target>Lanes</target>
       </segment>
     </unit>
     <unit id="t_ce026d005bed4e43f8a339cab181d43607587a7e371101daa50f97a5a86115d1" name="key:lanes:backward" tag:ignore="false" tag:category="osm" tag:valueRefs="t_1f39f717189fc9b1b357fc02309f1d80975ed58b26c446702e68eb4ce485635d t_268406cd649c3c878ca05a2f32aa49f87e479774faf7372af89eef0c2b6a4fda t_cc13ce0b23ee02f03f6684ccf71f6f823308895b594460237bef5f24fae1d476 t_dbfbfc09470334ff59f49023daa7994c00402ac761d20e5b11e5bf9cc98fdd58">
@@ -83903,13 +83903,13 @@ Errichtet A.D. 1888</source>
         <target/>
       </segment>
     </unit>
-    <unit id="t_810f240f6b1a3be5c7355865169773943f7acd6e7a1ef437bac663418623c31d" name="key:width" tag:ignore="false" tag:category="osm" tag:valueRefs="t_061c7e5733052e192a793306f242514a30d3795eb022dfe9b922522766ce2ce0 t_06f26f8e02e5f5cbe8ee35be852aaefc13ec1c69ee5116836ce80fbc9b44261a t_07ac4442e3e47289b35265bd66fea49b139ea64c3e11c749c20444e963c74dea t_09c44414d7065de0cf7979bb951df1c865515008ac7e91d0322edfe2363a9439 t_0b7d45db48a988855e5a35cfc40c75454c63897d566f0531aa66ee3af6428ed6 t_0c7df7028f743260a0419d94a4d325018215ae13236d8e947e3088696639e94d t_0f60dcee5144d2fe2a8472ee02613181c1dfc35e9f44e80c15fbbb8816b298a5 t_1223199b077e7df743a9efae136b93b4e0d3f5cc47173fa03c659d3b3608521c t_13844832eda5deea402d62d20d6d1d3ef8fc143820fa50e4829ba889154ce6d2 t_144ac57177fa577ba7e75368e39ea25c5b63702c085cf3479c607018eeb2c3df t_169466a294502cdc352c0260c4271862910186404423d37e7d683a2be9812cdc t_1e86a8fac3a37b140952b12ed9af8756cd7cb827ed93aef297f7c570a3edec47 t_28a4a07cd5fe41953de4e14a15f5ad0a23be6a17649855192cb894144aedf9bd t_305e3fc5d29a6d476b386a9e83022519c0dc029e370443489457e9360bb94a87 t_30ce57df0a7163ed2cee8dd514218c1ec547390269963e146d3ff04a7b1fffec t_3107faf5192459c3b553ec3a177fe27cea965f590a98fdfff075a4ba41fb40e9 t_336b361023d00fdb3f6ef1b8d428f4fc29ced6d4f55012734c71595c34225cd1 t_35bc442c6bf21e3a875e24a10f750f25ef46b0df4ec9b576b188d3d76678e6a1 t_383163a25a91b664fc2780467ee0b272c0a539fdaef73466d32ee4fc8f1afa65 t_38b2c68f48d3931668fd4163ba6f44fc0c177b8f18f45975576c4d3ea0c3c3ea t_3aa26bc65b519b96bb72105942aaa763ef37fab3b000a06cfdd1c136547fc070 t_3e5b73d84f3147e4bc5bfd74ed2cfc37a7615dca4a11bcbaa2bf0c3448871493 t_3e70e3bed6739b4add9637ea2e798d4c0699019e4eec582ac4b468ae2edfe4e8 t_44bc4e8bd7c87be36c98bcd7ea7bdd09a1c85f3ad8f3d5e6b1ea047b11e66f01 t_469a717098b790cbb86b398dea66a18f948cff4562ee4a0cd22a550db517a2f2 t_4d59eda83366309f59b9d64cfe58843287d2244a7549be93906ffd5acc16294e t_506c4d3422309c7b0ab2085a52ab2a2b749e5a72222719a14621e08419064fef t_54c2d7a5714999e1fcfa218a47be1f5103dcc61ac313a053afc34fdb20a0d193 t_57ecd2ebffb268408ba0cd67bb483a25984cdf89c6b20fdb0f3afdea90c8d0fa t_64bdc7d8bff886ee16a3db790701af234c5c778fc09899a4b91c864968813175 t_672781f950d0425a1df1318736b0d253c208d4ecb6218a6e9b944805d6006ad6 t_679c63b773949391405865b069f808e3601097a2ff747d95282a8c1eb29986b7 t_69926dc9f1dab3c74246eb5121ed6c0d9f94b45f88117828ac522d14047c46fd t_71f8696e9b9cf8653e6bb216f4f672c0155291e224804f7b94c6929de14ac8aa t_74573c6473062fc19a5462bce0c034720d8be7ecbee266247784bf89dcc1cbc9 t_83a42b9cea05baa8850269c9ebf1a4fef6e5e739c4c77f0917ca7b2831bd59ed t_849e490e06e4f1f36133604a642e492b2e4ac68e9a8fc70dbd6f8a099f10e39c t_8c906cd47f51c10262b5b919899db5579f3d6854cb03febe44c693ca1b1f2eaa t_9042a3a2ef39b2e206fb467b61c13d1d2f155705b415d2c829bac4603ee0826c t_9b9ec810fc56a1ea159192fb978fb42b6c45a7d80a72d06685db1e1f30cdd9fa t_a5d87983643639bb755e06bc20ab203573f5889ad4a861fc2c45a867ae47c6dc t_a607adc6e4b391e56a3d3246e03a4e87ee5ab0237329f27a40859c875e32f055 t_afbb1f9896349596c4f041c1e42069e4228eb1b1511cc2770c5a93f54c7d4b47 t_b17c620f23f239231cd90419c9aac4d8c7d0d4b8b312c100d53897d5183f1bac t_b22333fd6e1ab07e9e51c84e9fa947fec8f112f19c1ae401cd02a0b5f9523473 t_b42392592a6f5c920ac8b78966cdde78f36b1fcf010b2d8bb0e1cd558b955a2b t_b5ab82a0dcd1c9f07ddc2afdbddd978111e8f627597c0398b48209a5e9e29cf8 t_b694c8dc9f84ac18a6dd752cac75223f907c55e36f572b0ff8f159b17cc09a8b t_ba1230ce1cdde3f76795ac8b1d92b378028b09b0db9cf1bf5effb8cad3066030 t_bc60995d9857f1510ea793dbe8e3d86dea65fa2b5f51d77473b7b9338c8c9e40 t_bf8d1361aab0b7a4d72a6bb1e59d13a1bcc821f093944351400bb02fce1ce849 t_c0216161c17881311a00ebdc4af3bcbc5489edf0f188a69373d02bbe79f44b6c t_c1767bc4cbbe0ce717f7fe21d59bab158be000ba04f4a64460e3b25e9181605c t_c4328f9d2d6e06f49aaee2cc15b8d7f5fef8f16ba9cee2f610721889ed871559 t_d3997f8e3604879dcb44131e6922b299721405fb3f22a42e1f3e0fb84840fe32 t_d429056fec45aa1ecdf371afc433ccf2ead17a44137158aaa37275bae6c9b621 t_d49df932ba636bc5b47858e096d83eb6b38346f5573f3c280095bfed76f3e083 t_d4f4870be8a481410336055037e2f74999c8db3163408b2e8317243dda4f3b97 t_d61314d7c66042defc00bb0bacf3b3c7572757189c48d264bd61055b479e7241 t_deb813e3f7dd4b77c13592846a2cc643bd28e0d9be70f0a2e18977c63674a6e6 t_e613f969c9ccba8a43f7f289d2cc66feb4b837357ab7621f5a85cf906e622051 t_e9e8fda1c7addaf6d76b785054ff363e0cfa024c97736f024a2f3f281ad4025d t_eb38ab7db10d8701bc73dbfefefc52f2562692a444a6b13bf9757af0a1a8d412 t_ed403936cdf472f2b3afffc9d98dab5d69962a27cacd7dee73916a8bdefa5441 t_f22d0d95e753915b2b364e62f566075165461f956cdda1a5742bfe63ede571bb t_f58a7e397773a5e056261d3e2e93b3ec3fc5bc5e2fb67aa71570b572db0f39ab t_f7ad6fc1a6c8f6ce5df7067d75393669598f227686409414485604ac1b9c4a42 t_f84e3fb8343f8339efe06b9254b73ab9e6a841b7ab22661d2dd5435c06d18d35 t_f9d9077b48d061e7d27f8d4efbf959bb0624eb5abfafb8d783db9b79de788c8b t_fc547a65494d530b686ada048ff2ecba59e6bab45ae39207d56a2fbaf78804b9 t_ff47f0a04eca6dd4bf305d04075c8183012b79967465a2b8d0f636e878b69b17">
+    <unit id="t_810f240f6b1a3be5c7355865169773943f7acd6e7a1ef437bac663418623c31d" name="key:width" tag:ignore="false" tag:category="osm" tag:valueRefs="t_061c7e5733052e192a793306f242514a30d3795eb022dfe9b922522766ce2ce0 t_06f26f8e02e5f5cbe8ee35be852aaefc13ec1c69ee5116836ce80fbc9b44261a t_07ac4442e3e47289b35265bd66fea49b139ea64c3e11c749c20444e963c74dea t_09c44414d7065de0cf7979bb951df1c865515008ac7e91d0322edfe2363a9439 t_0b7d45db48a988855e5a35cfc40c75454c63897d566f0531aa66ee3af6428ed6 t_0c7df7028f743260a0419d94a4d325018215ae13236d8e947e3088696639e94d t_0f60dcee5144d2fe2a8472ee02613181c1dfc35e9f44e80c15fbbb8816b298a5 t_1223199b077e7df743a9efae136b93b4e0d3f5cc47173fa03c659d3b3608521c t_13844832eda5deea402d62d20d6d1d3ef8fc143820fa50e4829ba889154ce6d2 t_144ac57177fa577ba7e75368e39ea25c5b63702c085cf3479c607018eeb2c3df t_169466a294502cdc352c0260c4271862910186404423d37e7d683a2be9812cdc t_1e86a8fac3a37b140952b12ed9af8756cd7cb827ed93aef297f7c570a3edec47 t_28a4a07cd5fe41953de4e14a15f5ad0a23be6a17649855192cb894144aedf9bd t_305e3fc5d29a6d476b386a9e83022519c0dc029e370443489457e9360bb94a87 t_30ce57df0a7163ed2cee8dd514218c1ec547390269963e146d3ff04a7b1fffec t_3107faf5192459c3b553ec3a177fe27cea965f590a98fdfff075a4ba41fb40e9 t_336b361023d00fdb3f6ef1b8d428f4fc29ced6d4f55012734c71595c34225cd1 t_35bc442c6bf21e3a875e24a10f750f25ef46b0df4ec9b576b188d3d76678e6a1 t_383163a25a91b664fc2780467ee0b272c0a539fdaef73466d32ee4fc8f1afa65 t_38b2c68f48d3931668fd4163ba6f44fc0c177b8f18f45975576c4d3ea0c3c3ea t_3aa26bc65b519b96bb72105942aaa763ef37fab3b000a06cfdd1c136547fc070 t_3e5b73d84f3147e4bc5bfd74ed2cfc37a7615dca4a11bcbaa2bf0c3448871493 t_3e70e3bed6739b4add9637ea2e798d4c0699019e4eec582ac4b468ae2edfe4e8 t_44bc4e8bd7c87be36c98bcd7ea7bdd09a1c85f3ad8f3d5e6b1ea047b11e66f01 t_469a717098b790cbb86b398dea66a18f948cff4562ee4a0cd22a550db517a2f2 t_4d59eda83366309f59b9d64cfe58843287d2244a7549be93906ffd5acc16294e t_506c4d3422309c7b0ab2085a52ab2a2b749e5a72222719a14621e08419064fef t_54c2d7a5714999e1fcfa218a47be1f5103dcc61ac313a053afc34fdb20a0d193 t_57ecd2ebffb268408ba0cd67bb483a25984cdf89c6b20fdb0f3afdea90c8d0fa t_64bdc7d8bff886ee16a3db790701af234c5c778fc09899a4b91c864968813175 t_672781f950d0425a1df1318736b0d253c208d4ecb6218a6e9b944805d6006ad6 t_679c63b773949391405865b069f808e3601097a2ff747d95282a8c1eb29986b7 t_69926dc9f1dab3c74246eb5121ed6c0d9f94b45f88117828ac522d14047c46fd t_70b2d689f467c00fd60dbd7a2875744fbc609a0a282244e76dd3987450666415 t_71f8696e9b9cf8653e6bb216f4f672c0155291e224804f7b94c6929de14ac8aa t_74573c6473062fc19a5462bce0c034720d8be7ecbee266247784bf89dcc1cbc9 t_83a42b9cea05baa8850269c9ebf1a4fef6e5e739c4c77f0917ca7b2831bd59ed t_849e490e06e4f1f36133604a642e492b2e4ac68e9a8fc70dbd6f8a099f10e39c t_8c906cd47f51c10262b5b919899db5579f3d6854cb03febe44c693ca1b1f2eaa t_9042a3a2ef39b2e206fb467b61c13d1d2f155705b415d2c829bac4603ee0826c t_9ab4035d448c4c048f0aac3a59e5111968ea36793e1534d44010849f671f6fe0 t_9b9ec810fc56a1ea159192fb978fb42b6c45a7d80a72d06685db1e1f30cdd9fa t_a5d87983643639bb755e06bc20ab203573f5889ad4a861fc2c45a867ae47c6dc t_a607adc6e4b391e56a3d3246e03a4e87ee5ab0237329f27a40859c875e32f055 t_afbb1f9896349596c4f041c1e42069e4228eb1b1511cc2770c5a93f54c7d4b47 t_b17c620f23f239231cd90419c9aac4d8c7d0d4b8b312c100d53897d5183f1bac t_b22333fd6e1ab07e9e51c84e9fa947fec8f112f19c1ae401cd02a0b5f9523473 t_b42392592a6f5c920ac8b78966cdde78f36b1fcf010b2d8bb0e1cd558b955a2b t_b5ab82a0dcd1c9f07ddc2afdbddd978111e8f627597c0398b48209a5e9e29cf8 t_b694c8dc9f84ac18a6dd752cac75223f907c55e36f572b0ff8f159b17cc09a8b t_ba1230ce1cdde3f76795ac8b1d92b378028b09b0db9cf1bf5effb8cad3066030 t_bc60995d9857f1510ea793dbe8e3d86dea65fa2b5f51d77473b7b9338c8c9e40 t_bf8d1361aab0b7a4d72a6bb1e59d13a1bcc821f093944351400bb02fce1ce849 t_c0216161c17881311a00ebdc4af3bcbc5489edf0f188a69373d02bbe79f44b6c t_c1767bc4cbbe0ce717f7fe21d59bab158be000ba04f4a64460e3b25e9181605c t_c4328f9d2d6e06f49aaee2cc15b8d7f5fef8f16ba9cee2f610721889ed871559 t_d3997f8e3604879dcb44131e6922b299721405fb3f22a42e1f3e0fb84840fe32 t_d429056fec45aa1ecdf371afc433ccf2ead17a44137158aaa37275bae6c9b621 t_d49df932ba636bc5b47858e096d83eb6b38346f5573f3c280095bfed76f3e083 t_d4f4870be8a481410336055037e2f74999c8db3163408b2e8317243dda4f3b97 t_d61314d7c66042defc00bb0bacf3b3c7572757189c48d264bd61055b479e7241 t_deb813e3f7dd4b77c13592846a2cc643bd28e0d9be70f0a2e18977c63674a6e6 t_e613f969c9ccba8a43f7f289d2cc66feb4b837357ab7621f5a85cf906e622051 t_e9bfd3fe5e4ce7406a0547b0e94eb4bdf8b6f6d8bf0cef7395fa4fd788a3791e t_e9e8fda1c7addaf6d76b785054ff363e0cfa024c97736f024a2f3f281ad4025d t_eb38ab7db10d8701bc73dbfefefc52f2562692a444a6b13bf9757af0a1a8d412 t_ed403936cdf472f2b3afffc9d98dab5d69962a27cacd7dee73916a8bdefa5441 t_f22d0d95e753915b2b364e62f566075165461f956cdda1a5742bfe63ede571bb t_f58a7e397773a5e056261d3e2e93b3ec3fc5bc5e2fb67aa71570b572db0f39ab t_f7ad6fc1a6c8f6ce5df7067d75393669598f227686409414485604ac1b9c4a42 t_f84e3fb8343f8339efe06b9254b73ab9e6a841b7ab22661d2dd5435c06d18d35 t_f9d9077b48d061e7d27f8d4efbf959bb0624eb5abfafb8d783db9b79de788c8b t_fc547a65494d530b686ada048ff2ecba59e6bab45ae39207d56a2fbaf78804b9 t_ff47f0a04eca6dd4bf305d04075c8183012b79967465a2b8d0f636e878b69b17">
       <notes>
         <note>Tag key: width</note>
       </notes>
-      <segment state="initial">
+      <segment state="translated">
         <source>width</source>
-        <target/>
+        <target>Width</target>
       </segment>
     </unit>
     <unit id="t_bcd07a668efe1b1f9813e21e315eddf9988edbf403d360d057444654f80fdbab" name="key:wiki:symbol" tag:ignore="false" tag:category="osm" tag:valueRefs="t_1c8225769cb9d6e3596efcef730048daeb49ed21338a716736142b8f1c6177fe t_715711ec6c927f2577b3ad1c6191f425389df844a910c6d862892bc99f0756e5 t_879e23665810fde2bfc059028ac8f69f08015221a5249fe2d0775bf1b3d55179 t_c8ad5016be43853aba3ad54d7b65c043665fb8cd99332e5702c2f5dca1f0c4a1 t_f1682cfb08c0457d39ee86c18e66a65962798377b2fa2c343e5657d342ed4528">
@@ -101453,15 +101453,15 @@ Kulturbüro</source>
       </segment>
     </unit>
     <unit id="t_c71c794de964e30db02d5c3b1753e17ad975a9ffa4cd9345dc8d50a8bfe00f97" name="value:[&quot;lanes&quot;,&quot;1&quot;]" tag:ignore="false" tag:category="osm" tag:keyRef="t_e8498698b750bab2cf3c4837a8454658a6dbbd0cbc85424dfac5f13ace34fc51">
-      <segment state="initial">
+      <segment state="translated">
         <source>1</source>
-        <target/>
+        <target>1</target>
       </segment>
     </unit>
     <unit id="t_09c661df98b61ffa6128da4294b461783852f9f6f7a9ba8c48e1de980e7ebd8b" name="value:[&quot;lanes&quot;,&quot;2&quot;]" tag:ignore="false" tag:category="osm" tag:keyRef="t_e8498698b750bab2cf3c4837a8454658a6dbbd0cbc85424dfac5f13ace34fc51">
-      <segment state="initial">
+      <segment state="translated">
         <source>2</source>
-        <target/>
+        <target>2</target>
       </segment>
     </unit>
     <unit id="t_12d664ca1250c48eb167bf72fc102f90bda9f311785caf5880048718da3ed71b" name="value:[&quot;lanes&quot;,&quot;3&quot;]" tag:ignore="false" tag:category="osm" tag:keyRef="t_e8498698b750bab2cf3c4837a8454658a6dbbd0cbc85424dfac5f13ace34fc51">
@@ -132007,9 +132007,9 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
       </segment>
     </unit>
     <unit id="t_4c8858bc7fe7eeddb6a90765a335e70b62855b100a3811a8e80a57ee712aa88b" name="value:[&quot;surface&quot;,&quot;concrete&quot;]" tag:ignore="false" tag:category="osm" tag:keyRef="k_d302e976c9dd">
-      <segment state="initial">
+      <segment state="translated">
         <source>concrete</source>
-        <target/>
+        <target>Concrete</target>
       </segment>
     </unit>
     <unit id="t_0688adaffd20d65d02e23f8dda720dfbacba728f95595b725ad2b5aab3646afd" name="value:[&quot;surface&quot;,&quot;concrete:lanes&quot;]" tag:ignore="false" tag:category="osm" tag:keyRef="k_d302e976c9dd">
@@ -139975,6 +139975,66 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
       <segment state="initial">
         <source>laut</source>
         <target/>
+      </segment>
+    </unit>
+    <unit id="t_24465d823491b479476cb884d695d7d9c922f6604a057b94dc419e678f093ac6" name="key:footwalk" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: footwalk</note>
+      </notes>
+      <segment state="translated">
+        <source>footwalk</source>
+        <target>Sidewalk</target>
+      </segment>
+    </unit>
+    <unit id="t_ed4428fd61bb7a18a8e9dbc344f7526037e0b7c1853206a1dc86576d4be0ca0f" name="key:cycle_lane" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: cycle_lane</note>
+      </notes>
+      <segment state="translated">
+        <source>cycle lane</source>
+        <target>Cycle lane</target>
+      </segment>
+    </unit>
+    <unit id="t_4265a7ecb3da7c5ec1980ccfa71fd09c47412bae731d5d833a4333eece2d7235" name="key:roadway" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: roadway</note>
+      </notes>
+      <segment state="translated">
+        <source>roadway</source>
+        <target>Roadway</target>
+      </segment>
+    </unit>
+    <unit id="t_5766a05f969f520f00273340bf6f8342ffc5a238dc6e84f167c99f1dcdffcfb5" name="key:aspect:footwalk-wide" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect:footwalk-wide</note>
+      </notes>
+      <segment state="translated">
+        <source>aspect:footwalk-wide</source>
+        <target>Sidewalk at least 2 m wide</target>
+      </segment>
+    </unit>
+    <unit id="t_70b2d689f467c00fd60dbd7a2875744fbc609a0a282244e76dd3987450666415" name="value:[&quot;width&quot;,&quot;&lt;1&quot;]" tag:ignore="false" tag:category="custom" tag:keyRef="t_810f240f6b1a3be5c7355865169773943f7acd6e7a1ef437bac663418623c31d">
+      <segment state="translated">
+        <source>&lt;1</source>
+        <target>&lt; 1 m</target>
+      </segment>
+    </unit>
+    <unit id="t_9ab4035d448c4c048f0aac3a59e5111968ea36793e1534d44010849f671f6fe0" name="value:[&quot;width&quot;,&quot;1-2&quot;]" tag:ignore="false" tag:category="custom" tag:keyRef="t_810f240f6b1a3be5c7355865169773943f7acd6e7a1ef437bac663418623c31d">
+      <segment state="translated">
+        <source>1-2</source>
+        <target>1–2 m</target>
+      </segment>
+    </unit>
+    <unit id="t_e9bfd3fe5e4ce7406a0547b0e94eb4bdf8b6f6d8bf0cef7395fa4fd788a3791e" name="value:[&quot;width&quot;,&quot;&gt;2&quot;]" tag:ignore="false" tag:category="custom" tag:keyRef="t_810f240f6b1a3be5c7355865169773943f7acd6e7a1ef437bac663418623c31d">
+      <segment state="translated">
+        <source>&gt;2</source>
+        <target>&gt; 2 m</target>
+      </segment>
+    </unit>
+    <unit id="t_dc8bc872f97ad6ac9c318eeef5201f27f205954e22e37fb204a824eeb084ac19" name="value:[&quot;lanes&quot;,&quot;&gt;2&quot;]" tag:ignore="false" tag:category="custom" tag:keyRef="t_e8498698b750bab2cf3c4837a8454658a6dbbd0cbc85424dfac5f13ace34fc51">
+      <segment state="translated">
+        <source>&gt;2</source>
+        <target>More than 2</target>
       </segment>
     </unit>
   </file>

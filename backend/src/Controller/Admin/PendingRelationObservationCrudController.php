@@ -86,7 +86,7 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         return parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters)
-            ->innerJoin('entity.groupTags', 'pendingGroupTag')
+            ->leftJoin('entity.groupTags', 'pendingGroupTag')
             ->andWhere('pendingGroupTag.approved = false')
             ->distinct()
             // Relations whose pending tags changed most recently come first,
@@ -166,7 +166,7 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
             ->select('nodeGroup.id')
             ->distinct()
             ->from(NodeGroup::class, 'nodeGroup')
-            ->innerJoin('nodeGroup.groupTags', 'groupTag')
+            ->leftJoin('nodeGroup.groupTags', 'groupTag')
             ->where('groupTag.approved = false')
             ->orderBy('nodeGroup.id', 'ASC')
             ->setMaxResults(1);

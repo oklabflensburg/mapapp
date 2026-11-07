@@ -42,6 +42,7 @@ final class NodeGroupManager
         private readonly TagRepository $tagRepository,
         private readonly UserRepository $userRepository,
         private readonly StreetPartArea $streetPartArea,
+        private readonly StreetPartAspects $aspects,
     ) {
     }
 
@@ -83,6 +84,7 @@ final class NodeGroupManager
                 }
             }
 
+            $this->aspects->validate($request->tags, $group, $this->defaultUser(), $this->currentUserIsAdmin());
             $this->assignTags($group, $request->tags);
             $group->touch();
             $this->entityManager->flush();
@@ -159,7 +161,7 @@ final class NodeGroupManager
         $requested = SaveUserNodeRequest::tagEntryCounts($tags);
 
         foreach ($group->getGroupTags() as $groupTag) {
-            if ($groupTag->getCreatedByUser() !== $user) {
+            if ($groupTag->getCreatedByUser() !== $user || ($groupTag->isApproved() && !$this->currentUserIsAdmin())) {
                 continue;
             }
             $tag = $groupTag->getTag();
@@ -174,6 +176,13 @@ final class NodeGroupManager
 
         foreach ($requested as $pair => $count) {
             [$key, $value] = explode("\0", $pair, 2);
+            if (str_starts_with($key, 'way.')) {
+                foreach ($group->getGroupTags() as $existing) {
+                    if ($existing->isApproved() && $existing->getTag()->getKey() === $key && $existing->getTag()->getValue() === $value) {
+                        continue 2; // Echoing public content must not create a new observation.
+                    }
+                }
+            }
             for ($i = 0; $i < $count; $i++) {
                 $groupTag = $group->addTag($this->tagRepository->findOrCreate($key, $value), $user);
                 if ($groupTag !== null) {

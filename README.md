@@ -713,3 +713,82 @@ which the OS reclaims under memory pressure.
 Frontend: press the route button (top-left), then click the map twice to set
 start and end. The shortest walking route is drawn with a distance/time
 summary; Escape leaves routing mode.
+
+## Way vocabularies and street-part cross-sections
+
+`backend/config/way-observation-vocabulary.json` controls new observations on
+OSM ways by their exact `highway` value. Its small starter definitions cover
+`footway`, `residential`, and an empty `motorway` vocabulary. Unlisted types allow
+no new keys. File changes apply to the next request; reload the editor to refresh
+choices. Invalid or missing definitions return `editing_vocabulary_unavailable`
+(503). Buildings and point-node suggestions keep their existing flow.
+
+`backend/config/aspect-catalog.json` defines cross-section types, attributes,
+raw values with display labels, and routing predicates. It is file-backed and
+requires no catalog seeding or aspect-specific database tables. File changes
+apply on the next request; reload the editor to refresh its choices.
+
+The relation editor's **Cross-section** composer groups ordinary tags using
+`key.type.index.aspect = value`, for example:
+
+```text
+way.footwalk.1.width = "<1"
+way.footwalk.1.surface = "asphalt"
+way.footwalk.5.width = ">2"
+```
+
+The index is a position across the whole cross-section, starting at 1; repeated
+types remain independent. Raw width tokens `<1`, `1-2`, `>2` display with catalog
+labels such as `< 1 m`. Adding, reordering and removing editable rows rewrites
+their tag keys. Approved attributes and their positions are read-only.
+The frontend calls these rows **observations** (**Beobachtungen** in German).
+Controls use vue-i18n; type names, attributes, values and profile preference
+labels use the shared `backend/tag-translations/tags.{en,de}.xlf` catalogs.
+Translation sync includes the file-backed definitions and their retired value
+labels, so a complete sync preserves these entries. Indexed observation values
+resolve an exact tag translation first, then the shared attribute translation.
+
+`GET /api/editing-catalog` serves whole-way choices and string-identified
+`aspectTypes`. Relation saves use the existing `tags: [{key, value}]` array;
+responses use `tags` and creator-only `observations`. The former `aspects` input
+is rejected with HTTP 422. Structured tags use the existing relation moderation
+queue, with approval and supersession per full key. Only approved tags influence
+routing. Preference keys use stable `aspect:` identifiers and existing
+`/api/tag-priorities` storage; labels accompany `/api/route-preference-tags`.
+Aspect `avoid` uses a 0.1 multiplier so passage remains possible.
+
+For databases that used the previous aspect tables, stop editing during the
+conversion and migration. Run these commands before serving the updated app:
+
+```bash
+cd backend
+docker compose exec php php bin/console app:aspects:convert-legacy
+docker compose exec php php bin/console doctrine:migrations:migrate --no-interaction
+```
+
+Conversion preserves attribution, approval, positions, retired values and
+preference IDs/ratings; it exports the deployed definitions into
+`config/aspect-catalog.json`. Keep that exported file with the deployment.
+Unknown mappings, empty legacy rows and conflicting tags stop conversion with
+an actionable error. Reruns are safe. The migration verifies parity before
+removing the four old tables; a fresh install never creates them. Restoring the
+old model requires a backup; the removal migration has no automatic rollback.
+
+Run `node scripts/testing/check-map-editing.mjs` with Vite running for the
+fixture-based browser check (no development database writes).
+
+The committed catalog works immediately. To validate it without creating map
+data, use `app:aspects:load-demo --catalog-only --demo`. To load the five-element
+example in dev/test through ordinary tag persistence, use an existing editor:
+
+```bash
+cd backend
+docker compose exec php php bin/console app:aspects:load-demo editor@example.test --demo
+```
+
+The fixture in `config/examples/street-part.json` uses two independent footwalks,
+a cycle lane, a parking strip and a roadway. `config/examples/aspect-catalog.json`
+is the companion example catalog. The loader refuses production; reruns preserve
+edits. Sign in as that editor and open
+`http://localhost:5173/?lat=54.791&lon=9.437&zoom=18`, then click the part's line.
+Demo member identities are synthetic references, not real OSM edits.

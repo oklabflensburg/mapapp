@@ -73,6 +73,7 @@ function readStoredTagPriorities(): Record<string, TagPriority> {
 export const useSettingsStore = defineStore('settings', () => {
   const locale = ref<AppLocale>(readStored(LOCALE_KEY, 'en', ['en', 'de']))
   const prioritizableTags = ref<string[]>(FALLBACK_PRIORITIZABLE_TAGS)
+  const preferenceLabels = ref<Record<string, string>>({})
   const tagPriorities = ref<Record<string, TagPriority>>(readStoredTagPriorities())
 
   // Apply the persisted locale on startup, before the first render.
@@ -97,9 +98,10 @@ export const useSettingsStore = defineStore('settings', () => {
       if (!response.ok) {
         return
       }
-      const data = (await response.json()) as { tags?: unknown }
+      const data = (await response.json()) as { tags?: unknown; labels?: Record<string, string> }
       if (Array.isArray(data.tags) && data.tags.every((tag) => typeof tag === 'string')) {
         prioritizableTags.value = data.tags as string[]
+        preferenceLabels.value = data.labels ?? {}
       }
     } catch (error) {
       console.warn('Failed to load route preference tags', error)
@@ -138,6 +140,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     locale,
     prioritizableTags,
+    preferenceLabels,
     tagPriorities,
     setLocale,
     setTagPriority,

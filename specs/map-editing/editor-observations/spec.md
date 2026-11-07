@@ -13,6 +13,8 @@ A logged-in editor clicks an OSM feature on the map (a way node, but also ways, 
 - **OSM tags** — the read-only tags from the OSM data export, shown for every selected feature.
 - **Custom tags / observations** — key/value pairs added through the app. An observation is a custom tag that is not yet approved. Approval flips its presentation: from the editing "Observations" section to the read-only tag list of the node.
 
+Street-part cross-section attributes also use ordinary observation tags, with keys such as `way.footwalk.1.width` and values such as `<1`. Their grammar, composer and exact-key moderation contract are defined in [Street Part Aspects](../street-part-aspects/spec.md); they have no separate aspect persistence or approval state. This extension is implemented through the existing tag lifecycle.
+
 ## Requirements
 
 ### R1 — Selecting a feature opens the node editor
@@ -69,3 +71,7 @@ A logged-in editor clicks an OSM feature on the map (a way node, but also ways, 
 - Backend: `backend/tests/Controller/CrossEditorTagTest.php` (per-user visibility), `TagApprovalCleanupTest.php` (superseded same-key cleanup, node approval), `ModerationDeclineTest.php` (decline behavior), `ObservationTranslationTest.php` (translations), `PendingObservationListTest.php`/`PendingObservationCrudTest.php` (admin moderation).
 - Frontend: Playwright e2e (`npm test`) covers panel interactions; no dedicated unit tests for the panel.
 - Specs verified by code reading; tests were **not executed in this session**.
+
+## Implementation verification (2026-11-07)
+
+Implemented and checked; see [shared tasks and verification](../tasks.md) for commands, outcomes and limitations. Existing visibility, moderation and editor behavior remain covered by the backend suite and browser regressions.

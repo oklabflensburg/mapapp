@@ -25,7 +25,7 @@ final class NodeGroupController extends AbstractController
 
     #[Route('/api/node-groups', name: 'app_node_groups_save', methods: ['POST'])]
     #[IsGranted('ROLE_EDITOR')]
-    public function save(#[MapRequestPayload] SaveNodeGroupRequest $request): JsonResponse
+    public function save(#[MapRequestPayload(serializationContext: ['allow_extra_attributes' => false])] SaveNodeGroupRequest $request): JsonResponse
     {
         $result = $this->nodeGroupManager->save($request);
 

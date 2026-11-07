@@ -5,6 +5,7 @@ namespace App\Tests\Command;
 use App\Command\SyncTagTranslationsCommand;
 use App\Entity\Tag;
 use App\Service\TagTranslationCatalog;
+use App\Service\AspectCatalog;
 use App\Service\TagTranslationCatalogEditor;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -28,7 +29,7 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
             $catalog = new TagTranslationCatalog($directory);
             $editor = static::getContainer()->get(TagTranslationCatalogEditor::class);
             $tester = new CommandTester(new SyncTagTranslationsCommand(
-                static::getContainer()->get(EntityManagerInterface::class), $catalog, $editor,
+                static::getContainer()->get(EntityManagerInterface::class), $catalog, $editor, static::getContainer()->get(AspectCatalog::class),
             ));
             self::assertSame(0, $tester->execute(['--pairs' => $pairs]));
             self::assertStringContainsString('en: 2 new translation units', $tester->getDisplay());
@@ -82,7 +83,7 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
             $orphan = TagTranslationCatalog::valueId('orphan', 'yes');
             $editor->merge($catalog->path('de'), 'de', [$orphan => ['source' => 'yes', 'note' => 'Keep this note', 'target' => 'Ja']]);
             $tester = new CommandTester(new SyncTagTranslationsCommand(
-                static::getContainer()->get(EntityManagerInterface::class), $catalog, $editor,
+                static::getContainer()->get(EntityManagerInterface::class), $catalog, $editor, static::getContainer()->get(AspectCatalog::class),
             ));
             self::assertSame(0, $tester->execute(['--pairs' => $pairs]));
             // A later input only includes one new pair. Old references still exist.
@@ -155,7 +156,7 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
                 TagTranslationCatalog::valueId($keptKey, 'gone value') => ['source' => 'gone value', 'note' => '', 'category' => 'custom'],
                 $keptValue => ['source' => 'kept choice', 'note' => '', 'category' => 'custom', 'target' => 'Auswahl'],
             ]);
-            $tester = new CommandTester(new SyncTagTranslationsCommand($manager, $catalog, $editor));
+            $tester = new CommandTester(new SyncTagTranslationsCommand($manager, $catalog, $editor, static::getContainer()->get(AspectCatalog::class)));
             // Partial syncs lack the full picture and never remove units.
             self::assertSame(0, $tester->execute(['--database' => true]));
             self::assertStringContainsString('name="key:'.$staleKey.'"', file_get_contents($catalog->path('de')));
@@ -168,6 +169,9 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
                 self::assertContains('key:'.$keptKey, $names);
                 self::assertContains($keptValue, $names);
                 self::assertContains('key:'.$osmKey, $names);
+                self::assertContains('key:footwalk', $names);
+                self::assertContains('key:aspect:footwalk-wide', $names);
+                self::assertContains(TagTranslationCatalog::valueId('width', '<1'), $names);
                 self::assertNotContains('key:'.$staleKey, $names);
                 self::assertNotContains($staleValue, $names);
                 self::assertNotContains(TagTranslationCatalog::valueId($keptKey, 'gone value'), $names);
@@ -229,7 +233,7 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
             $editor->merge($catalog->path('de'), 'de', [
                 $sharedValue => ['source' => 'yes', 'note' => 'Tag value: '.$sharedKey.'=yes', 'target' => 'Gemeinsam'],
             ]);
-            $tester = new CommandTester(new SyncTagTranslationsCommand($manager, $catalog, $editor));
+            $tester = new CommandTester(new SyncTagTranslationsCommand($manager, $catalog, $editor, static::getContainer()->get(AspectCatalog::class)));
             // A subsequent OSM input upgrades units initially collected from the database.
             self::assertSame(0, $tester->execute(['--database' => true]));
             self::assertSame(0, $tester->execute(['keys' => $keys, '--pairs' => $pairs, '--database' => true]));

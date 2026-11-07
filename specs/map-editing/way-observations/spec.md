@@ -13,7 +13,7 @@ Editors tag streets and other ways: an editor clicks a way on the map (a gray st
 - **Way** — a `LineString` feature of the OSM export with an id like `"w4603722"`, carrying its original OSM tags (`highway`, `name`, `surface`, …). Ways render as strokes, never as filled areas.
 - **Node identity of a way** — the pair (`OSM`, way feature id); the shared identity for all observations on that way.
 - **Way type** — the way's `highway` tag value (`footway`, `residential`, `steps`, …), read directly from its OSM tags.
-- **Type vocabulary** — the admin-controlled set of observation keys (each with its selectable values) that applies to a way type; maintained in the backend (definition UI is a separate, later spec).
+- **Type vocabulary** — the controlled set of observation keys (each with its selectable values) that applies to a way type; initially file-backed, later stored in the database and maintained by admins. See [controlled vocabulary](../controlled-vocabulary/spec.md).
 
 ## Requirements
 
@@ -40,7 +40,7 @@ Editors tag streets and other ways: an editor clicks a way on the map (a gray st
 ### R5 — Type-specific controlled observation vocabulary (NEW — design refinement, not yet implemented)
 - Editors may add to a way **only** the observation keys that the admin's vocabulary defines for that way's type (`highway` value): the observations section offers exactly the type's keys, with each key's selectable values where the vocabulary configures them. Free-form key entry on ways is removed — a change to today's free-form behavior.
 - The restriction is enforced at both ends: the editor UI offers no other keys, and the backend rejects observations with keys outside the vocabulary for that way type (validation error).
-- The vocabulary itself is defined and maintained by admins in the backend; **how** it is defined is out of scope here and belongs to its own spec (along the lines of today's default-observation-tag admin section, but keyed by way type).
+- Definition and management follow the [controlled vocabulary spec](../controlled-vocabulary/spec.md): a backend JSON file first for testing, then database storage and backend admin management. Both stages share the API and validation contract.
 - The way type is read from the way's OSM `highway` tag at selection time; no classification step happens in the app.
 - **Ways without a `highway` tag** (railways, waterways, boundaries, …) have no way type and therefore no vocabulary: no observations can be added to them until an admin covers them. That is intended behavior, not a gap.
 - **Way types without a configured (empty) vocabulary** mean "no observations", too — there is **no fallback** to today's global default observation tags for ways.
@@ -73,4 +73,8 @@ The R5 edge cases were confirmed as intended behavior with the product owner and
 
 - Same verification coverage as step 2 (backend tag/visibility tests, Playwright e2e for panel interactions); the way-specific selection geometry is exercised by the e2e flow but has no dedicated test asserting closed-highway ways stay stroke-only.
 - Verified by code reading of `osmFeatureLayer.ts` (`isAreaOutline` excludes highway ways), `userNodeLayer.ts`, and the export sample; tests were **not executed in this session**.
-- **R5 is unimplemented design**: its ACs (AC6–AC8) are the acceptance baseline for the future vocabulary spec and its implementation, not descriptions of existing tests.
+- **R5 remains an acceptance baseline** (AC6–AC9). Database-backed work exists in the working tree but is not verified here; the file-based stage is specified in [controlled vocabulary](../controlled-vocabulary/spec.md) and is not implemented by this documentation change.
+
+## Implementation verification (2026-11-07)
+
+Implemented and checked; see [shared tasks and verification](../tasks.md) for commands, outcomes and limitations. R5 is implemented using the file-backed controlled-vocabulary contract, including grandfathered observations and distinct empty/error states.

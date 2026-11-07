@@ -1,4 +1,19 @@
 export default {
+  crossSection: {
+    noTypes: 'No observation types have been configured yet.',
+    reload: 'Reload catalog',
+    retry: 'Retry',
+    noObservations: 'No observations are configured for this way type.',
+    title: 'Cross-section',
+    observation: 'Observation {position}',
+    type: 'Observation type',
+    up: 'Move observation up',
+    down: 'Move observation down',
+    insert: 'Insert observation below',
+    remove: 'Remove observation',
+    add: 'Add observation',
+    loadFailed: 'Could not load the editing catalog. Reload the catalog to retry.',
+  },
   tagValues: {
     yes: 'Yes',
     no: 'No',

@@ -34,6 +34,7 @@ final class SaveNodeGroupRequest
          */
         #[Assert\Callback([SaveUserNodeRequest::class, 'validateTagEntries'])]
         public array $tags = [],
+
     ) {
     }
 

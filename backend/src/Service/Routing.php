@@ -204,6 +204,8 @@ final class Routing
 
             if ($level === 'avoid' || $level === 'try_to_avoid') {
                 $factor = $level === 'avoid' ? self::FACTOR_AVOID : self::FACTOR_TRY_TO_AVOID;
+                // Aspect avoidance penalizes passage without making the corridor impassable.
+                if ($level === 'avoid' && str_starts_with($tag, 'aspect:')) $factor = '0.1';
                 $conditions = array_map(static fn (string $id): string => 'in_'.$id, $areaIds);
                 $statements[] = ['if' => implode(' || ', $conditions), 'multiply_by' => $factor];
             } elseif ($level === 'prefer' || $level === 'strongly_prefer') {

@@ -36,6 +36,7 @@ final class UserNodeManager
         private readonly TagRepository $tagRepository,
         private readonly UserRepository $userRepository,
         private readonly ObservationTranslations $observationTranslations,
+        private readonly WayObservationVocabulary $wayVocabulary,
     ) {
     }
 
@@ -43,6 +44,7 @@ final class UserNodeManager
     {
         return $this->entityManager->wrapInTransaction(function () use ($request): SaveUserNodeResult {
             $node = $this->nodeRepository->findOneByProvider($request->provider, $request->providerNodeId);
+            $this->wayVocabulary->validate($request, $node, $this->defaultUser());
             $parent = null;
             if ($request->parent !== null) {
                 $reference = $request->parent;
@@ -239,6 +241,7 @@ final class UserNodeManager
 
         $parent = $node->getParent();
         if ($parent !== null && !$this->nodeIsVisible($parent, $user)) {
+            $this->wayVocabulary->validate($request, $node, $this->defaultUser());
             $parent = null;
         }
         $children = $node->getChildren()->filter(fn (Node $child): bool => $this->nodeIsVisible($child, $user));

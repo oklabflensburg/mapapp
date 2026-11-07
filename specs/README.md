@@ -7,7 +7,7 @@ Most describe existing behavior; future designs are marked explicitly.
 | Feature | Specs |
 | --- | --- |
 | Map | [Flensburg basemap](map/flensburg-map/spec.md) — public map, rendering and OSM overlay; [OSM static data](map/osm-static-data/spec.md) — loading, indexing, original tags and failure behavior |
-| Map editing | [Editor observations](map-editing/editor-observations/spec.md) — selection, tagging, approval and visibility; [Way observations](map-editing/way-observations/spec.md) — whole-way identity and markers, plus a planned per-type vocabulary; [Street part aspects](map-editing/street-part-aspects/spec.md) — planned cross-sections and aspect-based routing preferences |
+| Map editing | [Editor observations](map-editing/editor-observations/spec.md) — selection, tagging, approval and visibility; [Way observations](map-editing/way-observations/spec.md) — whole-way identity and markers; [Controlled vocabulary](map-editing/controlled-vocabulary/spec.md) — file-based way definitions, later database/admin management; [Street part aspects](map-editing/street-part-aspects/spec.md) — revised tag-based cross-sections (`key.type.index.aspect`), no extra aspect tables |
 | Authentication | [Authentication API](authentication/api-authentication/spec.md) — session login, current user, logout and roles |
 | Routing | [Routing API](routing/api-routing/spec.md) — GraphHopper walking routes shaped by user priorities |
 | Tag settings | [Tag settings and translations API](tag-settings/api-tag-settings/spec.md) — route preference metadata, per-user priorities, observation suggestions and shared translations |
@@ -22,7 +22,7 @@ The original map/editor rebuild reading order remains:
 1. [Flensburg basemap](map/flensburg-map/spec.md).
 2. [Editor observations](map-editing/editor-observations/spec.md).
 3. [Way observations](map-editing/way-observations/spec.md).
-4. [Street part aspects](map-editing/street-part-aspects/spec.md) (new feature design).
+4. [Street part aspects](map-editing/street-part-aspects/spec.md) (revised tag-storage design).
 
 Candidate follow-ups: buildings, areas, local node creation, parent relations,
 street parts as built, node/group edit panels, and PWA behavior.

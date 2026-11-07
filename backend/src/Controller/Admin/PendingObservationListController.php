@@ -86,7 +86,7 @@ final class PendingObservationListController extends AbstractController
         $groups = $this->entityManager->createQueryBuilder()
             ->select('DISTINCT nodeGroup')
             ->from(NodeGroup::class, 'nodeGroup')
-            ->join('nodeGroup.groupTags', 'groupTag')
+            ->leftJoin('nodeGroup.groupTags', 'groupTag')
             ->where('groupTag.approved = false')
             ->getQuery()
             ->getResult();

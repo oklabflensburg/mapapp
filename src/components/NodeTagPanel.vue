@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { NodeCreationState, NodeCreationInput } from '../map/nodeCreation'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
+import { useOsmDataStore } from '../stores/osmData'
 import ParentNodeTags from './ParentNodeTags.vue'
 import { nodeKey, useUserNodesStore, type NodeEditTarget, type TagEntry } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
@@ -41,6 +43,17 @@ const settings = useSettingsStore()
 const tagKeyLabels = useTagKeyLabelsStore()
 const defaultObservationTags = useDefaultObservationTagsStore()
 
+const catalog = useEditingCatalogStore()
+const osmData = useOsmDataStore()
+const isWay = computed(() => {
+  if (props.node?.provider !== 'OSM' || !/^w\d+$/.test(props.node.providerNodeId)) return false
+  const feature = osmData.data?.features.find(entry => String(entry.feature.id) === props.node!.providerNodeId)?.feature
+  return !feature || !!feature.properties?.highway || ['LineString', 'MultiLineString'].includes(feature.geometry.type)
+})
+const observationChoices = computed(() => isWay.value
+  ? (catalog.wayVocabularies[props.node?.osmTags.highway ?? ''] ?? [])
+  : defaultObservationTags.tags)
+watch(() => props.visible, visible => { if (visible) void catalog.load() }, { immediate: true })
 const pendingName = ref('')
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
@@ -132,7 +145,7 @@ const suggestedObservationOptions = computed(() => {
     return []
   }
   const used = new Set([...rows.value, ...observationRows.value].map((row) => row.key.trim()))
-  return defaultObservationTags.tags
+  return observationChoices.value
     .filter((entry) => !used.has(entry.key))
     .map((entry) => ({ key: entry.key, label: tagKeyLabels.label(entry.key) }))
 })
@@ -148,11 +161,11 @@ function addSuggestedObservation(key: unknown): void {
 // Suggested keys keep their raw key fixed and offer configured value choices.
 // Derive this from the key so it also holds after reloading saved rows.
 function isDefaultObservationTag(key: string): boolean {
-  return defaultObservationTags.keys.includes(key.trim())
+  return isWay.value || defaultObservationTags.keys.includes(key.trim())
 }
 
 function defaultValuesFor(key: string): string[] {
-  return defaultObservationTags.valuesFor(key.trim())
+  return isWay.value ? observationChoices.value.find(entry => entry.key === key.trim())?.values ?? [] : defaultObservationTags.valuesFor(key.trim())
 }
 
 // Keep language drafts separate and use raw identifiers for catalog lookups.
@@ -172,7 +185,8 @@ function translationText(row: TagRow, kind: 'key' | 'value'): string {
 
 function editTranslation(row: TagRow, kind: 'key' | 'value', text: string | undefined): void {
   const translation = text ?? ''
-  if (!row[kind].trim() || row.generatedRaw?.[kind] === row[kind]) {
+  const fixedVocabulary = isWay.value && (kind === 'key' || defaultValuesFor(row.key).length > 0)
+  if (!fixedVocabulary && (!row[kind].trim() || row.generatedRaw?.[kind] === row[kind])) {
     const generated = translation.normalize('NFKD').replace(/\p{M}/gu, '')
       .toLowerCase().replace(/ß/g, 'ss').replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '')
     editRawTag(row, kind, generated, true)
@@ -359,6 +373,10 @@ async function save(): Promise<void> {
       <section v-if="auth.canEdit || observationRows.length > 0" class="observations-section">
         <h4 class="section-title">{{ t('nodeEditor.observations') }}</h4>
         <template v-if="auth.canEdit">
+          <p v-if="isWay && catalog.failed" role="alert">{{ t('crossSection.loadFailed') }}
+            <Button :label="t('crossSection.retry')" text @click="catalog.load()" />
+          </p>
+          <p v-else-if="isWay && observationChoices.length === 0" class="empty-hint">{{ t('crossSection.noObservations') }}</p>
           <Select
             v-if="suggestedObservationOptions.length > 0"
             :model-value="null"
@@ -386,7 +404,7 @@ async function save(): Promise<void> {
               <InputText
                 :model-value="row.key"
                 @update:model-value="editRawTag(row, 'key', $event)"
-                :readonly="isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined"
+                :readonly="isWay || (isDefaultObservationTag(row.key) && row.generatedRaw?.key === undefined)"
                 :invalid="!row.key.trim()"
                 :placeholder="t('nodeEditor.key')"
                 :aria-label="t('nodeEditor.key')"
@@ -410,7 +428,7 @@ async function save(): Promise<void> {
                 option-value="value"
                 :placeholder="t('nodeEditor.value')"
                 :aria-label="t('nodeEditor.value')"
-                :editable="true"
+                :editable="!isWay"
                 show-clear
                 size="small"
                 class="raw-tag-input"
@@ -427,6 +445,7 @@ async function save(): Promise<void> {
             />
           </div>
           <Button
+            v-if="!isWay"
             :label="t('nodeEditor.addObservation')"
             icon="pi pi-plus"
             text

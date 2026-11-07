@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import CrossSectionComposer from './CrossSectionComposer.vue'
+import { useEditingCatalogStore } from '../stores/editingCatalog'
+import { crossSectionRows, crossSectionTags, parseAspectKey, type AspectRow } from '../lib/crossSection'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -47,20 +50,25 @@ const parentNames = computed(() => {
   }))]
 })
 
+const catalog = useEditingCatalogStore()
+const aspectRows = ref<AspectRow[]>([])
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
 const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
-  .some(row => !row.key.trim() || !row.value.trim()))
+  .some(row => !row.key.trim() || !row.value.trim()) || aspectRows.value.some(row => !Object.values(row.values).some(value => value)))
 
 // Mirrors the node editor: approved tags are read-only for editors, and the
 // observations pairs decide which entries are the current user's own pending
 // ones, matched by key and value so several values of one key can coexist.
 // The saved response re-splits the sections.
 function splitRows(group: NodeGroup): void {
+  aspectRows.value = crossSectionRows(group.tags, group.observations)
+  void catalog.load()
   rows.value = []
   observationRows.value = []
   const observationKeys = new Set(group.observations.map((observation) => `${observation.key}\0${observation.value}`))
   for (const { key, value } of group.tags) {
+    if (parseAspectKey(key)) continue
     if (observationKeys.has(`${key}\0${value}`)) {
       observationRows.value.push({ key, value })
     } else {
@@ -137,6 +145,7 @@ async function save(): Promise<void> {
       tags.push({ key, value: row.value })
     }
   }
+  tags.push(...crossSectionTags(aspectRows.value))
   const saved = await nodeGroups.save({ id: props.group.id, tags })
   if (saved) {
     splitRows(saved)
@@ -170,6 +179,10 @@ async function save(): Promise<void> {
       </ul>
     </section>
 
+    <section v-if="group" class="cross-section-section">
+      <h4 class="section-title">{{ t('crossSection.title') }}</h4>
+      <CrossSectionComposer v-model="aspectRows" :readonly="!auth.canEdit" />
+    </section>
     <section class="custom-tags-section">
       <p v-if="!group || (rows.length === 0 && observationRows.length === 0)" class="empty-hint">
         {{ t('relationEditor.empty') }}

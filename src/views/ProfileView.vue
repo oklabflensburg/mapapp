@@ -104,7 +104,7 @@ onMounted(() => {
       <p class="hint">{{ t('profile.tagPriorities.hint') }}</p>
 
       <div v-for="tag in settings.prioritizableTags" :key="tag" class="setting">
-        <label :for="`setting-tag-priority-${tag}`">{{ tagKeyLabels.label(tag) }}</label>
+        <label :for="`setting-tag-priority-${tag}`">{{ tagKeyLabels.labels[tag] ?? settings.preferenceLabels[tag] ?? tagKeyLabels.label(tag) }}</label>
         <Select
           :id="`setting-tag-priority-${tag}`"
           :model-value="settings.tagPriorities[tag] ?? 'neutral'"

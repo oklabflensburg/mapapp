@@ -23,6 +23,7 @@ final class RoutingController extends AbstractController
 {
     public function __construct(
         private readonly Routing $routing,
+        private readonly \App\Service\StreetPartAspects $aspects,
         private readonly TagPriorityManager $tagPriorityManager,
         private readonly NodeRepository $nodeRepository,
         private readonly NodeGroupRepository $nodeGroupRepository,
@@ -49,6 +50,8 @@ final class RoutingController extends AbstractController
         $groupAreas = $this->nodeGroupRepository->findAreaGeometriesByTagKeys(
             TagPriorityManager::tagsRelevantForRouting($tagPriorities),
         );
+
+        $groupAreas = array_replace($groupAreas, $this->aspects->routingAreas(TagPriorityManager::tagsRelevantForRouting($tagPriorities)));
 
         try {
             $route = $this->routing->findShortestFootRoute(

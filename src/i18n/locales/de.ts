@@ -1,4 +1,19 @@
 export default {
+  crossSection: {
+    noTypes: 'Es sind noch keine Beobachtungstypen eingerichtet.',
+    reload: 'Katalog neu laden',
+    retry: 'Erneut versuchen',
+    noObservations: 'Für diesen Wegtyp sind keine Beobachtungen konfiguriert.',
+    title: 'Straßenquerschnitt',
+    observation: 'Beobachtung {position}',
+    type: 'Beobachtungstyp',
+    up: 'Beobachtung nach oben verschieben',
+    down: 'Beobachtung nach unten verschieben',
+    insert: 'Beobachtung darunter einfügen',
+    remove: 'Beobachtung entfernen',
+    add: 'Beobachtung hinzufügen',
+    loadFailed: 'Der Bearbeitungskatalog konnte nicht geladen werden. Bitte den Katalog erneut laden.',
+  },
   tagValues: {
     yes: 'Ja',
     no: 'Nein',

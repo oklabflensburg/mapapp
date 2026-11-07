@@ -6,6 +6,7 @@ use App\Entity\DefaultObservationTag;
 use App\Entity\RoutePreferenceTag;
 use App\Entity\TagKeyLabel;
 use App\Service\TagKeyLabeler;
+use App\Service\AspectCatalog;
 use App\Service\TagTranslationCatalog;
 use App\Service\TagTranslationCatalogEditor;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,6 +24,7 @@ final class SyncTagTranslationsCommand extends Command
         private readonly EntityManagerInterface $manager,
         private readonly TagTranslationCatalog $catalog,
         private readonly TagTranslationCatalogEditor $editor,
+        private readonly AspectCatalog $editingCatalog,
     ) {
         parent::__construct();
     }
@@ -32,7 +34,7 @@ final class SyncTagTranslationsCommand extends Command
         $this
             ->addArgument('keys', InputArgument::OPTIONAL, 'OSM frequency TSV: count, key')
             ->addOption('pairs', null, InputOption::VALUE_REQUIRED, 'OSM frequency TSV: count, key, value')
-            ->addOption('database', null, InputOption::VALUE_NONE, 'Include all stored tags, default choices and route preference keys')
+            ->addOption('database', null, InputOption::VALUE_NONE, 'Include stored tags and configured editing/routing choices')
             ->addOption('import-legacy-labels', null, InputOption::VALUE_NONE, 'Copy old database labels to XLIFF, replacing conflicting file targets');
     }
 
@@ -80,6 +82,19 @@ final class SyncTagTranslationsCommand extends Command
             }
             foreach ($this->manager->getRepository(RoutePreferenceTag::class)->findAll() as $tag) {
                 $addKey($tag->getTag(), 'custom');
+            }
+            $definitions = $this->editingCatalog->read();
+            foreach ($definitions['types'] as $type) {
+                $addKey($type['name'], 'custom');
+                foreach ($type['attributes'] as $attribute) {
+                    $addKey($attribute['key'], 'custom');
+                    foreach (array_unique([...$attribute['values'], ...array_keys($attribute['labels'] ?? [])]) as $value) {
+                        $addPair($attribute['key'], (string) $value, 'custom');
+                    }
+                }
+            }
+            foreach ($definitions['preferences'] as $preference) {
+                $addKey($preference['key'], 'custom');
             }
         }
         $legacy = $input->getOption('import-legacy-labels') ? $this->manager->getRepository(TagKeyLabel::class)->findAll() : [];

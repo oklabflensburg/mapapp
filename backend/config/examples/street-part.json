@@ -1,0 +1,61 @@
+{
+  "name": "Demo cross-section",
+  "members": [
+    {
+      "providerNodeId": "demo-cross-section-a",
+      "latitude": 54.791,
+      "longitude": 9.436
+    },
+    {
+      "providerNodeId": "demo-cross-section-b",
+      "latitude": 54.791,
+      "longitude": 9.438
+    }
+  ],
+  "tags": [
+    {
+      "key": "way.footwalk.1.width",
+      "value": ">2"
+    },
+    {
+      "key": "way.footwalk.1.surface",
+      "value": "asphalt"
+    },
+    {
+      "key": "way.cycle_lane.2.width",
+      "value": "1-2"
+    },
+    {
+      "key": "way.cycle_lane.2.surface",
+      "value": "asphalt"
+    },
+    {
+      "key": "way.parking.3.width",
+      "value": ">2"
+    },
+    {
+      "key": "way.parking.3.surface",
+      "value": "concrete"
+    },
+    {
+      "key": "way.roadway.4.width",
+      "value": ">2"
+    },
+    {
+      "key": "way.roadway.4.surface",
+      "value": "asphalt"
+    },
+    {
+      "key": "way.roadway.4.lanes",
+      "value": "2"
+    },
+    {
+      "key": "way.footwalk.5.width",
+      "value": "1-2"
+    },
+    {
+      "key": "way.footwalk.5.surface",
+      "value": "paving_stones"
+    }
+  ]
+}

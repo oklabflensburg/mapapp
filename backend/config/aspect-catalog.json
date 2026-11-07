@@ -1,0 +1,161 @@
+{
+    "types": [
+        {
+            "name": "footwalk",
+            "attributes": [
+                {
+                    "key": "width",
+                    "kind": "range",
+                    "values": [
+                        "<1",
+                        "1-2",
+                        ">2"
+                    ],
+                    "labels": {
+                        "<1": "< 1 m",
+                        "1-2": "1 m – 2 m",
+                        ">2": "> 2 m"
+                    }
+                },
+                {
+                    "key": "surface",
+                    "kind": "enum",
+                    "values": [
+                        "asphalt",
+                        "paving_stones",
+                        "concrete"
+                    ],
+                    "labels": {
+                        "asphalt": "asphalt",
+                        "paving_stones": "paving_stones",
+                        "concrete": "concrete"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "cycle_lane",
+            "attributes": [
+                {
+                    "key": "width",
+                    "kind": "range",
+                    "values": [
+                        "<1",
+                        "1-2",
+                        ">2"
+                    ],
+                    "labels": {
+                        "<1": "< 1 m",
+                        "1-2": "1 m – 2 m",
+                        ">2": "> 2 m"
+                    }
+                },
+                {
+                    "key": "surface",
+                    "kind": "enum",
+                    "values": [
+                        "asphalt",
+                        "paving_stones",
+                        "concrete"
+                    ],
+                    "labels": {
+                        "asphalt": "asphalt",
+                        "paving_stones": "paving_stones",
+                        "concrete": "concrete"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "parking",
+            "attributes": [
+                {
+                    "key": "width",
+                    "kind": "range",
+                    "values": [
+                        "<1",
+                        "1-2",
+                        ">2"
+                    ],
+                    "labels": {
+                        "<1": "< 1 m",
+                        "1-2": "1 m – 2 m",
+                        ">2": "> 2 m"
+                    }
+                },
+                {
+                    "key": "surface",
+                    "kind": "enum",
+                    "values": [
+                        "asphalt",
+                        "paving_stones",
+                        "concrete"
+                    ],
+                    "labels": {
+                        "asphalt": "asphalt",
+                        "paving_stones": "paving_stones",
+                        "concrete": "concrete"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "roadway",
+            "attributes": [
+                {
+                    "key": "width",
+                    "kind": "range",
+                    "values": [
+                        "<1",
+                        "1-2",
+                        ">2"
+                    ],
+                    "labels": {
+                        "<1": "< 1 m",
+                        "1-2": "1 m – 2 m",
+                        ">2": "> 2 m"
+                    }
+                },
+                {
+                    "key": "surface",
+                    "kind": "enum",
+                    "values": [
+                        "asphalt",
+                        "paving_stones",
+                        "concrete"
+                    ],
+                    "labels": {
+                        "asphalt": "asphalt",
+                        "paving_stones": "paving_stones",
+                        "concrete": "concrete"
+                    }
+                },
+                {
+                    "key": "lanes",
+                    "kind": "range",
+                    "values": [
+                        "1",
+                        "2",
+                        ">2"
+                    ],
+                    "labels": {
+                        "1": "1",
+                        "2": "2",
+                        ">2": "> 2"
+                    }
+                }
+            ]
+        }
+    ],
+    "preferences": [
+        {
+            "key": "aspect:footwalk-wide",
+            "label": "Footwalk at least 2 m wide",
+            "type": "footwalk",
+            "aspect": "width",
+            "values": [
+                ">2"
+            ]
+        }
+    ]
+}
