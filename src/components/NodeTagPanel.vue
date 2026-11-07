@@ -84,7 +84,6 @@ const relationParentNames = computed(() => {
     const saved = userNodes.byIdentity.get(nodeKey(parent))
     return tagValue(saved?.tags, 'name')?.trim() || parent.name?.trim()
       || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
-      || parent.providerNodeId
   }))]
 })
 
@@ -103,7 +102,6 @@ const parentLabel = computed(() => {
   }
   return parent.name?.trim()
     || (parent.provider === 'OSM' ? osmData.tagsById?.get(parent.providerNodeId)?.name?.trim() : undefined)
-    || parent.providerNodeId
 })
 const nodeLabel = computed(() => {
   if (props.creation) {
@@ -117,7 +115,7 @@ const nodeLabel = computed(() => {
     || '')
 })
 const headerLabel = computed(() => {
-  const parts = [parentLabel.value, nodeLabel.value].map(part => part.trim()).filter(Boolean)
+  const parts = [parentLabel.value, nodeLabel.value].map(part => (part ?? '').trim()).filter(Boolean)
   if (parts.length === 0) {
     return t(props.creation ? 'map.create.add' : isRelation.value ? 'relationEditor.title' : 'nodeEditor.title')
   }
@@ -401,9 +399,10 @@ async function save(): Promise<void> {
            list, then the cross-section composer, then the tag sections. -->
       <section v-if="isRelation" class="relations-section members-section" :aria-label="t('relationEditor.members')">
         <ul class="member-list">
+          <!-- Only member names are shown; unnamed members appear as a
+               neutral marker instead of their generated provider id. -->
           <li v-for="member in relation?.members" :key="member.id" class="member-item">
-            <span>{{ member.name || member.providerNodeId }}</span>
-            <small>{{ member.provider }}<template v-if="member.name"> · {{ member.providerNodeId }}</template></small>
+            <span :class="{ 'member-unnamed': !member.name }">{{ member.name || '·' }}</span>
           </li>
         </ul>
       </section>
@@ -684,15 +683,13 @@ async function save(): Promise<void> {
 .member-item {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--p-content-border-color);
   overflow-wrap: anywhere;
 }
 
-.member-item small {
+.member-unnamed {
   color: var(--p-text-muted-color);
-  font-size: 0.65rem;
 }
 
 /* Fixed layout keeps the key/value columns aligned across all tag tables. */
