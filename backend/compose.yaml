@@ -1,5 +1,5 @@
 ---
-name: api
+name: map
 
 services:
   php:
@@ -7,7 +7,7 @@ services:
     build:
       context: .
       target: frankenphp_prod
-    image: ${IMAGES_PREFIX:-}app-php
+    image: ${IMAGES_PREFIX:-}map-php
     depends_on:
       database:
         condition: service_healthy
@@ -50,7 +50,7 @@ services:
     profiles: ["routing"]
     build:
       context: ./routing
-    image: accessapp-graphhopper:11.1
+    image: map-graphhopper:11.1
     restart: unless-stopped
     ports:
       - target: 8989

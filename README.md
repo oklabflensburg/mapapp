@@ -40,6 +40,13 @@ See the [spec index](specs/README.md) for feature specifications and their statu
 
 ## Backend
 
+The Compose project is `map`; containers and default volumes use the `map`
+prefix. PHP and routing images also use the `map` prefix. Run both the frontend
+and backend from this checkout; the older `code/js/accessapp` checkout expects
+an incompatible database schema. Existing `api_*` database and photo volumes
+must be copied to their `map_*` counterparts while the old stack is stopped
+before starting a renamed installation. Keep the original volumes as backups.
+
 ```bash
 cd backend
 docker compose up -d --wait
