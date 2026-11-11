@@ -98,7 +98,7 @@ final class LegacyAspectConverter
             foreach (json_decode($row['attribute_values'], true, flags: JSON_THROW_ON_ERROR) as $aspect => $value) {
                 $key = 'way.'.$type.'.'.$row['position'].'.'.$aspect;
                 $definitionIndex = array_search($aspect, array_column($types[$type]['attributes'], 'key'), true);
-                if (!StreetPartAspects::parse($key) || $definitionIndex === false || !is_string($value)) {
+                if (!StreetPartAspects::parseLegacy($key) || $definitionIndex === false || !is_string($value)) {
                     throw new \RuntimeException('Cannot map legacy aspect #'.$row['id'].' ('.$key.').');
                 }
                 $token = self::token($value);

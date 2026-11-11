@@ -6,7 +6,7 @@
 
 ## Problem / intent
 
-Users can already rate route preferences for plain tags and for the single shipped aspect predicate (`aspect:footwalk-wide`, footnote: any footwalk wider than 2 m). But the observed controlled-vocabulary attributes — the cross-section surfaces stored as `way.<type>.<index>.<aspect>` tags — cannot drive routing in the situations users care about.
+Users can already rate route preferences for plain tags and for the single shipped aspect predicate (`aspect:footwalk-wide`, footnote: any footwalk wider than 2 m). But the observed controlled-vocabulary attributes — the cross-section surfaces stored as `way.<type>.<direction>.<index>.<aspect>` tags — cannot drive routing in the situations users care about.
 
 Example: a user wants to avoid sidewalks made of paving stones. Today they cannot express that: no paving-stone preference exists, and the current evaluation would mark a way as soon as *any* footwalk matched, even when a comfortable asphalt footwalk runs alongside. The desired semantics are *"avoid ways where the only available footwalks are paving stones"* — an offered alternative should keep the way routable.
 
@@ -43,10 +43,10 @@ Two changes follow: the catalog offers surface/attribute preferences for the shi
 
 ### R4 — Routing evaluation with alternatives
 
-- `StreetPartAspects::routingAreas()` evaluates both modes over **approved structured tags only**, per street part and preference, at any valid index, with exact parsed-segment matching (no substring or numeric bin-token confusion; each existing rule of aspects R6 carries over).
+- `StreetPartAspects::routingAreas()` evaluates both modes over **approved structured tags only**, per street part and preference, at any valid direction and index, with exact parsed-segment matching (no substring or numeric bin-token confusion; each existing rule of aspects R6 carries over).
 - **`any_element`:** the part's corridor matches if any element of the preference's type carries an approved value in `values` (unchanged behavior).
 - **`no_alternative`:** the part's corridor matches iff
-  1. at least one element of the type exists on the part (at any index, with or without an approved value for the aspect), and
+  1. at least one element of the type exists on the part (at any direction/index, with or without an approved value for the aspect), and
   2. no element of the type carries an approved value for the aspect outside `values`.
 
   Consequences, per the confirmed decision: an element without any approved value for the aspect never exempts a part; a part whose elements all have unknown values matches (incomplete data does not make a way acceptable); a part with **no** element of the type does not match (the preference is about the quality of available elements of that type, not their absence); among several elements of the type, one explicitly non-selected value exempts the part.
@@ -64,12 +64,12 @@ Two changes follow: the catalog offers surface/attribute preferences for the shi
 
 - **AC1 (R1):** A catalog preference with `match` missing or set to `sometimes` fails the catalog read; `/api/editing-catalog` responds 503 `editing_vocabulary_unavailable` and structured saves persist nothing. Restoring a valid file recovers without a restart (existing behavior).
 - **AC2 (R2/R3):** With the shipped file, `/api/route-preference-tags` lists the three footwalk surface preferences with English/German labels next to `aspect:footwalk-wide`; a user rates `aspect:footwalk-surface-paving_stones` `avoid` and a later `GET /api/tag-priorities` (or profile reload) returns it; an anonymous visitor can set the same level locally.
-- **AC3 (R4):** Given a street part whose only approved footwalk tags are `way.footwalk.1.surface = "paving_stones"`, the user's route request produces a corridor area for that preference in the custom model with factor 0.1; the same request for a neutral/anonymous user produces the neutral route.
-- **AC4 (R4):** Given the street part R7 fixture (footwalk 1 asphalt, footwalk 5 paving stones), the paving-stones preference does **not** match (corridor unaffected) — an observed asphalt footwalk is an alternative; the same part does match an `any_element` paving-stones preference if one is configured.
-- **AC5 (R4):** Given a part with `way.footwalk.1.surface = "paving_stones"` and a second footwalk with only width tags (no surface at all), the paving-stones preference matches — unknown values are not alternatives.
+- **AC3 (R4):** Given a street part whose only approved footwalk tags are `way.footwalk.west.1.surface = "paving_stones"`, the user's route request produces a corridor area for that preference in the custom model with factor 0.1; the same request for a neutral/anonymous user produces the neutral route.
+- **AC4 (R4):** Given the street part R7 fixture (west footwalk asphalt, east footwalk paving stones), the paving-stones preference does **not** match (corridor unaffected) — an observed asphalt footwalk is an alternative; the same part does match an `any_element` paving-stones preference if one is configured.
+- **AC5 (R4):** Given a part with `way.footwalk.west.1.surface = "paving_stones"` and a second footwalk with only width tags (no surface at all), the paving-stones preference matches — unknown values are not alternatives.
 - **AC6 (R4):** Given a part whose elements are only `roadway`/`cycle_lane`/`parking` (no footwalk), the paving-stones preference does not match.
 - **AC7 (R4):** Given the paving-stones surface tag exists only as a pending (unapproved) observation, routing is unaffected; approval makes it take effect.
-- **AC8 (R5):** With the shipped file, a stored `prefer` rating for `aspect:footwalk-wide` still matches `way.footwalk.5.width = ">2"` and penalizes everything outside the corridor, as before.
+- **AC8 (R5):** With the shipped file, a stored `prefer` rating for `aspect:footwalk-wide` still matches `way.footwalk.east.1.width = ">2"` and penalizes everything outside the corridor, as before.
 - **AC9 (R3/R4):** Removing the paving-stones preference from the catalog removes it from the offered settings; the user's stored `avoid` level is ignored (and kept suitably) and the route request produces no statement for it.
 - **AC10 (R1):** A `no_alternative` preference listing `paving_stones` and `concrete` matches a part whose only approved surface is `paving_stones`, and exempts a part that also has an approved `asphalt` footwalk.
 
@@ -79,12 +79,12 @@ Given preference `type=footwalk`, `aspect=surface`, `values=[paving_stones]`, `m
 
 | Street part approved content | Matches? | Why |
 | --- | --- | --- |
-| footwalk 1 `surface=paving_stones` | yes | only element, value selected |
-| footwalk 1 `surface=paving_stones`, footwalk 2 `surface=asphalt` | no | asphalt is an explicit alternative |
-| footwalk 1 `surface=paving_stones`, footwalk 2 (width only, no surface) | yes | unknown is not an alternative |
-| footwalk 1 (no surface tags at all) | yes | ≥ 1 footwalk, no alternative observed |
+| footwalk west 1 `surface=paving_stones` | yes | only element, value selected |
+| footwalk west 1 `surface=paving_stones`, footwalk east 1 `surface=asphalt` | no | asphalt is an explicit alternative |
+| footwalk west 1 `surface=paving_stones`, footwalk east 1 (width only, no surface) | yes | unknown is not an alternative |
+| footwalk west 1 (no surface tags at all) | yes | ≥ 1 footwalk, no alternative observed |
 | roadway, cycle lane, parking only | no | no footwalk exists |
-| footwalk 1 `surface=asphalt` | no | single element is an alternative |
+| footwalk west 1 `surface=asphalt` | no | single element is an alternative |
 | paving_stones only as pending tag | no | pending tags never route |
 
 The same content with `match=any_element` (e.g. a configured "any paving stones" preference): rows 1, 2, 3 match; rows 4–7 do not.

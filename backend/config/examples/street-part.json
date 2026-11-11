@@ -14,47 +14,47 @@
   ],
   "tags": [
     {
-      "key": "way.footwalk.1.width",
+      "key": "way.footwalk.west.1.width",
       "value": ">2"
     },
     {
-      "key": "way.footwalk.1.surface",
+      "key": "way.footwalk.west.1.surface",
       "value": "asphalt"
     },
     {
-      "key": "way.cycle_lane.2.width",
+      "key": "way.cycle_lane.west.2.width",
       "value": "1-2"
     },
     {
-      "key": "way.cycle_lane.2.surface",
+      "key": "way.cycle_lane.west.2.surface",
       "value": "asphalt"
     },
     {
-      "key": "way.parking.3.width",
+      "key": "way.parking.west.3.width",
       "value": ">2"
     },
     {
-      "key": "way.parking.3.surface",
+      "key": "way.parking.west.3.surface",
       "value": "concrete"
     },
     {
-      "key": "way.roadway.4.width",
+      "key": "way.roadway.center.1.width",
       "value": ">2"
     },
     {
-      "key": "way.roadway.4.surface",
+      "key": "way.roadway.center.1.surface",
       "value": "asphalt"
     },
     {
-      "key": "way.roadway.4.lanes",
+      "key": "way.roadway.center.1.lanes",
       "value": "2"
     },
     {
-      "key": "way.footwalk.5.width",
+      "key": "way.footwalk.east.1.width",
       "value": "1-2"
     },
     {
-      "key": "way.footwalk.5.surface",
+      "key": "way.footwalk.east.1.surface",
       "value": "paving_stones"
     }
   ]

@@ -44,7 +44,7 @@ The vocabulary contract here covers whole-way observations classified by OSM `hi
 ### R5 — Meaningful street examples for testing
 - The example-data deliverable must include both vocabulary/catalog definitions and a complete ordered street-part cross-section, as specified in [Street Part Aspects R7](../street-part-aspects/spec.md). Flat way tags alone do not demonstrate the street model.
 - Supply file-based example definitions for `footwalk`, `cycle_lane`, `parking` (car parking lane) and `roadway`, with per-type width bins, surface choices and roadway lane-count choices. Include two independent footwalk elements on the same street part, with different width and surface values.
-- Keep the file-based cross-section catalog separate from whole-way `wayVocabularies`. Store cross-section values as ordinary tags (`way.footwalk.1.width`, `way.footwalk.5.width`, etc.), never as separate aspect records; repeated types remain independent through their index. Raw tokens and display labels follow Street Part Aspects R1/R7.
+- Keep the file-based cross-section catalog separate from whole-way `wayVocabularies`. Store cross-section values as ordinary tags (`way.footwalk.west.1.width`, `way.footwalk.east.1.width`, etc.), never as separate aspect records; repeated types remain independent through their direction and index. Raw tokens and display labels follow Street Part Aspects R1/R7.
 - Ship reproducible test fixtures and brief loading instructions alongside the examples; a tester must be able to open the complete cross-section without manually creating every definition and structured tag, or seeding aspect tables. Loading examples must be explicit and must not alter production map data automatically.
 
 ## Proposed file and test data

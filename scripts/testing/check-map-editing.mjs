@@ -91,6 +91,8 @@ try {
   await partDrawer.getByRole('button', {name: 'Reload catalog', exact: true}).click()
   await expect(partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true})).toBeEnabled()
   await partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true}).click()
+  // New rows default to the center direction; the direction column shows it.
+  await expect(partDrawer.getByRole('combobox', {name: 'Direction', exact: true}).first()).toContainText('Center')
   await page.getByRole('combobox', {name: 'Width', exact: true}).click()
   await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
   // Observations are ordered by their addition; no per-row move buttons.
@@ -99,7 +101,7 @@ try {
   await page.getByRole('option', {name: '> 2 m', exact: true}).last().click()
   await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(partDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  assert.deepEqual(requests.at(-1).tags, [{key: 'way.footwalk.1.width', value: '<1'}, {key: 'way.footwalk.2.width', value: '>2'}])
+  assert.deepEqual(requests.at(-1).tags, [{key: 'way.footwalk.center.1.width', value: '<1'}, {key: 'way.footwalk.center.2.width', value: '>2'}])
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
@@ -126,21 +128,26 @@ try {
   failSave = false
   await exampleDrawer.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(exampleDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.1.width').value, '<1')
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.5.width').value, '1-2')
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.5.surface').value, 'paving_stones')
+  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.west.1.width').value, '<1')
+  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.east.1.width').value, '1-2')
+  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.east.1.surface').value, 'paving_stones')
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   await expect(page.getByRole('combobox', {name: 'Width', exact: true}).first()).toContainText('< 1 m')
   await expect(page.getByRole('combobox', {name: 'Width', exact: true}).nth(4)).toContainText('1–2 m')
-  // Approval of width alone locks that value and its position, not surface.
-  group.observations = group.tags.filter(tag => tag.key !== 'way.footwalk.1.width')
+  // Approval of width alone locks that value, its direction and its position, not surface.
+  group.observations = group.tags.filter(tag => tag.key !== 'way.footwalk.west.1.width')
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   const locked = page.locator('.cross-section-composer .observation').first()
-  await expect(locked.getByRole('combobox', {name: 'Width', exact: true})).toHaveAttribute('aria-disabled', 'true')
+  // The approved width lives in the tag table only: the locked row offers
+  // no width select, its type and direction are read-only, and the
+  // still-pending surface stays editable.
+  await expect(locked.getByRole('combobox', {name: 'Type', exact: true})).toHaveAttribute('aria-disabled', 'true')
+  await expect(locked.getByRole('combobox', {name: 'Direction', exact: true})).toHaveAttribute('aria-disabled', 'true')
+  await expect(locked.getByRole('combobox', {name: 'Width', exact: true})).toHaveCount(0)
   await expect(locked.getByRole('combobox', {name: 'Surface', exact: true})).not.toHaveAttribute('aria-disabled', 'true')
   await expect(locked.getByRole('button', {name: 'Remove observation', exact: true})).toBeDisabled()
   await page.goto(new URL('/profile', page.url()).href)
@@ -156,10 +163,13 @@ try {
   await expect(germanComposer.getByText('Typ', {exact: true}).first()).toBeVisible()
   await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).first()).toContainText('Gehweg')
   await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).nth(1)).toContainText('Radfahrstreifen')
-  await expect(germanComposer.getByRole('combobox', {name: 'Breite', exact: true}).first()).toContainText('< 1 m')
+  await expect(germanComposer.getByRole('combobox', {name: 'Richtung', exact: true}).first()).toContainText('Westen')
+  // The west footwalk's approved width is tag-table content now, so the
+  // first editable Breite select belongs to the cycle lane.
+  await expect(germanComposer.getByRole('combobox', {name: 'Breite', exact: true}).first()).toContainText('1–2 m')
   await expect(germanComposer.getByRole('combobox', {name: 'Oberfläche', exact: true}).nth(4)).toContainText('Pflastersteine')
   await expect(germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true})).toBeVisible()
   await expect(germanComposer.getByText(/Aspekt|Aspect/)).toHaveCount(0)
-  assert.equal(group.tags.find(tag => tag.key === 'way.footwalk.1.width').value, '<1')
-  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, ordered cross-section save/reload, profile label, independent five-observation example, English/German controls and catalog labels')
+  assert.equal(group.tags.find(tag => tag.key === 'way.footwalk.west.1.width').value, '<1')
+  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, cross-section save/reload with direction prefixes, profile label, independent five-observation example, approved-structure locking, English/German controls and catalog labels')
 } finally { await browser.close() }

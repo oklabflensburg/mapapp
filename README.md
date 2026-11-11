@@ -736,18 +736,23 @@ requires no catalog seeding or aspect-specific database tables. File changes
 apply on the next request; reload the editor to refresh its choices.
 
 The relation editor's **Cross-section** composer groups ordinary tags using
-`key.type.index.aspect = value`, for example:
+`key.type.direction.index.aspect = value`, for example:
 
 ```text
-way.footwalk.1.width = "<1"
-way.footwalk.1.surface = "asphalt"
-way.footwalk.5.width = ">2"
+way.footwalk.west.1.width = "<1"
+way.footwalk.west.1.surface = "asphalt"
+way.footwalk.east.1.width = ">2"
+way.roadway.center.1.lanes = "2"
 ```
 
-The index is a position across the whole cross-section, starting at 1; repeated
-types remain independent. Raw width tokens `<1`, `1-2`, `>2` display with catalog
-labels such as `< 1 m`. Adding, reordering and removing editable rows rewrites
-their tag keys. Approved attributes and their positions are read-only.
+The direction is one of the fixed tokens `north`, `south`, `east`, `west`,
+`center`; the index counts positions within a direction, starting at 1, so
+repeated types on one side and the same type on opposite sides stay
+independent. Rows display in the canonical order west, south, center, north,
+east with the `center` (the way itself) between the sides. Raw width tokens
+`<1`, `1-2`, `>2` display with catalog labels such as `< 1 m`. Adding,
+reordering and removing editable rows rewrites their tag keys per direction.
+Approved attributes, their directions and their positions are read-only.
 The frontend calls these rows **observations** (**Beobachtungen** in German).
 Controls use vue-i18n; type names, attributes, values and profile preference
 labels use the shared `backend/tag-translations/tags.{en,de}.xlf` catalogs.
@@ -773,6 +778,21 @@ docker compose exec php php bin/console app:aspects:convert-legacy
 docker compose exec php php bin/console doctrine:migrations:migrate --no-interaction
 ```
 
+For databases that still store the older direction-less four-segment grammar
+(`way.footwalk.1.width`), rewrite those tags into the direction grammar with an
+explicit position mapping:
+
+```bash
+docker compose exec php php bin/console app:aspects:migrate-directions /path/to/directions.json
+```
+
+The mapping file lists every legacy position with its direction, for example
+`{"footwalk.1": "west", "roadway.4": "center"}`. Unmapped positions and
+conflicting values abort with an actionable report; attributes, attribution,
+approval state, translations and indexes are preserved, and reruns are safe.
+Installations coming from the aspect-table model run `app:aspects:convert-legacy`
+first and then this command.
+
 Conversion preserves attribution, approval, positions, retired values and
 preference IDs/ratings; it exports the deployed definitions into
 `config/aspect-catalog.json`. Keep that exported file with the deployment.
@@ -793,8 +813,9 @@ cd backend
 docker compose exec php php bin/console app:aspects:load-demo editor@example.test --demo
 ```
 
-The fixture in `config/examples/street-part.json` uses two independent footwalks,
-a cycle lane, a parking strip and a roadway. `config/examples/aspect-catalog.json`
+The fixture in `config/examples/street-part.json` describes one cross-section
+from west to east: a footwalk, cycle lane and parking strip on the west side,
+the roadway in the center, and a second footwalk east. `config/examples/aspect-catalog.json`
 is the companion example catalog. The loader refuses production; reruns preserve
 edits. Sign in as that editor and open
 `http://localhost:5173/?lat=54.791&lon=9.437&zoom=18`, then click the part's line.

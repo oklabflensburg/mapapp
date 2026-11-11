@@ -90,8 +90,8 @@ final class AspectObservationMappingTest extends WebTestCase
     }
 
     /**
-     * A street part with two approved footwalks: footwalk 1 has width and
-     * surface approved, footwalk 2 only width. A roadway element exists to
+     * A street part with two approved footwalks: footwalk west 1 has width and
+     * surface approved, footwalk west 2 only width. A roadway element exists to
      * prove cross-type targets are never offered.
      */
     private function createStreetPart(array $pending, string $identity): NodeGroup
@@ -108,10 +108,10 @@ final class AspectObservationMappingTest extends WebTestCase
         // Approved fixtures first: their insertions supersede same-key
         // pending tags through the doctrine approval listener, so pending
         // rows are added only after these are flushed.
-        $this->addPending($group, $admin, 'way.footwalk.1.width', '<1-'.$identity, true);
-        $this->addPending($group, $admin, 'way.footwalk.1.surface', 'asphalt-'.$identity, true);
-        $this->addPending($group, $admin, 'way.footwalk.2.width', '1-2-'.$identity, true);
-        $this->addPending($group, $admin, 'way.roadway.4.lanes', '2-'.$identity, true);
+        $this->addPending($group, $admin, 'way.footwalk.west.1.width', '<1-'.$identity, true);
+        $this->addPending($group, $admin, 'way.footwalk.west.1.surface', 'asphalt-'.$identity, true);
+        $this->addPending($group, $admin, 'way.footwalk.west.2.width', '1-2-'.$identity, true);
+        $this->addPending($group, $admin, 'way.roadway.west.4.lanes', '2-'.$identity, true);
 
         $manager->flush();
         $this->groupIds[] = $group->getId();
@@ -199,21 +199,21 @@ final class AspectObservationMappingTest extends WebTestCase
         $client = static::createClient();
         $this->loginUser($client);
 
-        $group = $this->createStreetPart([['way.footwalk.3.width', '>2-'.$identity]], $identity);
+        $group = $this->createStreetPart([['way.footwalk.west.3.width', '>2-'.$identity]], $identity);
         $crawler = $this->reviewPage($client, $group);
 
         // Approved cross-section context (AC1).
-        self::assertSelectorTextContains('.approved-cross-section', 'footwalk 1');
+        self::assertSelectorTextContains('.approved-cross-section', 'footwalk west 1');
         self::assertSelectorTextContains('.approved-cross-section', 'width=<1-'.$identity);
-        self::assertSelectorTextContains('.approved-cross-section', 'roadway 4');
+        self::assertSelectorTextContains('.approved-cross-section', 'roadway west 4');
 
         // Mapping options list existing approved footwalks only (AC6): the
         // roadway element is never offered, and the pending element itself
         // is not a target.
         $options = $crawler->filter('select[name="target_index"] option');
-        self::assertSame(3, $options->count()); // default + footwalk 1 + footwalk 2
-        self::assertStringContainsString('footwalk 1 (width=<1-'.$identity.', surface=asphalt-'.$identity.')', $options->eq(1)->text());
-        self::assertStringContainsString('footwalk 2 (width=1-2-'.$identity.')', $options->eq(2)->text());
+        self::assertSame(3, $options->count()); // default + footwalk west 1 + footwalk west 2
+        self::assertStringContainsString('footwalk west 1 (width=<1-'.$identity.', surface=asphalt-'.$identity.')', $options->eq(1)->text());
+        self::assertStringContainsString('footwalk west 2 (width=1-2-'.$identity.')', $options->eq(2)->text());
     }
 
     public function testApproveAsUpdateReplacesApprovedValueWithoutHistory(): void
@@ -222,22 +222,22 @@ final class AspectObservationMappingTest extends WebTestCase
         $client = static::createClient();
         $this->loginUser($client);
 
-        $group = $this->createStreetPart([['way.footwalk.3.width', '>2-'.$identity]], $identity);
-        $entry = $this->pendingEntry($group, 'way.footwalk.3.width', '>2-'.$identity);
+        $group = $this->createStreetPart([['way.footwalk.west.3.width', '>2-'.$identity]], $identity);
+        $entry = $this->pendingEntry($group, 'way.footwalk.west.3.width', '>2-'.$identity);
 
-        $payload = $this->targetOption($entry, 1); // footwalk 1
+        $payload = $this->targetOption($entry, 1); // footwalk west 1
         $this->approveWithTarget($client, $entry, $payload);
         self::assertResponseRedirects();
 
         $reloaded = $this->reloadGroup($group);
         // The old approved width is gone without a trace (AC3): one
-        // approved footwalk 1 width replaces it, the surface stays, the
+        // approved footwalk west 1 width replaces it, the surface stays, the
         // second footwalk stays, and no footwalk 3 is published.
         self::assertSame([
-            'way.footwalk.1.surface=asphalt-'.$identity,
-            'way.footwalk.1.width=>2-'.$identity,
-            'way.footwalk.2.width=1-2-'.$identity,
-            'way.roadway.4.lanes=2-'.$identity,
+            'way.footwalk.west.1.surface=asphalt-'.$identity,
+            'way.footwalk.west.1.width=>2-'.$identity,
+            'way.footwalk.west.2.width=1-2-'.$identity,
+            'way.roadway.west.4.lanes=2-'.$identity,
         ], $this->groupTagSummaries($reloaded));
         foreach ($reloaded->getGroupTags() as $groupTag) {
             self::assertTrue($groupTag->isApproved());
@@ -251,14 +251,14 @@ final class AspectObservationMappingTest extends WebTestCase
         $this->loginUser($client);
 
         $group = $this->createStreetPart([
-            ['way.footwalk.3.width', '>2-'.$identity],
+            ['way.footwalk.west.3.width', '>2-'.$identity],
         ], $identity);
         // A second editor's competing pending width proposal for the same
         // proposed element (a different value means a different shared tag).
         $secondEditor = $this->createUser('mapping-editor2-'.$identity.'@example.test', ['editor']);
-        $this->addPending($group, $secondEditor, 'way.footwalk.3.width', 'x-'.$identity, false);
+        $this->addPending($group, $secondEditor, 'way.footwalk.west.3.width', 'x-'.$identity, false);
 
-        $entry = $this->pendingEntry($group, 'way.footwalk.3.width', '>2-'.$identity);
+        $entry = $this->pendingEntry($group, 'way.footwalk.west.3.width', '>2-'.$identity);
         $payload = $this->targetOption($entry, 1);
         $this->approveWithTarget($client, $entry, $payload);
         self::assertResponseRedirects();
@@ -267,10 +267,10 @@ final class AspectObservationMappingTest extends WebTestCase
         // The competing proposal is superseded too (AC5): no unapproved way
         // key remains, and there is no footwalk 3.
         self::assertSame([
-            'way.footwalk.1.surface=asphalt-'.$identity,
-            'way.footwalk.1.width=>2-'.$identity,
-            'way.footwalk.2.width=1-2-'.$identity,
-            'way.roadway.4.lanes=2-'.$identity,
+            'way.footwalk.west.1.surface=asphalt-'.$identity,
+            'way.footwalk.west.1.width=>2-'.$identity,
+            'way.footwalk.west.2.width=1-2-'.$identity,
+            'way.roadway.west.4.lanes=2-'.$identity,
         ], $this->groupTagSummaries($reloaded));
     }
 
@@ -280,11 +280,11 @@ final class AspectObservationMappingTest extends WebTestCase
         $client = static::createClient();
         $this->loginUser($client);
 
-        // footwalk 2 has an approved width but no surface.
-        $group = $this->createStreetPart([['way.footwalk.5.surface', 'concrete-'.$identity]], $identity);
-        $entry = $this->pendingEntry($group, 'way.footwalk.5.surface', 'concrete-'.$identity);
+        // footwalk west 2 has an approved width but no surface.
+        $group = $this->createStreetPart([['way.footwalk.west.5.surface', 'concrete-'.$identity]], $identity);
+        $entry = $this->pendingEntry($group, 'way.footwalk.west.5.surface', 'concrete-'.$identity);
 
-        // Target footwalk 2: the observation describes that element, so the
+        // Target footwalk west 2: the observation describes that element, so the
         // mapped approve adds the surface aspect to it (AC4 case).
         $payload = $this->targetOption($entry, 2);
         $this->approveWithTarget($client, $entry, $payload);
@@ -292,11 +292,11 @@ final class AspectObservationMappingTest extends WebTestCase
 
         $reloaded = $this->reloadGroup($group);
         self::assertSame([
-            'way.footwalk.1.surface=asphalt-'.$identity,
-            'way.footwalk.1.width=<1-'.$identity,
-            'way.footwalk.2.surface=concrete-'.$identity,
-            'way.footwalk.2.width=1-2-'.$identity,
-            'way.roadway.4.lanes=2-'.$identity,
+            'way.footwalk.west.1.surface=asphalt-'.$identity,
+            'way.footwalk.west.1.width=<1-'.$identity,
+            'way.footwalk.west.2.surface=concrete-'.$identity,
+            'way.footwalk.west.2.width=1-2-'.$identity,
+            'way.roadway.west.4.lanes=2-'.$identity,
         ], $this->groupTagSummaries($reloaded));
     }
 
@@ -306,8 +306,8 @@ final class AspectObservationMappingTest extends WebTestCase
         $client = static::createClient();
         $this->loginUser($client);
 
-        $group = $this->createStreetPart([['way.footwalk.3.width', '>2-'.$identity]], $identity);
-        $entry = $this->pendingEntry($group, 'way.footwalk.3.width', '>2-'.$identity);
+        $group = $this->createStreetPart([['way.footwalk.west.3.width', '>2-'.$identity]], $identity);
+        $entry = $this->pendingEntry($group, 'way.footwalk.west.3.width', '>2-'.$identity);
 
         // Default option: approve as submitted without a mapping.
         $crawler = $this->reviewPage($client, $group);
@@ -320,11 +320,11 @@ final class AspectObservationMappingTest extends WebTestCase
         // Plain approval semantics (AC2): the new element joins the
         // cross-section and the approved footwalks are untouched.
         self::assertSame([
-            'way.footwalk.1.surface=asphalt-'.$identity,
-            'way.footwalk.1.width=<1-'.$identity,
-            'way.footwalk.2.width=1-2-'.$identity,
-            'way.footwalk.3.width=>2-'.$identity,
-            'way.roadway.4.lanes=2-'.$identity,
+            'way.footwalk.west.1.surface=asphalt-'.$identity,
+            'way.footwalk.west.1.width=<1-'.$identity,
+            'way.footwalk.west.2.width=1-2-'.$identity,
+            'way.footwalk.west.3.width=>2-'.$identity,
+            'way.roadway.west.4.lanes=2-'.$identity,
         ], $this->groupTagSummaries($reloaded));
     }
 
@@ -334,15 +334,15 @@ final class AspectObservationMappingTest extends WebTestCase
         $client = static::createClient();
         $this->loginUser($client);
 
-        $group = $this->createStreetPart([['way.footwalk.3.width', '>2-'.$identity]], $identity);
-        $entry = $this->pendingEntry($group, 'way.footwalk.3.width', '>2-'.$identity);
+        $group = $this->createStreetPart([['way.footwalk.west.3.width', '>2-'.$identity]], $identity);
+        $entry = $this->pendingEntry($group, 'way.footwalk.west.3.width', '>2-'.$identity);
 
         // Render the review screen and snapshot the offered option, then
         // change the target's approved width behind the reviewer's back.
         $crawler = $this->reviewPage($client, $group);
         self::assertResponseIsSuccessful();
         $payload = $this->targetOptionValue($crawler, $entry, 1);
-        $target = $this->findOrCreateTag('way.footwalk.1.width', '<1-'.$identity);
+        $target = $this->findOrCreateTag('way.footwalk.west.1.width', '<1-'.$identity);
         $target->setValue('changed-'.$identity);
         static::getContainer()->get('doctrine')->getManager()->flush();
 
@@ -355,11 +355,11 @@ final class AspectObservationMappingTest extends WebTestCase
         // is still pending (AC7).
         $reloaded = $this->reloadGroup($group);
         self::assertSame([
-            'way.footwalk.1.surface=asphalt-'.$identity,
-            'way.footwalk.1.width=changed-'.$identity,
-            'way.footwalk.2.width=1-2-'.$identity,
-            'way.footwalk.3.width=>2-'.$identity,
-            'way.roadway.4.lanes=2-'.$identity,
+            'way.footwalk.west.1.surface=asphalt-'.$identity,
+            'way.footwalk.west.1.width=changed-'.$identity,
+            'way.footwalk.west.2.width=1-2-'.$identity,
+            'way.footwalk.west.3.width=>2-'.$identity,
+            'way.roadway.west.4.lanes=2-'.$identity,
         ], $this->groupTagSummaries($reloaded));
         $reloadedEntry = null;
         foreach ($reloaded->getGroupTags() as $groupTag) {
@@ -382,16 +382,16 @@ final class AspectObservationMappingTest extends WebTestCase
 
         $crawler = $this->reviewPage($client, $group);
         self::assertResponseIsSuccessful();
-        $this->postApproveValues($client, $crawler, $entry, json_encode(['index' => 1, 'aspectValue' => null]));
+        $this->postApproveValues($client, $crawler, $entry, json_encode(['direction' => 'west', 'index' => 1, 'aspectValue' => null]));
         self::assertResponseStatusCodeSame(400);
 
         $reloaded = $this->reloadGroup($group);
         self::assertSame([
             'lit=yes-'.$identity,
-            'way.footwalk.1.surface=asphalt-'.$identity,
-            'way.footwalk.1.width=<1-'.$identity,
-            'way.footwalk.2.width=1-2-'.$identity,
-            'way.roadway.4.lanes=2-'.$identity,
+            'way.footwalk.west.1.surface=asphalt-'.$identity,
+            'way.footwalk.west.1.width=<1-'.$identity,
+            'way.footwalk.west.2.width=1-2-'.$identity,
+            'way.roadway.west.4.lanes=2-'.$identity,
         ], $this->groupTagSummaries($reloaded));
     }
 
@@ -439,8 +439,8 @@ final class AspectObservationMappingTest extends WebTestCase
             static::getContainer()->set(TagTranslationCatalog::class, new TagTranslationCatalog($directory));
             $this->loginUser($client);
 
-            $group = $this->createStreetPart([['way.footwalk.3.width', '>2-'.$identity]], $identity);
-            $entry = $this->pendingEntry($group, 'way.footwalk.3.width', '>2-'.$identity);
+            $group = $this->createStreetPart([['way.footwalk.west.3.width', '>2-'.$identity]], $identity);
+            $entry = $this->pendingEntry($group, 'way.footwalk.west.3.width', '>2-'.$identity);
             // The contributor's proposed labels ride along with the observation.
             $entry->getTag()->setTranslations(['de' => ['keyTranslation' => 'Breite '.$identity, 'valueTranslation' => 'Über 2 m '.$identity]]);
             static::getContainer()->get('doctrine')->getManager()->flush();
@@ -452,9 +452,9 @@ final class AspectObservationMappingTest extends WebTestCase
             // Reviewed labels publish under the effective key, and no catalog
             // unit exists for the proposed element key (AC8).
             $de = (string) file_get_contents($directory.'/tags.de.xlf');
-            self::assertStringContainsString('key:way.footwalk.1.width', $de);
+            self::assertStringContainsString('key:way.footwalk.west.1.width', $de);
             self::assertStringContainsString('Breite '.$identity, $de);
-            self::assertStringNotContainsString('way.footwalk.3.width', $de);
+            self::assertStringNotContainsString('way.footwalk.west.3.width', $de);
         } finally {
             foreach (['en', 'de'] as $locale) {
                 @unlink($directory.'/tags.'.$locale.'.xlf');

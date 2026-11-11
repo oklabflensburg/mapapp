@@ -11,6 +11,12 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 /** Cross-sections are a view of ordinary, moderated relation tags. */
 final class StreetPartAspects
 {
+    /**
+     * Element position tokens across the cross-section, in canonical order
+     * (each side axis keeps `center` between its opposite sides).
+     */
+    public const DIRECTIONS = ['west', 'south', 'center', 'north', 'east'];
+
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly StreetPartArea $area,
@@ -23,14 +29,39 @@ final class StreetPartAspects
         return $this->definitions->read()['types'];
     }
 
-    /** @return array{type: string, index: string, aspect: string}|null */
+    /** @return array{type: string, direction: string, index: string, aspect: string}|null */
     public static function parse(string $key): ?array
     {
-        if (!preg_match('/\Away\.([^.\s]+)\.([1-9][0-9]*)\.([^.\s]+)\z/u', $key, $match) || mb_strlen($key) > 255) {
+        if (!preg_match('/\Away\.([^.\s]+)\.(north|south|east|west|center)\.([1-9][0-9]*)\.([^.\s]+)\z/u', $key, $match) || mb_strlen($key) > 255) {
             return null;
         }
 
-        return ['type' => $match[1], 'index' => $match[2], 'aspect' => $match[3]];
+        return ['type' => $match[1], 'direction' => $match[2], 'index' => $match[3], 'aspect' => $match[4]];
+    }
+
+    /**
+     * The previous direction-less grammar `way.<type>.<index>.<aspect>`, kept
+     * for the conversion chain (see street-part-aspects R8):
+     * `app:aspects:convert-legacy` emits it, `app:aspects:migrate-directions`
+     * rewrites it into the direction grammar. New saves reject these keys.
+     * Validation reuses the current grammar parser (a legacy key is valid
+     * exactly when it becomes valid with a `center` direction inserted), so
+     * legacy keys long enough for the suffix push past the length limit are
+     * rejected — they predate validation and do not exist in practice.
+     *
+     * @return array{type: string, index: string, aspect: string}|null
+     */
+    public static function parseLegacy(string $key): ?array
+    {
+        if (!str_starts_with($key, 'way.') || substr_count($key, '.') !== 3) {
+            return null;
+        }
+        [$namespace, $type, $index, $aspect] = explode('.', $key);
+
+        $parsed = self::parse($namespace.'.'.$type.'.center.'.$index.'.'.$aspect);
+
+        return $parsed === null ? null
+            : ['type' => $parsed['type'], 'index' => $parsed['index'], 'aspect' => $parsed['aspect']];
     }
 
     public function validate(array $tags, NodeGroup $group, User $user, bool $admin): void
@@ -61,7 +92,7 @@ final class StreetPartAspects
                 $approved[$tag->getKey()][$tag->getValue()] = true;
                 $parsed = self::parse($tag->getKey());
                 if ($parsed && !$admin) {
-                    $positions[$parsed['index']] = $parsed['type'];
+                    $positions[$parsed['direction'].'.'.$parsed['index']] = $parsed['type'];
                 }
             }
         }
@@ -74,11 +105,12 @@ final class StreetPartAspects
                 throw new UnprocessableEntityHttpException('Malformed or duplicate structured tag key.');
             }
             $keys[$key] = true;
-            ['type' => $type, 'index' => $index, 'aspect' => $aspect] = $parsed;
-            if (isset($positions[$index]) && $positions[$index] !== $type) {
+            ['type' => $type, 'direction' => $direction, 'index' => $index, 'aspect' => $aspect] = $parsed;
+            $position = $direction.'.'.$index;
+            if (isset($positions[$position]) && $positions[$position] !== $type) {
                 throw new UnprocessableEntityHttpException('A cross-section position can have only one type.');
             }
-            $positions[$index] = $type;
+            $positions[$position] = $type;
             $unchanged = isset($owned[$key][$value]) || isset($approved[$key][$value]);
             if (!$unchanged && (!isset($definitions[$type][$aspect]) || !in_array($value, $definitions[$type][$aspect], true))) {
                 throw new UnprocessableEntityHttpException('Unknown cross-section type, aspect or value.');

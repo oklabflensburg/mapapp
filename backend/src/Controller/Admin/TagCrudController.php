@@ -150,7 +150,7 @@ final class TagCrudController extends AbstractCrudController
             throw new BadRequestHttpException('Mapping targets apply to structured street-part observations only.');
         }
         $target = $this->aspectObservationApproval->decodeTarget($targetPayload);
-        $effectiveKey = 'way.'.$proposed['type'].'.'.$target['index'].'.'.$proposed['aspect'];
+        $effectiveKey = 'way.'.$proposed['type'].'.'.$target['direction'].'.'.$target['index'].'.'.$proposed['aspect'];
 
         // The plain mapped post carries its CSRF token like a plain approve;
         // the translation form path validates its token while handling.

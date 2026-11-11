@@ -42,7 +42,7 @@
                         <tbody>
                             {% for element in approved_cross_section %}
                                 <tr>
-                                    <td>{{ element.type }} {{ element.index }}</td>
+                                    <td>{{ element.type }} {{ element.direction }} {{ element.index }}</td>
                                     <td>
                                         {%- for aspect, value in element.aspects -%}
                                             {{ aspect }}={{ value }}{% if not loop.last %}, {% endif %}

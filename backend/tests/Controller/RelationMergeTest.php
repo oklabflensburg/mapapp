@@ -545,8 +545,8 @@ final class RelationMergeTest extends WebTestCase
         $this->loginAdmin($client);
 
         [$approved, $pending, $user1, $user2] = $this->overlappingPair($identity);
-        $this->addRelationTag($approved, $user1, 'way.footwalk.1.width', '<1', true);
-        $this->addRelationTag($pending, $user2, 'way.footwalk.1.surface', 'asphalt', true);
+        $this->addRelationTag($approved, $user1, 'way.footwalk.west.1.width', '<1', true);
+        $this->addRelationTag($pending, $user2, 'way.footwalk.west.1.surface', 'asphalt', true);
 
         $crawler = $this->reviewPage($client, $pending);
         self::assertResponseIsSuccessful();
@@ -554,8 +554,8 @@ final class RelationMergeTest extends WebTestCase
             ->filter(sprintf('form[action="/admin/node-group/%d/merge/%d"]', $pending->getId(), $approved->getId()));
 
         $conflict = $crawler->filter('.relation-merge-conflict')->text();
-        self::assertStringNotContainsString('way.footwalk.1.width', $conflict);
-        self::assertStringNotContainsString('way.footwalk.1.surface', $conflict);
+        self::assertStringNotContainsString('way.footwalk.west.1.width', $conflict);
+        self::assertStringNotContainsString('way.footwalk.west.1.surface', $conflict);
         self::assertStringContainsString('surface', $conflict, 'the plain surface key alone competes');
 
         // Let the rendered defaults apply: only approved rows are checked.
@@ -569,8 +569,8 @@ final class RelationMergeTest extends WebTestCase
         self::assertNull($absorbed);
 
         $summaries = $this->tagRowSummaries($merged);
-        self::assertContains($user1->getUserIdentifier().':way.footwalk.1.width=<1 [approved]', $summaries);
-        self::assertContains($user2->getUserIdentifier().':way.footwalk.1.surface=asphalt [approved]', $summaries);
+        self::assertContains($user1->getUserIdentifier().':way.footwalk.west.1.width=<1 [approved]', $summaries);
+        self::assertContains($user2->getUserIdentifier().':way.footwalk.west.1.surface=asphalt [approved]', $summaries);
         self::assertContains($user1->getUserIdentifier().':surface=asphalt [approved]', $summaries);
 
         foreach ($this->tagRows($merged) as $row) {

@@ -1,6 +1,24 @@
 # Map editing implementation
 
-## Current revision: aspects stored as tags (2026-11-07)
+## Current revision: direction-qualified cross-section grammar (2026-11-11)
+
+**Status:** Implemented and verified against the revised [aspect spec](street-part-aspects/spec.md) R1/R2/R7/R8 and the direction-updated [mapping spec](aspect-observation-mapping/spec.md). The cross-section key grammar is now `way.<type>.<direction>.<index>.<aspect>` with the fixed direction tokens `north`, `south`, `east`, `west`, `center` and per-direction indexes; positions are `(direction, index)` with one type each. The canonical display order is west, south, center, north, east.
+
+- [x] R1/R2, AC1/AC2/AC12: five-segment grammar in `StreetPartAspects` (backend) and `crossSection.ts` (frontend); per-direction position validation; same type/index across directions independent. Old four-segment keys and unknown direction tokens reject with 422.
+- [x] R2: composer direction column (localized Direction/Richtung + North…/Norden…), per-direction renumbering, `center` default for new rows, direction joins the approved-structure lock; i18n additions in `locales/{en,de}.ts`.
+- [x] R3/R4 (mapping spec): review cross-section carries direction; target payload `{direction, index, aspectValue}`; effective key `way.<type>.<direction>.<index>.<aspect>`; twig review tables show direction.
+- [x] R7, AC1/AC9: demo fixture `config/examples/street-part.json` in the direction grammar (west footwalk/cycle/parking, center roadway, east footwalk); loader unchanged; e2e check reads it directly.
+- [x] R8, AC13: `app:aspects:migrate-directions` (`AspectDirectionMigration`) rewrites legacy keys via an explicit mapping file; preserves attribution, approval, translations and indexes; unmapped positions and value collisions abort transactionally with actionable reports; reruns are no-ops. `StreetPartAspects::parseLegacy` keeps convert-legacy working.
+- [x] Specs and README updated: street-part-aspects (R1/R2/R7/R8, ACs, new AC13), aspect-observation-mapping (keys/payload/labels), relation-merge (structural key note), controlled-vocabulary, aspect-route-preferences (scenario keys), README grammar and migration docs.
+
+### Verification of the direction revision
+
+- **Passed:** complete backend suite `docker compose exec -T php vendor/bin/phpunit` — 169 tests, 1301 assertions (new: direction-grammar validation, cross-direction independence, `AspectDirectionMigrationTest` conversion/collision/no-op cases).
+- **Passed:** `npm run build` (vue-tsc + Vite) and `node scripts/testing/check-map-editing.mjs` (against the running dev server on :5173) — direction-prefix save/reload, center default, per-direction handling of the fixture, approved direction locking, EN/DE controls. `check-node-relation.mjs`, `check-relation-approval-color.mjs` still pass; `lint:container`, `lint:twig` pass.
+- **Note:** `tag-translations.test.mjs` fails on a pre-existing Node ESM directory-import in `src/stores/tagKeyLabels.ts`, unrelated to this revision.
+- **Open:** the local development database still stores legacy four-segment tags (parts "x", "mapping replay part", "y"); `app:aspects:migrate-directions` with an operator-defined mapping file is pending (targets live in three test parts; see R8). A net — the test database was cleaned of polluted leftovers from an initially broken test teardown.
+
+## Previous revision: aspects stored as tags (2026-11-07)
 
 **Status:** Implemented and verified against the revised [aspect spec](street-part-aspects/spec.md). Earlier entity-model evidence is retained below as history.
 
