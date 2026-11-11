@@ -54,6 +54,48 @@
                     </table>
                 </section>
             {% endif %}
+            {% if merge_candidates is defined and merge_candidates is not empty %}
+                {# Overlapping relations: the admin decides whether to merge
+                   (and which relation survives) while reviewing the pending
+                   observation; competing tag keys must be resolved per row
+                   (see specs/map-editing/relation-merge/spec.md). #}
+                <section class="relation-merge">
+                    <h2>Overlapping relations</h2>
+                    {% for candidate in merge_candidates %}
+                        <form method="post" action="{{ path('app_admin_node_group_merge', {id: group.id, candidateId: candidate.id}) }}" class="relation-merge-candidate">
+                            <input type="hidden" name="_token" value="{{ csrf_token('merge_' ~ group.id ~ '_' ~ candidate.id) }}">
+                            <input type="hidden" name="merge_snapshot" value="{{ candidate.snapshot }}">
+                            <h3>{{ candidate.label }}</h3>
+                            <p class="relation-merge-meta">
+                                {{ candidate.memberCount }} {{ candidate.memberCount == 1 ? 'member' : 'members' }} ·
+                                {{ candidate.approvedTags }}
+                            </p>
+                            <label class="relation-merge-target">
+                                <span>Merge decision</span>
+                                <select name="merge_target">
+                                    <option value="candidate">Merge this relation into {{ candidate.label }} — the approved relation survives</option>
+                                    <option value="reviewed">Merge {{ candidate.label }} into this relation — this relation survives</option>
+                                </select>
+                            </label>
+                            {% if candidate.conflicts is not empty %}
+                                <p>Both relations carry these tag keys; select the rows that survive the merge.</p>
+                                {% for conflict in candidate.conflicts %}
+                                    <fieldset class="relation-merge-conflict">
+                                        <legend>{{ conflict.key }}</legend>
+                                        {% for row in conflict.rows %}
+                                            <label class="relation-merge-row">
+                                                <input type="checkbox" name="merge_keep[]" value="{{ row.id }}"{% if row.checked %} checked{% endif %}>
+                                                {{ (row.side == 'reviewed' ? 'this relation' : candidate.label) ~ ' · ' ~ row.value ~ ' by ' ~ row.user ~ (row.approved ? ' · approved' : ' · pending') }}
+                                            </label>
+                                        {% endfor %}
+                                    </fieldset>
+                                {% endfor %}
+                            {% endif %}
+                            <button class="btn btn-danger" type="submit">Merge relations</button>
+                        </form>
+                    {% endfor %}
+                </section>
+            {% endif %}
             {% include 'admin/_unapproved_tags.html.twig' with { tags: group.groupTags, next_url: path('app_admin_node_group_next_pending', {id: group.id}), empty_message: 'No unapproved tags on this relation.' } %}
         </div>
         <aside class="node-edit-split-preview">
@@ -94,6 +136,45 @@
 
         .relation-review-members small {
             color: var(--text-muted);
+        }
+
+        .relation-merge h2 {
+            font-size: 1.1rem;
+        }
+
+        .relation-merge-candidate {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+
+        .relation-merge-candidate h3 {
+            margin: 0 0 0.25rem;
+            font-size: 1rem;
+        }
+
+        .relation-merge-meta {
+            margin: 0 0 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .relation-merge-target,
+        .relation-merge-row {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .relation-merge-conflict {
+            margin: 0 0 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--border-radius);
+        }
+
+        .relation-merge-conflict legend {
+            font-weight: 600;
+            padding: 0 0.25rem;
         }
     </style>
 {% endblock %}
