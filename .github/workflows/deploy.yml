@@ -1,0 +1,123 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    env:
+      BACKEND_DEPLOY_PATH: /opt/access/backend
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PATH: /opt/access
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      SSH_OPTS: -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # Builds public/data/flensburg.geojson from the Geofabrik extract.
+      # Vite copies the public/ directory into dist/, so the file ends up at
+      # dist/data/flensburg.geojson where the frontend fetches it.
+      - name: Build Flensburg map data
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends osmium-tool
+          bash scripts/production/prepare-flensburg.sh
+          test -s public/data/flensburg.geojson
+
+      - run: npm run build
+
+      - name: Configure SSH
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Deploy frontend and backend
+        env:
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo 'Missing required deploy secrets: DEPLOY_HOST, DEPLOY_USER or DEPLOY_SSH_KEY' >&2
+            exit 1
+          fi
+          if [ -z "$BACKEND_ENV" ]; then
+            echo 'Missing required production secret: BACKEND_ENV' >&2
+            exit 1
+          fi
+          RSYNC_RSH="ssh -p $DEPLOY_PORT -i ~/.ssh/id_ed25519 $SSH_OPTS"
+          export RSYNC_RSH
+
+          ssh -p "$DEPLOY_PORT" -i ~/.ssh/id_ed25519 $SSH_OPTS \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "mkdir -p '$DEPLOY_PATH' '$DEPLOY_PATH/public/data' '$BACKEND_DEPLOY_PATH'"
+
+          # The backend compose stack bind-mounts ../public/data from the
+          # checkout into the php container (/app/osm-data), so both the
+          # frontend (dist) and the backend ($DEPLOY_PATH/public/data) need
+          # the GeoJSON.
+          rsync -az --delete --delay-updates \
+            --exclude='/backend/' \
+            --exclude='/public/' \
+            dist/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+          rsync -az \
+            public/data/flensburg.geojson \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/public/data/flensburg.geojson"
+
+          # routing/data/ holds the cached OSM extract on the server;
+          # the graph itself lives in the graphhopper_graphs volume. The
+          # tag-translations catalogs are baked into the image and seeded
+          # into the tag_translation_data volume on first start.
+          rsync -az --delete --delay-updates \
+            --exclude='.env.local' \
+            --exclude='.env.*.local' \
+            --exclude='compose.override.yaml' \
+            --exclude='var/' \
+            --exclude='vendor/' \
+            --exclude='routing/data/' \
+            backend/ "$DEPLOY_USER@$DEPLOY_HOST:$BACKEND_DEPLOY_PATH/"
+
+          printf '%s\n' "$BACKEND_ENV" | \
+            ssh -p "$DEPLOY_PORT" -i ~/.ssh/id_ed25519 $SSH_OPTS \
+              "$DEPLOY_USER@$DEPLOY_HOST" \
+              "umask 077 && cat > '$BACKEND_DEPLOY_PATH/.env.local'"
+
+      - name: Build, migrate and start backend
+        run: |
+          ssh -p "$DEPLOY_PORT" -i ~/.ssh/id_ed25519 $SSH_OPTS \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$BACKEND_DEPLOY_PATH' && \
+             if [ ! -s routing/data/schleswig-holstein-latest.osm.pbf ]; then \
+               docker compose --env-file .env.local \
+                 -f compose.yaml -f compose.prod.yaml \
+                 --profile routing-data run --rm routing-data; \
+             fi && \
+             docker compose --env-file .env.local \
+               -f compose.yaml -f compose.prod.yaml \
+               --profile routing build && \
+             docker compose --env-file .env.local \
+               -f compose.yaml -f compose.prod.yaml \
+               run --rm php php bin/console doctrine:migrations:migrate \
+                 --no-interaction && \
+             docker compose --env-file .env.local \
+               -f compose.yaml -f compose.prod.yaml \
+               --profile routing up --detach --remove-orphans --wait"
