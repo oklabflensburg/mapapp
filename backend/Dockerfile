@@ -87,6 +87,8 @@ RUN composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scri
 
 # copy sources
 COPY --link --exclude=frankenphp/ . ./
+# Use committed defaults; deployment secrets are supplied by Compose at runtime.
+COPY --link .env.example .env
 
 RUN <<-EOF
 	mkdir -p var/cache var/log var/share

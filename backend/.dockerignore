@@ -1,0 +1,7 @@
+.git/
+vendor/
+var/
+routing/data/
+.env
+.env.*
+!.env.example
