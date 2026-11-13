@@ -33,9 +33,12 @@ GEOJSON="${OUT_DIR}/flensburg.geojson"
 
 mkdir -p "${DATA_DIR}" "${OUT_DIR}"
 
-if [ ! -f "${PBF}" ]; then
+if [ ! -s "${PBF}" ]; then
   echo "Downloading Geofabrik Schleswig-Holstein extract..."
-  curl --fail --location --user-agent "${USER_AGENT}" --output "${PBF}" "${GEOFABRIK_URL}"
+  curl --fail --location --retry 5 --retry-all-errors \
+    --connect-timeout 20 --max-time 900 \
+    --user-agent "${USER_AGENT}" --output "${PBF}.part" "${GEOFABRIK_URL}"
+  mv "${PBF}.part" "${PBF}"
 else
   echo "Using cached extract: ${PBF}"
 fi
