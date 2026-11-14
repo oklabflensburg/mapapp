@@ -9,7 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         // Symfony serves these routes; the cached Vue shell would render blank.
-        navigateFallbackDenylist: [/^\/(?:admin|api)(?:\/|$)/],
+        // Workbox matches pathname + search, including EasyAdmin's query string.
+        navigateFallbackDenylist: [/^\/(?:admin|api)(?:\/|\?|$)/],
       },
       manifest: {
         name: 'AccessApp',
