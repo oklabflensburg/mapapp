@@ -7,6 +7,10 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Symfony serves these routes; the cached Vue shell would render blank.
+        navigateFallbackDenylist: [/^\/(?:admin|api)(?:\/|$)/],
+      },
       manifest: {
         name: 'AccessApp',
         short_name: 'AccessApp',
