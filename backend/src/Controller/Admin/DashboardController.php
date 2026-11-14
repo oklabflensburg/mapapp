@@ -25,7 +25,10 @@ final class DashboardController extends AbstractDashboardController
     }
     public function configureDashboard(): Dashboard
     {
-        return Dashboard::new()->setTitle('AccessApp Admin');
+        return Dashboard::new()
+            ->setTitle('AccessApp Admin')
+            // Keep actions on the browser's HTTPS origin behind a TLS proxy.
+            ->generateRelativeUrls();
     }
 
     public function configureMenuItems(): iterable

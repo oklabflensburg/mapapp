@@ -61,4 +61,22 @@ final class AdminDashboardTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
     }
+
+    public function testTagBatchDeleteUsesTheBrowserOriginBehindATlsProxy(): void
+    {
+        $client = static::createClient();
+        $this->loginAdmin($client);
+        // Model an HTTPS browser request forwarded to PHP over HTTP.
+        $crawler = $client->request('GET', '/admin/tag', server: [
+            'HTTP_HOST' => 'map.hendrikgoebel.de',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        $actions = $crawler->filter('[data-action-url*="/admin/tag/batch-delete"]');
+        self::assertGreaterThan(0, $actions->count());
+        foreach ($actions as $action) {
+            self::assertStringStartsWith('/admin/tag/batch-delete', $action->getAttribute('data-action-url'));
+        }
+    }
 }
