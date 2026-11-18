@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
+import ToggleSwitch from 'primevue/toggleswitch'
 import { useAuthStore } from '../stores/auth'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 import {
@@ -96,6 +97,19 @@ onMounted(() => {
           option-value="value"
           @update:model-value="settings.setLocale($event as AppLocale)"
         />
+      </div>
+
+      <div class="setting">
+        <div class="setting-row">
+          <label for="setting-way-direction">{{ t('profile.settings.wayDirection.label') }}</label>
+          <ToggleSwitch
+            id="setting-way-direction"
+            :model-value="settings.wayDirection"
+            :aria-label="t('profile.settings.wayDirection.label')"
+            @update:model-value="settings.setWayDirection($event as boolean)"
+          />
+        </div>
+        <p class="hint">{{ t('profile.settings.wayDirection.hint') }}</p>
       </div>
     </section>
 
@@ -201,6 +215,14 @@ onMounted(() => {
 .setting label {
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+/* A switch sits on the same row as its label instead of below it. */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .setting .p-select {

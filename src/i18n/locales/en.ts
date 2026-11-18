@@ -104,6 +104,10 @@ export default {
         en: 'English',
         de: 'German',
       },
+      wayDirection: {
+        label: 'Way direction arrows',
+        hint: 'Shows arrows on ways and street parts pointing along their direction. Applied to the map immediately.',
+      },
     },
     tagPriorities: {
       title: 'Tag priorities',

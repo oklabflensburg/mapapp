@@ -104,6 +104,10 @@ export default {
         en: 'Englisch',
         de: 'Deutsch',
       },
+      wayDirection: {
+        label: 'Richtungspfeile',
+        hint: 'Zeigt Pfeile auf Wegen und Straßenteilen entlang ihrer Richtung. Wird sofort auf die Karte angewendet.',
+      },
     },
     tagPriorities: {
       title: 'Tag-Prioritäten',

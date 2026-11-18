@@ -10,6 +10,8 @@ export type TagPriority = 'neutral' | 'avoid' | 'try_to_avoid' | 'prefer' | 'str
 
 const LOCALE_KEY = 'accessapp.settings.locale'
 const TAG_PRIORITIES_KEY = 'accessapp.settings.tagPriorities'
+// Stored as 'on' | 'off'; readStored-typed like the locale.
+const WAY_DIRECTION_KEY = 'accessapp.settings.wayDirection'
 
 const TAG_PRIORITY_LEVELS: readonly TagPriority[] = [
   'neutral',
@@ -70,11 +72,18 @@ function readStoredTagPriorities(): Record<string, TagPriority> {
 // localStorage; tag priorities are additionally stored per user on the
 // backend when logged in. The tags offered as route preferences are managed
 // by admins in the backend and loaded from there.
+// 'on'/'off' storage for the way-direction arrows, the same scheme the
+// locale uses; true means the arrows render.
+type WayDirectionSetting = 'on' | 'off'
+
 export const useSettingsStore = defineStore('settings', () => {
   const locale = ref<AppLocale>(readStored(LOCALE_KEY, 'en', ['en', 'de']))
   const prioritizableTags = ref<string[]>(FALLBACK_PRIORITIZABLE_TAGS)
   const preferenceLabels = ref<Record<string, string>>({})
   const tagPriorities = ref<Record<string, TagPriority>>(readStoredTagPriorities())
+  // Arrowheads on OSM ways and node relations are on by default; the profile
+  // page lets each visitor turn just the clutter off without Chrome-flags.
+  const wayDirection = ref(readStored(WAY_DIRECTION_KEY, 'on', ['on', 'off']) === 'on')
 
   // Apply the persisted locale on startup, before the first render.
   i18n.global.locale.value = locale.value
@@ -83,6 +92,11 @@ export const useSettingsStore = defineStore('settings', () => {
     locale.value = value
     i18n.global.locale.value = value
     writeStored(LOCALE_KEY, value)
+  }
+
+  function setWayDirection(value: boolean): void {
+    wayDirection.value = value
+    writeStored(WAY_DIRECTION_KEY, (value ? 'on' : 'off') satisfies WayDirectionSetting)
   }
 
   function applyTagPriorities(priorities: Record<string, TagPriority>): void {
@@ -142,7 +156,9 @@ export const useSettingsStore = defineStore('settings', () => {
     prioritizableTags,
     preferenceLabels,
     tagPriorities,
+    wayDirection,
     setLocale,
+    setWayDirection,
     setTagPriority,
     loadRoutePreferenceTags,
     loadTagPriorities,

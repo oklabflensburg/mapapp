@@ -8,6 +8,7 @@ import { useUserNodesStore } from '../stores/userNodes'
 import { nodeKey, tagValue, type NodeEditTarget, type SaveUserNodeInput, type TagEntry, type UserNode } from '../stores/userNodes'
 import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 import '../map/leafletIcons'
 import {
   DEFAULT_CENTER,
@@ -298,6 +299,8 @@ defineExpose({ clearSelection, selectRelation, creation, savePendingNodes, abort
 const userNodes = useUserNodesStore()
 const nodeGroups = useNodeGroupsStore()
 const osmData = useOsmDataStore()
+// The way-direction arrows follow the visitor's client-side setting.
+const settings = useSettingsStore()
 
 // Local nodes remain selectable after approval. The API returns approved
 // nodes plus the current user's pending nodes. OSM overlays keep markers
@@ -354,6 +357,7 @@ function renderNodeGroups(): void {
   nodeGroupLayer?.render(nodeGroups.groups, relationPreviewPoints.value, {
     selectedGroupId: selectedGroupId.value,
     onSelect: areasInteractive.value ? onSelectGroup : undefined,
+    showArrows: settings.wayDirection,
   })
 }
 
@@ -361,7 +365,7 @@ function renderNodeGroups(): void {
 // the user-node markers, and the pending and routing layers last, so they are
 // drawn (and hit-tested) in that order on the shared canvas renderer.
 function renderLayers(): void {
-  osmFeatureLayer?.render()
+  osmFeatureLayer?.render({ showArrows: settings.wayDirection })
   renderNodeGroups()
   userNodeLayer?.render(visibleUserNodes.value)
   pendingNodeLayer?.render(pendingNodes.value)
@@ -388,6 +392,13 @@ watch(
 watch(
   [selectedGroupId, areasInteractive],
   () => renderNodeGroups(),
+)
+
+// Turning the way-direction arrows on or off in the profile settings takes
+// effect on the map immediately.
+watch(
+  () => settings.wayDirection,
+  () => renderLayers(),
 )
 
 watch(
