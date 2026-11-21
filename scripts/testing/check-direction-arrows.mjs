@@ -1,13 +1,8 @@
 // Deterministic browser check; requires npm run dev (set APP_URL to override
 // the default http://localhost:5173). API, session, and OSM fixtures are
 // intercepted so this check never writes to the development database.
-// Verifies the way-direction spec (specs/map/way-direction/spec.md):
-// a way stroke carries a direction arrowhead pointing from its first to its
-// last coordinate (and reverses with the geometry, AC1), long lines carry
-// several arrowheads (AC5), a closed-way loop keeps arrowheads around the
-// loop (AC2), a saved relation's line carries an arrowhead in member order
-// and the dashed edit-mode preview gets live arrowheads (AC3), and clicking
-// an arrowhead still selects the way underneath (AC5-non-interference).
+// Checks arrow visibility on selection and deselection, geometry and member
+// order, spacing, click passthrough, and the profile setting.
 import assert from 'node:assert/strict'
 import { chromium, expect } from '@playwright/test'
 
@@ -112,12 +107,9 @@ await page.route('**/api/me', route => route.fulfill({
 await page.route('**/api/nodes', route => route.fulfill({ json: [] }))
 await page.route('**/api/node-groups', route => route.fulfill({ json: groups }))
 
-// Samples the overlay canvas around a position for arrowhead colors. The
-// canvas holds only what the app drew (tiles are a separate pane), so the
-// stroke and arrow colors are exact: gray ways #888888, relation green
-// #2e7d32, pending/preview amber #d97706.
-async function hasColor(x, y, kind, radius = 1) {
-  return page.evaluate(({ x, y, kind, radius }) => {
+// The overlay canvas holds only what the app drew. Map tiles are separate.
+async function hasInk(x, y, radius = 1) {
+  return page.evaluate(({ x, y, radius }) => {
     const canvas = document.querySelector('.leaflet-overlay-pane canvas')
     if (!canvas) {
       return false
@@ -128,32 +120,20 @@ async function hasColor(x, y, kind, radius = 1) {
     const y0 = Math.max(0, Math.floor((y - rect.top - radius) * scale))
     const size = Math.ceil((radius * 2 + 1) * scale)
     const data = canvas.getContext('2d').getImageData(x0, y0, size, size).data
-    const matches = (r, g, b, a) => {
-      if (a < 90) {
-        return false
-      }
-      if (kind === 'gray') {
-        return Math.abs(r - 136) < 30 && Math.abs(g - 136) < 30 && Math.abs(b - 136) < 30
-      }
-      if (kind === 'green') {
-        return r < 100 && g > 100 && b < 75 && g - b > 60
-      }
-      return r > 150 && g > 80 && b < 90 && r - b > 90
-    }
-    for (let i = 0; i < data.length; i += 4) {
-      if (matches(data[i], data[i + 1], data[i + 2], data[i + 3])) {
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] >= 90) {
         return true
       }
     }
     return false
-  }, { x, y, kind, radius })
+  }, { x, y, radius })
 }
 
 // Counts clusters of arrowhead-colored columns in a horizontal band, or rows
 // in a vertical band. Long lines carry several arrowheads, so the band must
 // contain several separated clusters (one per arrowhead's off-line wing).
-async function countClusters({ horizontal, from, to, fixed, kind }) {
-  return page.evaluate(({ horizontal, from, to, fixed, kind }) => {
+async function countClusters({ horizontal, from, to, fixed }) {
+  return page.evaluate(({ horizontal, from, to, fixed }) => {
     const canvas = document.querySelector('.leaflet-overlay-pane canvas')
     if (!canvas) {
       return 0
@@ -174,12 +154,7 @@ async function countClusters({ horizontal, from, to, fixed, kind }) {
       let match = false
       for (let k = 0; k < size; k++) {
         const i = (horizontal ? k * length + step : step * size + k) * 4
-        const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]]
-        const colored = a >= 90 && (
-          (kind === 'gray' && Math.abs(r - 136) < 30 && Math.abs(g - 136) < 30 && Math.abs(b - 136) < 30) ||
-          (kind === 'green' && r < 100 && g > 100 && b < 75 && g - b > 60)
-        )
-        if (colored) {
+        if (data[i + 3] >= 90) {
           match = true
           break
         }
@@ -199,7 +174,7 @@ async function countClusters({ horizontal, from, to, fixed, kind }) {
       }
     }
     return clusters
-  }, { horizontal, from, to, fixed, kind })
+  }, { horizontal, from, to, fixed })
 }
 
 // A chevron opens behind its center: the wing back vertices sit 4.5px off
@@ -217,110 +192,112 @@ function emptySideSample(midX, lineY, east) {
   return east ? { x: midX + 6, y: lineY - 5 } : { x: midX - 6, y: lineY - 5 }
 }
 
-async function assertHorizontalArrowDirection(midX, lineY, kind, expectEast) {
+async function assertHorizontalArrowDirection(midX, lineY, expectEast) {
   const back = arrowSample(midX, lineY, expectEast)
   const empty = emptySideSample(midX, lineY, expectEast)
-  await expect.poll(() => hasColor(back.x, back.y, kind)).toBe(true)
-  const opposite = await hasColor(empty.x, empty.y, kind)
+  await expect.poll(() => hasInk(back.x, back.y)).toBe(true)
+  const opposite = await hasInk(empty.x, empty.y)
   assert.equal(opposite, false, `no arrowhead color ahead of the arrowhead (line y=${lineY})`)
 }
 
 const streetWest = screenPos(STREET.lonWest, STREET.lat)
 const relationWest = screenPos(RELATION.lonWest, RELATION.lat)
 
+const streetMid = (streetWest.x + screenPos(STREET.lonEast, STREET.lat).x) / 2
+const relationMid = (relationWest.x + screenPos(RELATION.lonEast, RELATION.lat).x) / 2
+const streetWing = arrowSample(streetMid, streetWest.y, true)
+const relationWing = arrowSample(relationMid, relationWest.y, true)
+const drawer = page.locator('.p-drawer')
+
+async function closeSelection() {
+  await drawer.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(drawer).toHaveCount(0)
+}
+
+async function selectLine(x, y) {
+  await expect.poll(() => hasInk(x, y)).toBe(true)
+  await page.mouse.click(x, y)
+  await expect(drawer).toBeVisible()
+}
+
 try {
   await page.goto(APP_URL)
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   const add = page.getByRole('button', { name: 'Add node', exact: true })
   await expect(add).toBeVisible()
+  await expect.poll(() => hasInk(streetMid, streetWest.y)).toBe(true)
+  await expect.poll(() => hasInk(relationMid, relationWest.y)).toBe(true)
+  assert.equal(await hasInk(streetWing.x, streetWing.y), false, 'unselected way has no arrows')
+  assert.equal(await hasInk(relationWing.x, relationWing.y), false, 'unselected relation has no arrows')
 
-  // AC1: the street's single arrowhead (one per short line) points east,
-  // following the coordinate order west -> east.
-  const streetMid = (streetWest.x + screenPos(STREET.lonEast, STREET.lat).x) / 2
-  await assertHorizontalArrowDirection(streetMid, streetWest.y, 'gray', true)
+  await selectLine(streetMid, streetWest.y)
+  await expect(drawer.filter({ hasText: STREET.name })).toBeVisible()
+  await assertHorizontalArrowDirection(streetMid, streetWest.y, true)
+  assert.equal(await hasInk(relationWing.x, relationWing.y), false, 'selection leaves other lines without arrows')
+  // A click on an existing arrow wing still reaches the selected way.
+  await page.mouse.click(streetWing.x, streetWing.y)
+  await expect(drawer.filter({ hasText: STREET.name })).toBeVisible()
+  await closeSelection()
+  await expect.poll(() => hasInk(streetWing.x, streetWing.y)).toBe(false)
 
-  // AC5: the long street carries several separated arrowheads.
+  await selectLine(relationMid, relationWest.y)
+  await assertHorizontalArrowDirection(relationMid, relationWest.y, true)
+  await closeSelection()
+  await expect.poll(() => hasInk(relationWing.x, relationWing.y)).toBe(false)
+
   const longWest = screenPos(LONG_STREET.lonWest, LONG_STREET.lat)
   const longEast = screenPos(LONG_STREET.lonEast, LONG_STREET.lat)
+  await selectLine(350, longWest.y)
   await expect.poll(() =>
-    countClusters({ horizontal: true, from: longWest.x + 40, to: longEast.x - 40, fixed: longWest.y - 3.5, kind: 'gray' }),
+    countClusters({ horizontal: true, from: longWest.x + 40, to: longEast.x - 40, fixed: longWest.y - 5 }),
   ).toBeGreaterThanOrEqual(3)
+  await closeSelection()
 
-  // AC2: the closed-way loop keeps arrowheads around its course: above the
-  // top edge and beside the right edge of the loop.
   const loopWest = screenPos(LOOP.lonWest, LOOP.latTop)
   const loopEast = screenPos(LOOP.lonEast, LOOP.latTop)
   const loopSouth = screenPos(LOOP.lonEast, LOOP.latBottom)
+  await selectLine(350, loopWest.y)
   await expect.poll(() =>
-    countClusters({ horizontal: true, from: loopWest.x + 40, to: loopEast.x - 40, fixed: loopWest.y - 3.5, kind: 'gray' }),
+    countClusters({ horizontal: true, from: loopWest.x + 40, to: loopEast.x - 40, fixed: loopWest.y - 5 }),
   ).toBeGreaterThanOrEqual(2)
   await expect.poll(() =>
-    countClusters({ horizontal: false, from: loopEast.y + 40, to: loopSouth.y - 40, fixed: loopEast.x + 3.5, kind: 'gray' }),
+    countClusters({ horizontal: false, from: loopEast.y + 40, to: loopSouth.y - 40, fixed: loopEast.x + 5 }),
   ).toBeGreaterThanOrEqual(2)
 
-  // R3: the saved relation's line carries an arrowhead in member order
-  // (members listed west -> east).
-  const relationEast = screenPos(RELATION.lonEast, RELATION.lat)
-  await assertHorizontalArrowDirection(
-    (relationWest.x + relationEast.x) / 2, relationWest.y, 'green', true,
-  )
-
-  // Non-interference (R5): the click lands on the street arrowhead's
-  // off-line wing, within the stroke's hit tolerance; the arrowhead must
-  // not intercept it.
-  const wing = arrowSample(streetMid, streetWest.y, true)
-  await page.mouse.click(wing.x, wing.y)
-  const drawer = page.locator('.p-drawer').filter({ hasText: STREET.name })
-  await expect(drawer).toBeVisible()
-  await drawer.getByRole('button', { name: 'Cancel', exact: true }).click()
-  await expect(page.locator('.p-drawer').last()).toBeHidden()
-
-  // AC1 (reversal): a reload with the geometry reversed flips the arrowhead.
   reverseStreet = true
   await page.reload()
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
-  await assertHorizontalArrowDirection(streetMid, streetWest.y, 'gray', false)
+  await selectLine(streetMid, streetWest.y)
+  await assertHorizontalArrowDirection(streetMid, streetWest.y, false)
+  await closeSelection()
 
-  // R3 (preview): while collecting a relation, the dashed preview line gets
-  // live arrowheads in collection order.
   await add.click()
   await expect(add).toHaveAttribute('aria-pressed', 'true')
   await page.mouse.click(PREVIEW.xA, PREVIEW.y)
   await page.mouse.click(PREVIEW.xB, PREVIEW.y)
-  await assertHorizontalArrowDirection((PREVIEW.xA + PREVIEW.xB) / 2, PREVIEW.y, 'amber', true)
+  await expect.poll(() => hasInk(PREVIEW.xA + 20, PREVIEW.y, 5)).toBe(true)
+  const previewWing = arrowSample((PREVIEW.xA + PREVIEW.xB) / 2, PREVIEW.y, true)
+  assert.equal(await hasInk(previewWing.x, previewWing.y), false, 'preview has no arrows')
 
-  // R6: the way-direction arrows are configurable on the profile page.
-  // Turning them off redraws the map with bare lines (arrows are off, the
-  // strokes themselves keep rendering); toggling back on restores them.
   const arrowSwitch = () => page.locator('#setting-way-direction')
   await page.goto(`${APP_URL}/profile`)
   await expect(arrowSwitch()).toBeVisible()
   await arrowSwitch().click()
   await expect(arrowSwitch()).toHaveAttribute('data-p-checked', 'false')
   await page.goto(APP_URL)
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
-  // The street stroke and the relation line still render after the reload.
-  await expect.poll(() => hasColor(streetMid, streetWest.y, 'gray')).toBe(true)
-  await expect.poll(() => hasColor(relationWest.x, relationWest.y, 'green')).toBe(true)
-  // Their arrowheads are gone (the way is still west-directed from the
-  // reversal phase, so its back vertex is east of the center).
-  const hiddenBack = arrowSample(streetMid, streetWest.y, false)
-  const relationMid = (relationWest.x + screenPos(RELATION.lonEast, RELATION.lat).x) / 2
-  const hiddenRelationBack = arrowSample(relationMid, relationWest.y, true)
-  assert.equal(await hasColor(hiddenBack.x, hiddenBack.y, 'gray'), false, 'way arrowheads hidden when turned off')
-  assert.equal(await hasColor(hiddenRelationBack.x, hiddenRelationBack.y, 'green'), false, 'relation arrowheads hidden when turned off')
-  const loopTopEmpty = await countClusters({ horizontal: true, from: loopWest.x + 40, to: loopEast.x - 40, fixed: loopWest.y - 3.5, kind: 'gray' })
-  assert.equal(loopTopEmpty, 0, 'closed-loop arrowheads hidden when turned off')
+  await selectLine(streetMid, streetWest.y)
+  const reversedWing = arrowSample(streetMid, streetWest.y, false)
+  assert.equal(await hasInk(reversedWing.x, reversedWing.y), false, 'selected way has no arrows with the setting off')
+  await closeSelection()
+  await selectLine(relationMid, relationWest.y)
+  assert.equal(await hasInk(relationWing.x, relationWing.y), false, 'selected relation has no arrows with the setting off')
 
-  // Toggling back on restores the arrows.
   await page.goto(`${APP_URL}/profile`)
   await arrowSwitch().click()
   await expect(arrowSwitch()).toHaveAttribute('data-p-checked', 'true')
   await page.goto(APP_URL)
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
-  await assertHorizontalArrowDirection(streetMid, streetWest.y, 'gray', false)
+  await selectLine(streetMid, streetWest.y)
+  await assertHorizontalArrowDirection(streetMid, streetWest.y, false)
 
-  console.log('PASS: way and relation arrowheads point along coordinate/member order, reverse with the geometry, repeat on long lines, follow closed loops, keep clicks passing through, render on the live relation preview, and hide when the profile setting turns them off')
+  console.log('PASS: direction arrows follow selection and the profile setting, keep clicks passing through, and follow line geometry')
 } finally {
   await browser.close()
 }

@@ -22,13 +22,12 @@ export interface DirectionArrowStyle {
 // chevrons are small open polylines with interaction disabled, so clicks keep
 // reaching the line underneath. Repeated consecutive coordinates (e.g. a
 // closed way's first and last point) carry no direction and are skipped.
-// Returns the created chevrons so callers can restyle them.
 export function drawDirectionArrows(
   into: L.LayerGroup,
   map: L.Map,
   positions: L.LatLngExpression[],
   style: DirectionArrowStyle,
-): L.Polyline[] {
+): void {
   const zoom = map.getZoom()
   const points: L.Point[] = []
   for (const position of positions) {
@@ -38,7 +37,7 @@ export function drawDirectionArrows(
     }
   }
   if (points.length < 2) {
-    return []
+    return
   }
 
   const segments: { start: L.Point; end: L.Point; length: number }[] = []
@@ -53,18 +52,13 @@ export function drawDirectionArrows(
     }
   }
   if (totalLength === 0) {
-    return []
+    return
   }
 
-  const arrows: L.Polyline[] = []
   const arrowCount = Math.max(1, Math.floor(totalLength / ARROW_SPACING_PX))
   for (let i = 1; i <= arrowCount; i++) {
-    arrows.push(chevronAt(segments, (totalLength * i) / (arrowCount + 1), map, zoom, style))
+    chevronAt(segments, (totalLength * i) / (arrowCount + 1), map, zoom, style).addTo(into)
   }
-  for (const arrow of arrows) {
-    arrow.addTo(into)
-  }
-  return arrows
 }
 
 // Builds the chevron at the given screen distance along the segments: a

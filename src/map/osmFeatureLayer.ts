@@ -4,7 +4,7 @@ import type { NodeEditTarget } from '../stores/userNodes'
 import { enableAreaHitTest } from './areaHitTest'
 import { bboxArea, isMinorFeature, type IndexedFeature } from './featureIndex'
 import { designToken, highlightStyleFor, POINT_MARKER_OPTIONS, styleFor } from './featureStyling'
-import { drawDirectionArrows, type DirectionArrowStyle } from './directionArrows'
+import { drawDirectionArrows } from './directionArrows'
 import { MAX_VISIBLE_FEATURES } from './mapConfig'
 
 export interface OsmFeatureLayerDeps {
@@ -14,8 +14,7 @@ export interface OsmFeatureLayerDeps {
 }
 
 export interface OsmFeatureRenderOptions {
-  // Way-direction arrowheads stay drawn unless the visitor turned them off
-  // in their settings.
+  // Whether to show direction arrows on the selected way.
   showArrows?: boolean
 }
 
@@ -33,11 +32,7 @@ export class OsmFeatureLayer {
   private highlightedFeature: Feature | undefined
   private highlightedLayer: L.Path | undefined
 
-  // Every rendered way's direction arrowheads, keyed by their feature. The
-  // arrowheads follow their line's style: base stroke normally, primary
-  // highlight while the way is selected.
   private arrowLayer: L.LayerGroup | undefined
-  private arrowsByFeature: Map<Feature, L.Polyline[]> = new Map()
 
   constructor(deps: OsmFeatureLayerDeps) {
     this.deps = deps
@@ -50,7 +45,7 @@ export class OsmFeatureLayer {
   render(options: OsmFeatureRenderOptions = {}): void {
     this.layer?.remove()
     this.arrowLayer?.remove()
-    this.arrowsByFeature = new Map()
+    this.arrowLayer = undefined
     this.highlightedLayer = undefined
     if (this.features.length === 0) {
       return
@@ -130,28 +125,9 @@ export class OsmFeatureLayer {
       },
     }).addTo(this.deps.map)
 
-    // Direction arrowheads on every rendered way stroke, drawn as a layer of
-    // their own above the features so a way's OSM node order stays readable.
-    // Points and areas carry no direction and get none (see the spec).
-    if (options.showArrows === false) {
-      return
-    }
-    this.arrowLayer = L.layerGroup().addTo(this.deps.map)
-    for (const indexed of visible) {
-      const feature = indexed.feature
-      if (feature.geometry?.type !== 'LineString') {
-        continue
-      }
-      const style = baseArrowStyleFor(feature)
-      const positions = (feature.geometry.coordinates as [number, number][])
-        .map((coordinate): L.LatLngTuple => [coordinate[1], coordinate[0]])
-      const arrows = drawDirectionArrows(this.arrowLayer, this.deps.map, positions, style)
-      if (arrows.length > 0) {
-        this.arrowsByFeature.set(feature, arrows)
-      }
-      if (feature === this.highlightedFeature) {
-        this.restyleArrows(feature, { color: designToken('--p-primary-color'), opacity: 1 })
-      }
+    if (options.showArrows !== false) {
+      this.arrowLayer = L.layerGroup().addTo(this.deps.map)
+      this.renderSelectedArrows()
     }
   }
 
@@ -160,7 +136,6 @@ export class OsmFeatureLayer {
     this.layer = undefined
     this.arrowLayer?.remove()
     this.arrowLayer = undefined
-    this.arrowsByFeature = new Map()
     this.highlightedFeature = undefined
     this.highlightedLayer = undefined
   }
@@ -171,9 +146,7 @@ export class OsmFeatureLayer {
     if (this.highlightedLayer) {
       this.highlightedLayer.setStyle(styleFor(this.highlightedFeature as Feature))
     }
-    if (this.highlightedFeature) {
-      this.restyleArrows(this.highlightedFeature, baseArrowStyleFor(this.highlightedFeature))
-    }
+    this.arrowLayer?.clearLayers()
     this.highlightedFeature = undefined
     this.highlightedLayer = undefined
   }
@@ -182,31 +155,28 @@ export class OsmFeatureLayer {
     if (this.highlightedLayer && this.highlightedLayer !== layer) {
       this.highlightedLayer.setStyle(styleFor(this.highlightedFeature as Feature))
     }
-    if (this.highlightedFeature && this.highlightedFeature !== feature) {
-      this.restyleArrows(this.highlightedFeature, baseArrowStyleFor(this.highlightedFeature))
-    }
     this.highlightedFeature = feature
     this.highlightedLayer = layer
     layer.setStyle(highlightStyleFor(layer))
     layer.bringToFront()
-    this.restyleArrows(feature, { color: designToken('--p-primary-color'), opacity: 1 })
+    this.renderSelectedArrows()
     this.deps.onSelect()
   }
 
-  // A way's arrowheads follow the line: the stroke's base style normally,
-  // the primary highlight while the way is selected.
-  private restyleArrows(feature: Feature, style: DirectionArrowStyle): void {
-    for (const arrow of this.arrowsByFeature.get(feature) ?? []) {
-      arrow.setStyle({ color: style.color, weight: style.weight, opacity: style.opacity })
+  private renderSelectedArrows(): void {
+    const { arrowLayer, highlightedFeature, highlightedLayer } = this
+    if (!arrowLayer) {
+      return
     }
-  }
-}
+    arrowLayer.clearLayers()
+    if (!highlightedLayer || highlightedFeature?.geometry.type !== 'LineString') {
+      return
+    }
 
-function baseArrowStyleFor(feature: Feature): DirectionArrowStyle {
-  const lineStyle = styleFor(feature)
-  return {
-    color: lineStyle.color ?? '#888888',
-    weight: Math.max(1.5, lineStyle.weight ?? 1),
-    opacity: lineStyle.opacity ?? 1,
+    const positions = highlightedFeature.geometry.coordinates
+      .map((coordinate): L.LatLngTuple => [coordinate[1], coordinate[0]])
+    drawDirectionArrows(arrowLayer, this.deps.map, positions, {
+      color: designToken('--p-primary-color'),
+    })
   }
 }

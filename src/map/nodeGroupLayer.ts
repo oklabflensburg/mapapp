@@ -35,8 +35,7 @@ const SELECTED_LINE_OVERRIDES: L.PolylineOptions = {
 export interface NodeGroupRenderOptions {
   selectedGroupId?: number
   onSelect?: (group: NodeGroup) => void
-  // Relation and preview arrowheads follow the same client setting as the
-  // OSM ways' ones.
+  // Whether to show direction arrows on the selected relation.
   showArrows?: boolean
 }
 
@@ -70,19 +69,18 @@ export class NodeGroupLayer {
     this.layer = L.layerGroup().addTo(this.map)
 
     const { onSelect, selectedGroupId, showArrows } = options
-    // The relation's member line carries arrowheads in member order, so the
-    // street part's direction of travel is visible on every rendered line.
     for (const group of groups) {
       const positions = memberPositions(group)
       if (!positions) {
         continue
       }
+      const selected = selectedGroupId === group.id
       const lineOptions = group.approved
         ? { ...APPROVED_LINE_OPTIONS, color: APPROVED_COLOR }
         : { ...PENDING_LINE_OPTIONS, color: PENDING_COLOR }
       const line = L.polyline(positions, {
         ...lineOptions,
-        ...(selectedGroupId === group.id ? SELECTED_LINE_OVERRIDES : {}),
+        ...(selected ? SELECTED_LINE_OVERRIDES : {}),
         // Without a click handler the lines stay a visual aid whose clicks
         // pass through to the layers beneath.
         interactive: onSelect !== undefined,
@@ -95,7 +93,7 @@ export class NodeGroupLayer {
       line.addTo(this.layer)
       // Drawn right after their line, so each relation's arrows stay above
       // its own stroke; they never intercept clicks (see directionArrows).
-      if (showArrows !== false) {
+      if (selected && showArrows !== false) {
         drawDirectionArrows(this.layer, this.map, positions, { color: lineOptions.color })
       }
     }
@@ -103,11 +101,6 @@ export class NodeGroupLayer {
     if (previewPoints.length >= 2) {
       const positions = previewPoints.map((point): L.LatLngTuple => [point.latitude, point.longitude])
       L.polyline(positions, PREVIEW_LINE_OPTIONS).addTo(this.layer)
-      if (showArrows !== false) {
-        // The live preview shows its direction too, so the editor sees which
-        // way the relation will run while collecting its nodes.
-        drawDirectionArrows(this.layer, this.map, positions, { color: PENDING_COLOR })
-      }
     }
   }
 

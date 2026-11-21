@@ -106,7 +106,7 @@ export default {
       },
       wayDirection: {
         label: 'Way direction arrows',
-        hint: 'Shows arrows on ways and street parts pointing along their direction. Applied to the map immediately.',
+        hint: 'Shows the direction of the selected way or street part. Applied to the map immediately.',
       },
     },
     tagPriorities: {
