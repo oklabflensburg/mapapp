@@ -803,20 +803,3 @@ old model requires a backup; the removal migration has no automatic rollback.
 
 Run `node scripts/testing/check-map-editing.mjs` with Vite running for the
 fixture-based browser check (no development database writes).
-
-The committed catalog works immediately. To validate it without creating map
-data, use `app:aspects:load-demo --catalog-only --demo`. To load the five-element
-example in dev/test through ordinary tag persistence, use an existing editor:
-
-```bash
-cd backend
-docker compose exec php php bin/console app:aspects:load-demo editor@example.test --demo
-```
-
-The fixture in `config/examples/street-part.json` describes one cross-section
-from west to east: a footwalk, cycle lane and parking strip on the west side,
-the roadway in the center, and a second footwalk east. `config/examples/aspect-catalog.json`
-is the companion example catalog. The loader refuses production; reruns preserve
-edits. Sign in as that editor and open
-`http://localhost:5173/?lat=54.791&lon=9.437&zoom=18`, then click the part's line.
-Demo member identities are synthetic references, not real OSM edits.

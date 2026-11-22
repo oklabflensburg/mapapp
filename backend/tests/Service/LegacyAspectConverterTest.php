@@ -34,7 +34,7 @@ final class LegacyAspectConverterTest extends KernelTestCase
             "INSERT INTO user_tag_priorities VALUES (7, 'aspect:42', 'prefer')",
         ] as $sql) $this->connection->executeStatement($sql);
         $this->path = tempnam(sys_get_temp_dir(), 'legacy-aspects');
-        file_put_contents($this->path, file_get_contents(dirname(__DIR__, 2).'/config/examples/aspect-catalog.json'));
+        file_put_contents($this->path, file_get_contents(dirname(__DIR__, 2).'/config/aspect-catalog.json'));
     }
 
     protected function tearDown(): void

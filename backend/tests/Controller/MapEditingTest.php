@@ -262,38 +262,6 @@ final class MapEditingTest extends WebTestCase
         }
     }
 
-    public function testDemoUsesNormalTagPersistenceAndKeepsRepeatedTypesIndependent(): void
-    {
-        $client = static::createClient();
-        $user = $this->createUser('structured-demo@example.test', ['editor']);
-        $application = new \Symfony\Bundle\FrameworkBundle\Console\Application(static::$kernel);
-        $tester = new \Symfony\Component\Console\Tester\CommandTester($application->find('app:aspects:load-demo'));
-        self::assertSame(2, $tester->execute(['email' => $user->getEmail()]));
-        self::assertSame(0, $tester->execute(['--catalog-only' => true, '--demo' => true]), $tester->getDisplay());
-        self::assertSame(0, $tester->execute(['email' => $user->getEmail(), '--demo' => true]), $tester->getDisplay());
-        $em = static::getContainer()->get('doctrine')->getManager();
-        $group = $em->getRepository(NodeGroup::class)->findOneBy(['name' => 'Demo cross-section', 'createdByUser' => $user]);
-        self::assertNotNull($group);
-        $this->groups[] = $group->getId();
-        foreach ($group->getMembers() as $member) $this->nodes[] = $member->getNode()->getId();
-        self::assertSame(0, $tester->execute(['email' => $user->getEmail(), '--demo' => true]));
-        $client->loginUser($user);
-        $client->request('GET', '/api/node-groups');
-        $part = array_values(array_filter(json_decode($client->getResponse()->getContent(), true), fn ($g) => $g['id'] === $group->getId()))[0];
-        self::assertCount(11, $part['tags']);
-        $tags = $part['tags'];
-        foreach ($tags as &$tag) if ($tag['key'] === 'way.footwalk.west.1.width') $tag['value'] = '<1';
-        unset($tag);
-        $client->jsonRequest('POST', '/api/node-groups', ['id' => $part['id'], 'tags' => $tags]);
-        self::assertResponseIsSuccessful();
-        $saved = json_decode($client->getResponse()->getContent(), true);
-        $byKey = array_column($saved['tags'], 'value', 'key');
-        self::assertSame('<1', $byKey['way.footwalk.west.1.width']);
-        self::assertSame('1-2', $byKey['way.footwalk.east.1.width']);
-        self::assertSame('paving_stones', $byKey['way.footwalk.east.1.surface']);
-        self::assertSame('2', $byKey['way.roadway.center.1.lanes']);
-    }
-
     public function testPublicCatalogAndUnavailableResponse(): void
     {
         $client = static::createClient();

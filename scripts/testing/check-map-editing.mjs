@@ -106,28 +106,40 @@ try {
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   await expect(page.getByRole('combobox', {name: 'Width', exact: true}).first()).toContainText('< 1 m')
-  // Exercise the committed five-aspect example in the normal composer.
-  const exampleCatalog = JSON.parse(await readFile(new URL('../../backend/config/examples/aspect-catalog.json', import.meta.url), 'utf8'))
-  const examplePart = JSON.parse(await readFile(new URL('../../backend/config/examples/street-part.json', import.meta.url), 'utf8'))
-  catalog.aspectTypes = exampleCatalog.types
-  group = {...group, tags: examplePart.tags, observations: examplePart.tags}
+  // Exercise a full five-type cross-section in the normal composer.
+  const definitionCatalog = JSON.parse(await readFile(new URL('../../backend/config/aspect-catalog.json', import.meta.url), 'utf8'))
+  const crossSectionTags = [
+    { key: 'way.footwalk.west.1.width', value: '>2' },
+    { key: 'way.footwalk.west.1.surface', value: 'asphalt' },
+    { key: 'way.cycle_lane.west.2.width', value: '1-2' },
+    { key: 'way.cycle_lane.west.2.surface', value: 'asphalt' },
+    { key: 'way.parking.west.3.width', value: '>2' },
+    { key: 'way.parking.west.3.surface', value: 'concrete' },
+    { key: 'way.roadway.center.1.width', value: '>2' },
+    { key: 'way.roadway.center.1.surface', value: 'asphalt' },
+    { key: 'way.roadway.center.1.lanes', value: '2' },
+    { key: 'way.footwalk.east.1.width', value: '1-2' },
+    { key: 'way.footwalk.east.1.surface', value: 'paving_stones' },
+  ]
+  catalog.aspectTypes = definitionCatalog.types
+  group = {...group, tags: crossSectionTags, observations: crossSectionTags}
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
-  const exampleDrawer = page.locator('.p-drawer').filter({hasText: 'Test street part'})
-  const widths = exampleDrawer.getByRole('combobox', {name: 'Width', exact: true})
+  const crossSectionDrawer = page.locator('.p-drawer').filter({hasText: 'Test street part'})
+  const widths = crossSectionDrawer.getByRole('combobox', {name: 'Width', exact: true})
   await expect(widths).toHaveCount(5)
   await expect(widths.first()).toContainText('> 2 m')
   await expect(widths.nth(4)).toContainText('1–2 m')
   await widths.first().click()
   await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
   failSave = true
-  await exampleDrawer.getByRole('button', {name: 'Save', exact: true}).click()
-  await expect(exampleDrawer.locator('.save-error')).toBeVisible()
+  await crossSectionDrawer.getByRole('button', {name: 'Save', exact: true}).click()
+  await expect(crossSectionDrawer.locator('.save-error')).toBeVisible()
   await expect(widths.first()).toContainText('< 1 m')
   failSave = false
-  await exampleDrawer.getByRole('button', {name: 'Save', exact: true}).click()
-  await expect(exampleDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
+  await crossSectionDrawer.getByRole('button', {name: 'Save', exact: true}).click()
+  await expect(crossSectionDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
   assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.west.1.width').value, '<1')
   assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.east.1.width').value, '1-2')
   assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.east.1.surface').value, 'paving_stones')
@@ -171,5 +183,5 @@ try {
   await expect(germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true})).toBeVisible()
   await expect(germanComposer.getByText(/Aspekt|Aspect/)).toHaveCount(0)
   assert.equal(group.tags.find(tag => tag.key === 'way.footwalk.west.1.width').value, '<1')
-  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, cross-section save/reload with direction prefixes, profile label, independent five-observation example, approved-structure locking, English/German controls and catalog labels')
+  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, cross-section save/reload with direction prefixes, profile label, independent five-observation cross-section, approved-structure locking, English/German controls and catalog labels')
 } finally { await browser.close() }

@@ -15,7 +15,7 @@ final class AspectCatalogTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'aspect-catalog');
         $reader = new AspectCatalog($path, new NullLogger());
         try {
-            $catalog = json_decode(file_get_contents(dirname(__DIR__, 2).'/config/examples/aspect-catalog.json'), true);
+            $catalog = json_decode(file_get_contents(dirname(__DIR__, 2).'/config/aspect-catalog.json'), true);
             file_put_contents($path, json_encode($catalog));
             self::assertSame($catalog, $reader->read());
             $catalog['types'][0]['attributes'][0]['values'] = ['>2'];
