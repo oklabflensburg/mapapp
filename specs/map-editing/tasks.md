@@ -1,6 +1,23 @@
 # Map editing implementation
 
-## Current revision: direction-qualified cross-section grammar (2026-11-11)
+## Current revision: OSM-based aspect naming (2026-11-22)
+
+**Status:** Implemented and verified against the [naming spec](osm-aspect-naming/spec.md). The cross-section key grammar is `<type>.<side>.<index>.<aspect>` (bare, no namespace prefix) with sides `left`, `right`, `center` (relative to the relation's direction of travel, like OSM); types `sidewalk`, `cycleway`, `parking`, `roadway`; preference keys use the `aspect.` prefix. All previous observation content was deleted (content reset) — no migration.
+
+- [x] R1/R2: side grammar in `StreetPartAspects` (`SIDES = ['left','center','right']`, `way.*` regex) and `crossSection.ts`; compass-side, colon-separated and four-segment keys reject with 422. Composer renamed direction→side (Side/Seite, Left/Links, Center/Mitte, Right/Rechts), canonical side order left/center/right, per-side renumbering, `center` default.
+- [x] R1: catalog renames `footwalk`→`sidewalk`, `cycle_lane`→`cycleway`; `aspect-catalog.json`, `AspectCatalog` (prefix `aspect.`, 50-char limit), `Routing.php` prefix check.
+- [x] R1 (second pass, same day): the `way.` namespace prefix is removed — structured keys are bare `<type>.<side>.<index>.<aspect>`; detection is shape-based (`StreetPartAspects::isStructuredKey`: parses, or a 4+-segment key with a side token in the second segment), so near-grammar typos stay 422 while prefix/compass/colon shapes degrade to ordinary tags (new `testFormerGrammarShapesAreOrdinaryTags`); `TagCrudController` effective keys, `NodeGroupManager` approved-echo rule, `crossSection.ts`/`CrossSectionComposer.vue` key builders and all fixtures/tests/checks updated; suite green (163 tests, 1271 assertions).
+- [x] R3/R4 (mapping spec continuation): review payloads `{side, index, aspectValue}`; effective key `<type>.<side>.<index>.<aspect>`; twig review tables show side.
+- [x] R5: no-compat cleanup — `parseLegacy`, `LegacyAspectConverter`, `AspectDirectionMigration`, `ConvertLegacyAspectsCommand`, `MigrateAspectDirectionsCommand` and their tests deleted; transactional reset wiped all user-created observation content (groups, group/node tags, tags, local nodes, `aspect:*` priorities; 5 static OSM provider nodes preserved); translation sync regenerated `key:sidewalk`/`key:cycleway`/`key:aspect.sidewalk-*` units and stale `key:footwalk`/`key:cycle_lane`/`key:aspect:footwalk-*` units were removed from both XLIFF catalogs. This resolves the direction revision's open migration item by replacement.
+
+### Verification of the naming revision
+
+- **Passed:** complete backend suite `docker compose exec -T php vendor/bin/phpunit` — 162 tests, 1268 assertions; `lint:container`, `lint:twig`.
+- **Passed:** `npm run build` and `check-map-editing.mjs` (side-token save/reload, center default, per-side renumbering, structure/side lock, five-element fixture, EN/DE labels, `aspect.` profile labels); `check-node-relation.mjs`, `check-relation-approval-color.mjs`, `check-direction-arrows.mjs`, `check-node-selection.mjs` pass.
+- **Pre-existing failure:** `check-node-creation.mjs` fails on the drawer save button on the unmodified `refactoring` commit too (verified by stashing); unrelated.
+- **Open:** AC3's geometric leftness against the arrows holds by construction (both use the relation's member order); no automated geometric check exists.
+
+## Previous revision: direction-qualified cross-section grammar (2026-11-11)
 
 **Status:** Implemented and verified against the revised [aspect spec](street-part-aspects/spec.md) R1/R2/R7/R8 and the direction-updated [mapping spec](aspect-observation-mapping/spec.md). The cross-section key grammar is now `way.<type>.<direction>.<index>.<aspect>` with the fixed direction tokens `north`, `south`, `east`, `west`, `center` and per-direction indexes; positions are `(direction, index)` with one type each. The canonical display order is west, south, center, north, east.
 

@@ -37,6 +37,11 @@ export interface NodeGroupRenderOptions {
   onSelect?: (group: NodeGroup) => void
   // Whether to show direction arrows on the selected relation.
   showArrows?: boolean
+  // Whether the collected batch's direction is known (one shared parent
+  // way): the preview then shows arrowheads along the inherited direction
+  // (see specs/map-editing/relation-parent-direction/spec.md). A preview
+  // without a direction stays arrowless.
+  previewShowsDirection?: boolean
 }
 
 // Dashed preview of the street part being collected in relation mode.
@@ -101,6 +106,9 @@ export class NodeGroupLayer {
     if (previewPoints.length >= 2) {
       const positions = previewPoints.map((point): L.LatLngTuple => [point.latitude, point.longitude])
       L.polyline(positions, PREVIEW_LINE_OPTIONS).addTo(this.layer)
+      if (options.previewShowsDirection && showArrows !== false) {
+        drawDirectionArrows(this.layer, this.map, positions, { color: PENDING_COLOR })
+      }
     }
   }
 

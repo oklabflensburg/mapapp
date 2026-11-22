@@ -12,10 +12,11 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class StreetPartAspects
 {
     /**
-     * Element position tokens across the cross-section, in canonical order
-     * (each side axis keeps `center` between its opposite sides).
+     * Element side tokens across the cross-section, in canonical order
+     * (relative to the relation's direction of travel, like OSM's
+     * `:left`/`:right` suffixes; `center` is the carriageway).
      */
-    public const DIRECTIONS = ['west', 'south', 'center', 'north', 'east'];
+    public const SIDES = ['left', 'center', 'right'];
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -29,47 +30,41 @@ final class StreetPartAspects
         return $this->definitions->read()['types'];
     }
 
-    /** @return array{type: string, direction: string, index: string, aspect: string}|null */
+    /** @return array{type: string, side: string, index: string, aspect: string}|null */
     public static function parse(string $key): ?array
     {
-        if (!preg_match('/\Away\.([^.\s]+)\.(north|south|east|west|center)\.([1-9][0-9]*)\.([^.\s]+)\z/u', $key, $match) || mb_strlen($key) > 255) {
+        if (!preg_match('/\A([^.\s]+)\.(left|right|center)\.([1-9][0-9]*)\.([^.\s]+)\z/u', $key, $match) || mb_strlen($key) > 255) {
             return null;
         }
 
-        return ['type' => $match[1], 'direction' => $match[2], 'index' => $match[3], 'aspect' => $match[4]];
+        return ['type' => $match[1], 'side' => $match[2], 'index' => $match[3], 'aspect' => $match[4]];
     }
 
     /**
-     * The previous direction-less grammar `way.<type>.<index>.<aspect>`, kept
-     * for the conversion chain (see street-part-aspects R8):
-     * `app:aspects:convert-legacy` emits it, `app:aspects:migrate-directions`
-     * rewrites it into the direction grammar. New saves reject these keys.
-     * Validation reuses the current grammar parser (a legacy key is valid
-     * exactly when it becomes valid with a `center` direction inserted), so
-     * legacy keys long enough for the suffix push past the length limit are
-     * rejected — they predate validation and do not exist in practice.
-     *
-     * @return array{type: string, index: string, aspect: string}|null
+     * Whether a key declares a cross-section position: it parses as a
+     * structured key, or - without the former way. namespace - it carries a
+     * side token as the second dot segment of a four-or-more-segment key,
+     * so a typo near the grammar (a zero index, an extra segment) stays a
+     * validation error instead of silently becoming an ordinary tag. Keys
+     * that parse are the valid structured keys; reserved ones that do not
+     * are malformed and rejected on save.
      */
-    public static function parseLegacy(string $key): ?array
+    public static function isStructuredKey(string $key): bool
     {
-        if (!str_starts_with($key, 'way.') || substr_count($key, '.') !== 3) {
-            return null;
+        if (self::parse($key) !== null) {
+            return true;
         }
-        [$namespace, $type, $index, $aspect] = explode('.', $key);
+        $segments = explode('.', $key);
 
-        $parsed = self::parse($namespace.'.'.$type.'.center.'.$index.'.'.$aspect);
-
-        return $parsed === null ? null
-            : ['type' => $parsed['type'], 'index' => $parsed['index'], 'aspect' => $parsed['aspect']];
+        return \count($segments) >= 4 && \in_array($segments[1], self::SIDES, true);
     }
 
     public function validate(array $tags, NodeGroup $group, User $user, bool $admin): void
     {
-        $structured = array_filter($tags, static fn ($tag) => str_starts_with($tag['key'], 'way.'));
+        $structured = array_filter($tags, static fn ($tag) => self::isStructuredKey($tag['key']));
         $hasStored = false;
         foreach ($group->getGroupTags() as $entry) {
-            $hasStored = $hasStored || ($entry->getCreatedByUser() === $user && str_starts_with($entry->getTag()->getKey(), 'way.'));
+            $hasStored = $hasStored || ($entry->getCreatedByUser() === $user && self::isStructuredKey($entry->getTag()->getKey()));
         }
         if (!$structured && !$hasStored) {
             return;
@@ -92,7 +87,7 @@ final class StreetPartAspects
                 $approved[$tag->getKey()][$tag->getValue()] = true;
                 $parsed = self::parse($tag->getKey());
                 if ($parsed && !$admin) {
-                    $positions[$parsed['direction'].'.'.$parsed['index']] = $parsed['type'];
+                    $positions[$parsed['side'].'.'.$parsed['index']] = $parsed['type'];
                 }
             }
         }
@@ -105,8 +100,8 @@ final class StreetPartAspects
                 throw new UnprocessableEntityHttpException('Malformed or duplicate structured tag key.');
             }
             $keys[$key] = true;
-            ['type' => $type, 'direction' => $direction, 'index' => $index, 'aspect' => $aspect] = $parsed;
-            $position = $direction.'.'.$index;
+            ['type' => $type, 'side' => $side, 'index' => $index, 'aspect' => $aspect] = $parsed;
+            $position = $side.'.'.$index;
             if (isset($positions[$position]) && $positions[$position] !== $type) {
                 throw new UnprocessableEntityHttpException('A cross-section position can have only one type.');
             }

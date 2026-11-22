@@ -389,6 +389,32 @@ try {
   assert.equal(crossStreetGroup.members.length, 4)
   await closeEditor()
 
+  // A relation placed on a single OSM way always adopts the way's
+  // direction: with the placements clicked in reverse (east first), the
+  // created relation still runs west to east like Street Alpha.
+  await add.click()
+  const reversedStreetPoints = [[54.797, 9.44], [54.797, 9.43]]
+  for (const [lat, lng] of reversedStreetPoints) {
+    const point = pixel(lat, lng)
+    await page.mouse.click(point.x, point.y)
+  }
+  await dialog.getByLabel('Name', { exact: true }).fill('Alpha direction part')
+  const reversedStart = nodeRequests.length
+  await save.click()
+  await expect(dialog).toBeHidden()
+  const reversedBatch = nodeRequests.slice(reversedStart)
+  assert.deepEqual(reversedBatch.map(node => node.parent.providerNodeId), ['w-street-a', 'w-street-a'])
+  const savedById = new Map(nodes.map(node => [node.providerNodeId, node.id]))
+  assert.deepEqual(groupRequests.at(-1).members.map(member => member.id), [
+    savedById.get(reversedBatch[1].providerNodeId),
+    savedById.get(reversedBatch[0].providerNodeId),
+  ])
+  await closeEditor()
+  nodes.length = 0
+  groups.length = 0
+  await page.reload()
+  await ready()
+
   // Creation and editing share observations and preserve drafts as points
   // are placed. Check the bounded sheet and reachable actions on mobile.
   await page.setViewportSize({ width: 390, height: 844 })

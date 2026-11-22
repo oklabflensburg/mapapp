@@ -27,6 +27,7 @@ import { NodeGroupLayer } from '../map/nodeGroupLayer'
 import { PendingNodeLayer } from '../map/pendingNodeLayer'
 import type { NodeCreationInput } from '../map/nodeCreation'
 import { crossSectionTags } from '../lib/crossSection'
+import { orderByWayDirection } from '../lib/parentDirection'
 import { RoutingLayer } from '../map/routingLayer'
 import { useRoutingStore } from '../stores/routing'
 import { locateUser, type LocationLayers, type MapStatus } from '../map/geolocation'
@@ -60,6 +61,9 @@ interface PendingNode {
   latitude: number
   longitude: number
   parent?: SaveUserNodeInput['parent']
+  // Identity key of the parent this placement belongs to, so the batch's
+  // shared parent survives until the relation is composed.
+  parentKey?: string
 }
 
 // Keep placed nodes and partial saves on the map; the shared editor owns
@@ -182,6 +186,7 @@ function placePendingNode(click: L.LatLng, target?: NodeEditTarget): void {
     providerNodeId: crypto.randomUUID(),
     latitude: click.lat,
     longitude: click.lng,
+    parentKey: parent ? nodeKey(parent) : undefined,
     parent: parent
       ? parent.id !== undefined
         ? { id: parent.id }
@@ -243,13 +248,17 @@ async function savePendingNodes(input: NodeCreationInput): Promise<void> {
     }
 
     const name = input.name.trim()
-    const members = savedBatchNodes.value.map((node) => ({ id: node.id }))
+    // Corrected direction first: members listed along the parent way when
+    // the batch has a single parent way, placement order otherwise.
+    const way = batchParentWay.value
+    const orderedSaved = way === null ? savedBatchNodes.value : orderByWayDirection(savedBatchNodes.value, way)
+    const members = orderedSaved.map((node) => ({ id: node.id }))
     const group = await nodeGroups.save({
       members,
       // The dialog name also becomes a name tag, so it reaches the
       // translation catalog like a node name does (see NodeGroupManager).
       // The cross-section draft from the create panel travels along as
-      // structured way.* tags, so the relation is complete in one save.
+      // structured aspect tags, so the relation is complete in one save.
       tags: withNameTag([...input.tags, ...crossSectionTags(input.crossSection)], name),
       ...(name !== '' ? { name } : {}),
     })
@@ -339,25 +348,57 @@ const areasInteractive = computed(
     !creating.value,
 )
 
+// The one parent way whose direction the new relation adopts: when every
+// node of the batch belongs to the same OSM way (the street the part lies
+// on), the relation inherits that way's direction (see
+// specs/map-editing/relation-parent-direction/spec.md); any other parent
+// mix leaves direction to the placement order.
+const batchParentWay = computed<[number, number][] | null>(() => {
+  if (!createMode.value && !creating.value) {
+    return null
+  }
+  const batch = [...savedBatchNodes.value, ...pendingNodes.value]
+  if (batch.length === 0) {
+    return null
+  }
+  const keys = batch.map((node): string | undefined => {
+    if ('parentKey' in node && node.parentKey !== undefined) {
+      return node.parentKey
+    }
+    const parents = (node as UserNode).parents
+    return parents?.[0] ? nodeKey(parents[0]) : undefined
+  })
+  const [shared] = [...new Set(keys)]
+  if (shared === undefined || shared === null || !shared.startsWith('OSM:')) {
+    return null
+  }
+  return osmData.lineStringById.get(shared.slice('OSM:'.length)) ?? null
+})
+
+// Ordered batch nodes: along the parent way when its direction applies,
+// placement order otherwise. Used for the preview and the create save.
+const orderedBatchNodes = computed(() => {
+  if (createMode.value || creating.value) {
+    const batch = [...savedBatchNodes.value, ...pendingNodes.value]
+    return batchParentWay.value === null ? batch : orderByWayDirection(batch, batchParentWay.value)
+  }
+  return []
+})
+
 // Live preview of the relation being formed: the pending (and already saved)
 // batch nodes in edit mode, where two or more nodes become a node relation
 // on save. NodeGroupLayer draws the dashed line through them as soon as a
-// second node exists.
-const relationPreviewPoints = computed(() => {
-  if (createMode.value || creating.value) {
-    return [...savedBatchNodes.value, ...pendingNodes.value].map(
-      (node) => ({ latitude: node.latitude, longitude: node.longitude }),
-    )
-  }
-
-  return []
-})
+// second node exists; when a parent way's direction applies, it shows
+// arrowheads along that inherited direction.
+const relationPreviewPoints = computed(() =>
+  orderedBatchNodes.value.map((node) => ({ latitude: node.latitude, longitude: node.longitude })))
 
 function renderNodeGroups(): void {
   nodeGroupLayer?.render(nodeGroups.groups, relationPreviewPoints.value, {
     selectedGroupId: selectedGroupId.value,
     onSelect: areasInteractive.value ? onSelectGroup : undefined,
     showArrows: settings.wayDirection,
+    previewShowsDirection: batchParentWay.value !== null,
   })
 }
 

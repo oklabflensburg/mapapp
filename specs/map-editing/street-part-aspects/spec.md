@@ -1,6 +1,7 @@
 # Street Part Aspects (tag-based cross-sections and routing)
 
 **Status:** Implemented and verified (2026-11-07). Revised (2026-11-11): the cross-section grammar gains a direction segment — `way.<type>.<direction>.<index>.<aspect>` — replacing the bare numeric position; see R1 and R8.
+Implementing revision (2026-11-22): [OSM-based aspect naming](../osm-aspect-naming/spec.md) supersedes this spec's naming — compass directions became `left`/`right`/`center` sides, types adopted OSM tag names (`sidewalk`, `cycleway`), preference keys now use `aspect.` — and all existing observation content was deleted instead of migrating.
 This tag-based design supersedes the separate aspect-table model and its earlier verification results.
 **Builds on:** street parts (`NodeGroupManager`, `StreetPartArea`), existing tag storage and moderation, and routing via `Routing` custom models and `TagPriorityManager`.
 **Related:** [controlled vocabulary](../controlled-vocabulary/spec.md), [editor observations](../editor-observations/spec.md), [shared tasks and historical verification](../tasks.md), [aspect route preferences](../../routing/aspect-route-preferences/spec.md) (extends R5/R6 with match modes).

@@ -9,17 +9,17 @@ let failCatalog = true
 let failSave = false
 const translations = {
   en: {
-    labels: {footwalk: 'Sidewalk', cycle_lane: 'Cycle lane', parking: 'Parking', roadway: 'Roadway', width: 'Width', surface: 'Surface', lanes: 'Lanes'},
+    labels: {sidewalk: 'Sidewalk', cycleway: 'Cycle lane', parking: 'Parking', roadway: 'Roadway', width: 'Width', surface: 'Surface', lanes: 'Lanes'},
     values: {'["surface","asphalt"]': 'Asphalt', '["surface","paving_stones"]': 'Paving stones', '["surface","concrete"]': 'Concrete', '["width","<1"]': '< 1 m', '["width","1-2"]': '1–2 m', '["width",">2"]': '> 2 m'},
   },
   de: {
-    labels: {footwalk: 'Gehweg', cycle_lane: 'Radfahrstreifen', parking: 'Parken', roadway: 'Fahrbahn', width: 'Breite', surface: 'Oberfläche', lanes: 'Fahrstreifen', 'aspect:1': 'Breiter Gehweg'},
+    labels: {sidewalk: 'Gehweg', cycleway: 'Radfahrstreifen', parking: 'Parken', roadway: 'Fahrbahn', width: 'Breite', surface: 'Oberfläche', lanes: 'Fahrstreifen', 'aspect.1': 'Breiter Gehweg'},
     values: {'["surface","asphalt"]': 'Asphalt', '["surface","paving_stones"]': 'Pflastersteine', '["surface","concrete"]': 'Beton', '["width","<1"]': '< 1 m', '["width","1-2"]': '1–2 m', '["width",">2"]': '> 2 m'},
   },
 }
 const catalog = {
   wayVocabularies: { footway: [{ key: 'surface', values: ['asphalt', 'gravel'] }] },
-  aspectTypes: [{ name: 'footwalk', attributes: [{ key: 'width', kind: 'range', values: ['<1', '>2'], labels: {'<1': '< 1 m', '>2': '> 2 m'} }] }],
+  aspectTypes: [{ name: 'sidewalk', attributes: [{ key: 'width', kind: 'range', values: ['<1', '>2'], labels: {'<1': '< 1 m', '>2': '> 2 m'} }] }],
 }
 const members = [
   { id: 1, provider: 'OSM', providerNodeId: 'n1', name: null, tags: [], latitude: 54.795, longitude: 9.427 },
@@ -48,7 +48,7 @@ await page.route('**/api/**', async route => {
     }
     return route.fulfill({ json: [group] })
   }
-  if (path === '/api/route-preference-tags') return route.fulfill({ json: {tags: ['aspect:1'], labels: {'aspect:1': 'Wide sidewalk'}} })
+  if (path === '/api/route-preference-tags') return route.fulfill({ json: {tags: ['aspect.1'], labels: {'aspect.1': 'Wide sidewalk'}} })
   return route.fulfill({json: {}})
 })
 await page.route('**/data/flensburg.geojson', route => route.fulfill({ json: {
@@ -91,8 +91,8 @@ try {
   await partDrawer.getByRole('button', {name: 'Reload catalog', exact: true}).click()
   await expect(partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true})).toBeEnabled()
   await partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true}).click()
-  // New rows default to the center direction; the direction column shows it.
-  await expect(partDrawer.getByRole('combobox', {name: 'Direction', exact: true}).first()).toContainText('Center')
+  // New rows default to the center side; the side column shows it.
+  await expect(partDrawer.getByRole('combobox', {name: 'Side', exact: true}).first()).toContainText('Center')
   await page.getByRole('combobox', {name: 'Width', exact: true}).click()
   await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
   // Observations are ordered by their addition; no per-row move buttons.
@@ -101,7 +101,7 @@ try {
   await page.getByRole('option', {name: '> 2 m', exact: true}).last().click()
   await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(partDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  assert.deepEqual(requests.at(-1).tags, [{key: 'way.footwalk.center.1.width', value: '<1'}, {key: 'way.footwalk.center.2.width', value: '>2'}])
+  assert.deepEqual(requests.at(-1).tags, [{key: 'sidewalk.center.1.width', value: '<1'}, {key: 'sidewalk.center.2.width', value: '>2'}])
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
@@ -109,17 +109,17 @@ try {
   // Exercise a full five-type cross-section in the normal composer.
   const definitionCatalog = JSON.parse(await readFile(new URL('../../backend/config/aspect-catalog.json', import.meta.url), 'utf8'))
   const crossSectionTags = [
-    { key: 'way.footwalk.west.1.width', value: '>2' },
-    { key: 'way.footwalk.west.1.surface', value: 'asphalt' },
-    { key: 'way.cycle_lane.west.2.width', value: '1-2' },
-    { key: 'way.cycle_lane.west.2.surface', value: 'asphalt' },
-    { key: 'way.parking.west.3.width', value: '>2' },
-    { key: 'way.parking.west.3.surface', value: 'concrete' },
-    { key: 'way.roadway.center.1.width', value: '>2' },
-    { key: 'way.roadway.center.1.surface', value: 'asphalt' },
-    { key: 'way.roadway.center.1.lanes', value: '2' },
-    { key: 'way.footwalk.east.1.width', value: '1-2' },
-    { key: 'way.footwalk.east.1.surface', value: 'paving_stones' },
+    { key: 'sidewalk.left.1.width', value: '>2' },
+    { key: 'sidewalk.left.1.surface', value: 'asphalt' },
+    { key: 'cycleway.left.2.width', value: '1-2' },
+    { key: 'cycleway.left.2.surface', value: 'asphalt' },
+    { key: 'parking.left.3.width', value: '>2' },
+    { key: 'parking.left.3.surface', value: 'concrete' },
+    { key: 'roadway.center.1.width', value: '>2' },
+    { key: 'roadway.center.1.surface', value: 'asphalt' },
+    { key: 'roadway.center.1.lanes', value: '2' },
+    { key: 'sidewalk.right.1.width', value: '1-2' },
+    { key: 'sidewalk.right.1.surface', value: 'paving_stones' },
   ]
   catalog.aspectTypes = definitionCatalog.types
   group = {...group, tags: crossSectionTags, observations: crossSectionTags}
@@ -140,25 +140,25 @@ try {
   failSave = false
   await crossSectionDrawer.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(crossSectionDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.west.1.width').value, '<1')
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.east.1.width').value, '1-2')
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'way.footwalk.east.1.surface').value, 'paving_stones')
+  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'sidewalk.left.1.width').value, '<1')
+  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'sidewalk.right.1.width').value, '1-2')
+  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'sidewalk.right.1.surface').value, 'paving_stones')
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   await expect(page.getByRole('combobox', {name: 'Width', exact: true}).first()).toContainText('< 1 m')
   await expect(page.getByRole('combobox', {name: 'Width', exact: true}).nth(4)).toContainText('1–2 m')
-  // Approval of width alone locks that value, its direction and its position, not surface.
-  group.observations = group.tags.filter(tag => tag.key !== 'way.footwalk.west.1.width')
+  // Approval of width alone locks that value, its side and its position, not surface.
+  group.observations = group.tags.filter(tag => tag.key !== 'sidewalk.left.1.width')
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   const locked = page.locator('.cross-section-composer .observation').first()
   // The approved width lives in the tag table only: the locked row offers
-  // no width select, its type and direction are read-only, and the
+  // no width select, its type and side are read-only, and the
   // still-pending surface stays editable.
   await expect(locked.getByRole('combobox', {name: 'Type', exact: true})).toHaveAttribute('aria-disabled', 'true')
-  await expect(locked.getByRole('combobox', {name: 'Direction', exact: true})).toHaveAttribute('aria-disabled', 'true')
+  await expect(locked.getByRole('combobox', {name: 'Side', exact: true})).toHaveAttribute('aria-disabled', 'true')
   await expect(locked.getByRole('combobox', {name: 'Width', exact: true})).toHaveCount(0)
   await expect(locked.getByRole('combobox', {name: 'Surface', exact: true})).not.toHaveAttribute('aria-disabled', 'true')
   await expect(locked.getByRole('button', {name: 'Remove observation', exact: true})).toBeDisabled()
@@ -175,13 +175,13 @@ try {
   await expect(germanComposer.getByText('Typ', {exact: true}).first()).toBeVisible()
   await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).first()).toContainText('Gehweg')
   await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).nth(1)).toContainText('Radfahrstreifen')
-  await expect(germanComposer.getByRole('combobox', {name: 'Richtung', exact: true}).first()).toContainText('Westen')
-  // The west footwalk's approved width is tag-table content now, so the
+  await expect(germanComposer.getByRole('combobox', {name: 'Seite', exact: true}).first()).toContainText('Links')
+  // The left sidewalk's approved width is tag-table content now, so the
   // first editable Breite select belongs to the cycle lane.
   await expect(germanComposer.getByRole('combobox', {name: 'Breite', exact: true}).first()).toContainText('1–2 m')
   await expect(germanComposer.getByRole('combobox', {name: 'Oberfläche', exact: true}).nth(4)).toContainText('Pflastersteine')
   await expect(germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true})).toBeVisible()
   await expect(germanComposer.getByText(/Aspekt|Aspect/)).toHaveCount(0)
-  assert.equal(group.tags.find(tag => tag.key === 'way.footwalk.west.1.width').value, '<1')
-  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, cross-section save/reload with direction prefixes, profile label, independent five-observation cross-section, approved-structure locking, English/German controls and catalog labels')
+  assert.equal(group.tags.find(tag => tag.key === 'sidewalk.left.1.width').value, '<1')
+  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, cross-section save/reload with side tokens, profile label, independent five-observation cross-section, approved-structure locking, English/German controls and catalog labels')
 } finally { await browser.close() }

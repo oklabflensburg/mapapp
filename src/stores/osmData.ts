@@ -8,6 +8,19 @@ export const useOsmDataStore = defineStore('osmData', () => {
   const loading = ref(false)
   const loadFailed = ref(false)
   const tagsById = computed(() => data.value?.tagsById)
+  // Line features by id, the direction carriers for parent-direction
+  // inheritance (see src/lib/parentDirection.ts); points and areas are
+  // excluded because they carry no direction.
+  const lineStringById = computed(() => {
+    const lines = new Map<string, [number, number][]>()
+    for (const indexed of data.value?.features ?? []) {
+      const id = indexed.feature.id
+      if (id !== undefined && id !== null && indexed.feature.geometry.type === 'LineString') {
+        lines.set(String(id), indexed.feature.geometry.coordinates as [number, number][])
+      }
+    }
+    return lines
+  })
   let request: Promise<OsmData | undefined> | undefined
 
   function load(): Promise<OsmData | undefined> {
@@ -24,5 +37,5 @@ export const useOsmDataStore = defineStore('osmData', () => {
     return request
   }
 
-  return { data, tagsById, loading, loadFailed, load }
+  return { data, tagsById, lineStringById, loading, loadFailed, load }
 })

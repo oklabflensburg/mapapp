@@ -28,7 +28,7 @@ final class AspectObservationApproval
     /**
      * Mapping options for a pending structured observation: the existing
      * approved elements of the same type. The payload carries the element
-     * position (direction and index) and the approved value of the
+     * position (side and index) and the approved value of the
      * observation's aspect at review time; approve compares it against the
      * current state (staleness).
      *
@@ -50,10 +50,10 @@ final class AspectObservationApproval
                 // PHP casts numeric-string array keys to int; keep the
                 // index a canonical string in the payload.
                 'payload' => json_encode(
-                    ['direction' => $element['direction'], 'index' => (string) $element['index'], 'aspectValue' => $element['aspects'][$proposed['aspect']] ?? null],
+                    ['side' => $element['side'], 'index' => (string) $element['index'], 'aspectValue' => $element['aspects'][$proposed['aspect']] ?? null],
                     JSON_THROW_ON_ERROR
                 ),
-                'label' => $element['type'].' '.$element['direction'].' '.$element['index'].' ('.$this->aspectSummary($element['aspects']).')',
+                'label' => $element['type'].' '.$element['side'].' '.$element['index'].' ('.$this->aspectSummary($element['aspects']).')',
             ];
         }
 
@@ -63,13 +63,13 @@ final class AspectObservationApproval
     /**
      * The approved cross-section of a street part, for review context.
      *
-     * @return list<array{type: string, direction: string, index: string, aspects: array<string, string>}>
+     * @return list<array{type: string, side: string, index: string, aspects: array<string, string>}>
      */
     public function approvedCrossSection(NodeGroup $group): array
     {
         $elements = [];
         foreach ($this->approvedElements($group) as $element) {
-            $elements[] = ['type' => $element['type'], 'direction' => $element['direction'], 'index' => (string) $element['index'], 'aspects' => $element['aspects']];
+            $elements[] = ['type' => $element['type'], 'side' => $element['side'], 'index' => (string) $element['index'], 'aspects' => $element['aspects']];
         }
 
         return $elements;
@@ -80,7 +80,7 @@ final class AspectObservationApproval
      * target element position and the approved value of the mapped aspect
      * at review time (null when the target element has none yet).
      *
-     * @return array{direction: string, index: string, aspectValue: ?string}
+     * @return array{side: string, index: string, aspectValue: ?string}
      */
     public function decodeTarget(string $payload): array
     {
@@ -91,7 +91,7 @@ final class AspectObservationApproval
         }
         if (
             !\is_array($decoded)
-            || !\in_array($decoded['direction'] ?? null, StreetPartAspects::DIRECTIONS, true)
+            || !\in_array($decoded['side'] ?? null, StreetPartAspects::SIDES, true)
             || !(\is_string($decoded['index'] ?? null) || \is_int($decoded['index'] ?? null))
             || !preg_match('/^[1-9][0-9]*$/D', (string) ($decoded['index'] ?? null))
             || !(\is_string($decoded['aspectValue'] ?? null) || $decoded['aspectValue'] === null)
@@ -99,7 +99,7 @@ final class AspectObservationApproval
             throw new BadRequestHttpException('Invalid mapping target: '.$payload);
         }
 
-        return ['direction' => $decoded['direction'], 'index' => (string) $decoded['index'], 'aspectValue' => $decoded['aspectValue']];
+        return ['side' => $decoded['side'], 'index' => (string) $decoded['index'], 'aspectValue' => $decoded['aspectValue']];
     }
 
     /**
@@ -197,7 +197,7 @@ final class AspectObservationApproval
     }
 
     /**
-     * @return array<string, array{type: string, direction: string, index: string, aspects: array<string, string>}>
+     * @return array<string, array{type: string, side: string, index: string, aspects: array<string, string>}>
      */
     private function approvedElements(NodeGroup $group): array
     {
@@ -210,16 +210,16 @@ final class AspectObservationApproval
             if ($parsed === null) {
                 continue;
             }
-            $position = $parsed['direction'].'.'.$parsed['index'];
+            $position = $parsed['side'].'.'.$parsed['index'];
             $elements[$position]['type'] ??= $parsed['type'];
-            $elements[$position]['direction'] ??= $parsed['direction'];
+            $elements[$position]['side'] ??= $parsed['side'];
             $elements[$position]['index'] ??= $parsed['index'];
             $elements[$position]['aspects'][$parsed['aspect']] = $entry->getTag()->getValue();
         }
-        // Canonical order: the fixed direction order, then the numeric index within it.
-        $directionOrder = array_flip(StreetPartAspects::DIRECTIONS);
-        uasort($elements, static function (array $a, array $b) use ($directionOrder): int {
-            return $directionOrder[$a['direction']] <=> $directionOrder[$b['direction']]
+        // Canonical order: the fixed side order, then the numeric index within it.
+        $sideOrder = array_flip(StreetPartAspects::SIDES);
+        uasort($elements, static function (array $a, array $b) use ($sideOrder): int {
+            return $sideOrder[$a['side']] <=> $sideOrder[$b['side']]
                 ?: (\strlen($a['index']) <=> \strlen($b['index']) ?: strcmp($a['index'], $b['index']));
         });
 

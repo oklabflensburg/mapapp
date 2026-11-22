@@ -89,7 +89,7 @@ export function splitRelationDraft(group: NodeGroup): { rows: TagRow[]; observat
 }
 
 // Approved aspects are read-only tag rows; the composer draft owns the
-// structured way.* keys on save, so the rows never resubmit them.
+// structured aspect keys on save, so the rows never resubmit them.
 export function collectSaveTags(rows: TagRow[], observationRows: TagRow[], skipApprovedAspects: boolean): TagEntry[] {
   const tags: TagEntry[] = []
   for (const row of rows) {

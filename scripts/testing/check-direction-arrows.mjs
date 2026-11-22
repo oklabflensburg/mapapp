@@ -277,6 +277,22 @@ try {
   const previewWing = arrowSample((PREVIEW.xA + PREVIEW.xB) / 2, PREVIEW.y, true)
   assert.equal(await hasInk(previewWing.x, previewWing.y), false, 'preview has no arrows')
 
+  // A batch collected on a single way shows its direction while collecting
+  // (parent-direction inheritance): placed opposite to the reversed
+  // street's direction, the preview arrows run with the street. The
+  // parentless preview above stays arrowless.
+  await page.keyboard.press('Escape')
+  await expect(add).toHaveAttribute('aria-pressed', 'false')
+  const streetSpotWest = screenPos(9.43, STREET.lat)
+  const streetSpotEast = screenPos(9.434, STREET.lat)
+  await add.click()
+  await page.mouse.click(streetSpotWest.x, streetSpotWest.y)
+  await page.mouse.click(streetSpotEast.x, streetSpotEast.y)
+  await assertHorizontalArrowDirection(
+    (streetSpotWest.x + streetSpotEast.x) / 2, streetWest.y, false)
+  await page.keyboard.press('Escape')
+  await expect(add).toHaveAttribute('aria-pressed', 'false')
+
   const arrowSwitch = () => page.locator('#setting-way-direction')
   await page.goto(`${APP_URL}/profile`)
   await expect(arrowSwitch()).toBeVisible()
@@ -289,6 +305,17 @@ try {
   await closeSelection()
   await selectLine(relationMid, relationWest.y)
   assert.equal(await hasInk(relationWing.x, relationWing.y), false, 'selected relation has no arrows with the setting off')
+
+  // The direction-known preview shows no arrowheads with the setting off
+  // either; the parent-direction inheritance still orders the relation on
+  // save, only the indicator disappears.
+  await add.click()
+  await page.mouse.click(streetSpotWest.x, streetSpotWest.y)
+  await page.mouse.click(streetSpotEast.x, streetSpotEast.y)
+  const inheritWing = arrowSample((streetSpotWest.x + streetSpotEast.x) / 2, streetWest.y, false)
+  assert.equal(await hasInk(inheritWing.x, inheritWing.y), false, 'direction-known preview has no arrows with the setting off')
+  await page.keyboard.press('Escape')
+  await expect(add).toHaveAttribute('aria-pressed', 'false')
 
   await page.goto(`${APP_URL}/profile`)
   await arrowSwitch().click()

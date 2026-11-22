@@ -6,13 +6,11 @@ export default {
     noObservations: 'No observation types configured.',
     title: 'Cross-section',
     type: 'Type',
-    direction: 'Direction',
-    directions: {
-      north: 'North',
-      south: 'South',
-      east: 'East',
-      west: 'West',
+    side: 'Side',
+    sides: {
+      left: 'Left',
       center: 'Center',
+      right: 'Right',
     },
     remove: 'Remove observation',
     add: 'Add observation',

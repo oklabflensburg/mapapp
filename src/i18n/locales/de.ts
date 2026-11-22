@@ -6,13 +6,11 @@ export default {
     noObservations: 'Keine Beobachtungstypen konfiguriert.',
     title: 'Straßenquerschnitt',
     type: 'Typ',
-    direction: 'Richtung',
-    directions: {
-      north: 'Norden',
-      south: 'Süden',
-      east: 'Osten',
-      west: 'Westen',
+    side: 'Seite',
+    sides: {
+      left: 'Links',
       center: 'Mitte',
+      right: 'Rechts',
     },
     remove: 'Beobachtung entfernen',
     add: 'Beobachtung hinzufügen',

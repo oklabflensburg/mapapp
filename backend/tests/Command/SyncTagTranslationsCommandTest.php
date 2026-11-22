@@ -169,8 +169,8 @@ final class SyncTagTranslationsCommandTest extends KernelTestCase
                 self::assertContains('key:'.$keptKey, $names);
                 self::assertContains($keptValue, $names);
                 self::assertContains('key:'.$osmKey, $names);
-                self::assertContains('key:footwalk', $names);
-                self::assertContains('key:aspect:footwalk-wide', $names);
+                self::assertContains('key:sidewalk', $names);
+                self::assertContains('key:aspect.sidewalk-wide', $names);
                 self::assertContains(TagTranslationCatalog::valueId('width', '<1'), $names);
                 self::assertNotContains('key:'.$staleKey, $names);
                 self::assertNotContains($staleValue, $names);

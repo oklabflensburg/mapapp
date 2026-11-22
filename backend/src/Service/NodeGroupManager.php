@@ -176,7 +176,7 @@ final class NodeGroupManager
 
         foreach ($requested as $pair => $count) {
             [$key, $value] = explode("\0", $pair, 2);
-            if (str_starts_with($key, 'way.')) {
+            if (StreetPartAspects::parse($key) !== null) {
                 foreach ($group->getGroupTags() as $existing) {
                     if ($existing->isApproved() && $existing->getTag()->getKey() === $key && $existing->getTag()->getValue() === $value) {
                         continue 2; // Echoing public content must not create a new observation.

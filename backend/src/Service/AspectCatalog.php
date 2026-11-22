@@ -85,7 +85,7 @@ final class AspectCatalog
             self::text($preference['key'] ?? null);
             self::text($preference['label'] ?? null);
             $key = $preference['key'];
-            if (!str_starts_with($key, 'aspect:') || mb_strlen($key) > 50 || isset($keys[$key]) || !isset($types[$preference['type'] ?? ''][$preference['aspect'] ?? ''])) {
+            if (!str_starts_with($key, 'aspect.') || mb_strlen($key) > 50 || isset($keys[$key]) || !isset($types[$preference['type'] ?? ''][$preference['aspect'] ?? ''])) {
                 throw new \RuntimeException('Duplicate or invalid preference predicate.');
             }
             self::values($preference['values'] ?? null);

@@ -1,7 +1,7 @@
 {
     "types": [
         {
-            "name": "footwalk",
+            "name": "sidewalk",
             "attributes": [
                 {
                     "key": "width",
@@ -34,7 +34,7 @@
             ]
         },
         {
-            "name": "cycle_lane",
+            "name": "cycleway",
             "attributes": [
                 {
                     "key": "width",
@@ -149,9 +149,9 @@
     ],
     "preferences": [
         {
-            "key": "aspect:footwalk-wide",
+            "key": "aspect.sidewalk-wide",
             "label": "Footwalk at least 2 m wide",
-            "type": "footwalk",
+            "type": "sidewalk",
             "aspect": "width",
             "values": [
                 ">2"
@@ -159,9 +159,9 @@
             "match": "any_element"
         },
         {
-            "key": "aspect:footwalk-asphalt",
+            "key": "aspect.sidewalk-asphalt",
             "label": "Footwalk with asphalt surface",
-            "type": "footwalk",
+            "type": "sidewalk",
             "aspect": "surface",
             "values": [
                 "asphalt"
@@ -169,9 +169,9 @@
             "match": "no_alternative"
         },
         {
-            "key": "aspect:footwalk-paving-stones",
+            "key": "aspect.sidewalk-paving-stones",
             "label": "Footwalk with paving stones",
-            "type": "footwalk",
+            "type": "sidewalk",
             "aspect": "surface",
             "values": [
                 "paving_stones"
@@ -179,9 +179,9 @@
             "match": "no_alternative"
         },
         {
-            "key": "aspect:footwalk-concrete",
+            "key": "aspect.sidewalk-concrete",
             "label": "Footwalk with concrete surface",
-            "type": "footwalk",
+            "type": "sidewalk",
             "aspect": "surface",
             "values": [
                 "concrete"

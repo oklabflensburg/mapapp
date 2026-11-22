@@ -4,9 +4,9 @@ import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
-import type { AspectDirection, AspectRow } from '../lib/crossSection'
+import type { AspectSide, AspectRow } from '../lib/crossSection'
 import { compareRows, isAspectRowEditable } from '../lib/crossSection'
-import { DIRECTIONS } from '../lib/crossSection'
+import { SIDES } from '../lib/crossSection'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 const rows = defineModel<AspectRow[]>({ required: true })
 const props = defineProps<{ readonly?: boolean }>()
@@ -15,9 +15,9 @@ const labels = useTagKeyLabelsStore()
 const { t } = useI18n()
 const types = computed(() => catalog.aspectTypes)
 const typeOptions = computed(() => types.value.map(type => ({ ...type, label: labels.label(type.name) })))
-const directionOptions = computed(() => DIRECTIONS.map(direction => ({
-  direction,
-  label: t(`crossSection.directions.${direction}`),
+const sideOptions = computed(() => SIDES.map(side => ({
+  side,
+  label: t(`crossSection.sides.${side}`),
 })))
 // Approved aspects show as tag info in the panel, not as locked selects; a
 // row without any editable content left is not rendered at all.
@@ -38,25 +38,25 @@ function changeType(row: AspectRow, type: string): void {
   row.values = Object.fromEntries(Object.entries(row.values).filter(([key, value]) =>
     attributes.some(attribute => attribute.key === key && attribute.values.includes(value))))
 }
-// Positions are per direction: after any structural edit the editable draft
-// is renumbered 1…n in canonical display order within each direction.
+// Positions are per side: after any structural edit the editable draft
+// is renumbered 1…n in canonical display order within each side.
 function renumber(list: AspectRow[] = rows.value): void {
-  const counters = new Map<AspectDirection, bigint>()
+  const counters = new Map<AspectSide, bigint>()
   for (const row of [...list].sort(compareRows)) {
-    const next = (counters.get(row.direction) ?? 0n) + 1n
-    counters.set(row.direction, next)
+    const next = (counters.get(row.side) ?? 0n) + 1n
+    counters.set(row.side, next)
     row.index = String(next)
   }
 }
-function changeDirection(): void {
+function changeSide(): void {
   if (!structureLocked.value) renumber()
 }
 function add(): void {
   if (props.readonly || unavailable.value || !types.value.length) return
-  const direction: AspectDirection = 'center'
+  const side: AspectSide = 'center'
   const lastIndex = rows.value.reduce((max, row) =>
-    row.direction === direction && BigInt(row.index) > max ? BigInt(row.index) : max, 0n)
-  const row: AspectRow = { type: types.value[0]!.name, direction, index: String(lastIndex + 1n), values: {}, approvedKeys: [] }
+    row.side === side && BigInt(row.index) > max ? BigInt(row.index) : max, 0n)
+  const row: AspectRow = { type: types.value[0]!.name, side, index: String(lastIndex + 1n), values: {}, approvedKeys: [] }
   rows.value.push(row)
   if (!structureLocked.value) renumber()
 }
@@ -66,7 +66,7 @@ function remove(index: number): void {
   if (!structureLocked.value) renumber()
 }
 function valueLabel(row: AspectRow, key: string, value: string): string {
-  const rawKey = `way.${row.type}.${row.direction}.${row.index}.${key}`
+  const rawKey = `${row.type}.${row.side}.${row.index}.${key}`
   const translated = labels.valueLabel(rawKey, value)
   if (translated !== value) return translated
   // Attribute translations are shared across every indexed observation.
@@ -79,7 +79,7 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
     <p v-if="catalog.failed" role="alert">{{ t('crossSection.loadFailed') }}</p>
     <p v-else-if="!catalog.loading && !types.length" role="status">{{ t('crossSection.noTypes') }}</p>
     <Button v-if="!readonly && (catalog.failed || !types.length)" :label="t('crossSection.reload')" :loading="catalog.loading" text @click="catalog.reload()" />
-    <div v-for="{ row, index } in visibleRows" :key="`${row.type}-${row.direction}-${row.index}`" class="observation">
+    <div v-for="{ row, index } in visibleRows" :key="`${row.type}-${row.side}-${row.index}`" class="observation">
       <label class="type-label">
         {{ t('crossSection.type') }}
         <Select
@@ -93,17 +93,17 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           @change="changeType(row, row.type)"
         />
       </label>
-      <label class="direction-label">
-        {{ t('crossSection.direction') }}
+      <label class="side-label">
+        {{ t('crossSection.side') }}
         <Select
-          v-model="row.direction"
+          v-model="row.side"
           size="small"
-          :options="directionOptions"
+          :options="sideOptions"
           option-label="label"
-          option-value="direction"
+          option-value="side"
           :disabled="readonly || row.approvedKeys.length > 0 || unavailable || structureLocked"
-          :aria-label="t('crossSection.direction')"
-          @change="changeDirection"
+          :aria-label="t('crossSection.side')"
+          @change="changeSide"
         />
       </label>
       <label v-for="attribute in editableAttributes(row)" :key="attribute.key">

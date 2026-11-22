@@ -140004,24 +140004,6 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
         <target>c</target>
       </segment>
     </unit>
-    <unit id="t_24465d823491b479476cb884d695d7d9c922f6604a057b94dc419e678f093ac6" name="key:footwalk" tag:ignore="false" tag:category="custom">
-      <notes>
-        <note>Tag key: footwalk</note>
-      </notes>
-      <segment state="translated">
-        <source>footwalk</source>
-        <target>Gehweg</target>
-      </segment>
-    </unit>
-    <unit id="t_ed4428fd61bb7a18a8e9dbc344f7526037e0b7c1853206a1dc86576d4be0ca0f" name="key:cycle_lane" tag:ignore="false" tag:category="custom">
-      <notes>
-        <note>Tag key: cycle_lane</note>
-      </notes>
-      <segment state="translated">
-        <source>cycle lane</source>
-        <target>Radfahrstreifen</target>
-      </segment>
-    </unit>
     <unit id="t_4265a7ecb3da7c5ec1980ccfa71fd09c47412bae731d5d833a4333eece2d7235" name="key:roadway" tag:ignore="false" tag:category="custom">
       <notes>
         <note>Tag key: roadway</note>
@@ -140029,42 +140011,6 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
       <segment state="translated">
         <source>roadway</source>
         <target>Fahrbahn</target>
-      </segment>
-    </unit>
-    <unit id="t_79813cced7cef35191aca0d7ebadfe531ff4836c113ac0ecf5c97c9aff68b7b5" name="key:aspect:footwalk-asphalt" tag:ignore="false" tag:category="custom">
-      <notes>
-        <note>Tag key: aspect:footwalk-asphalt</note>
-      </notes>
-      <segment state="translated">
-        <source>aspect:footwalk-asphalt</source>
-        <target>Gehweg aus Asphalt</target>
-      </segment>
-    </unit>
-    <unit id="t_908fc39c194fe495ce08762b628033ba96737a6b24034c2145587e364074a7cc" name="key:aspect:footwalk-concrete" tag:ignore="false" tag:category="custom">
-      <notes>
-        <note>Tag key: aspect:footwalk-concrete</note>
-      </notes>
-      <segment state="translated">
-        <source>aspect:footwalk-concrete</source>
-        <target>Gehweg aus Beton</target>
-      </segment>
-    </unit>
-    <unit id="t_a7b7ecdc3a90fb13c828ef10c6ab213b1fe2ca18d53a90ec6bbc9b17225be82f" name="key:aspect:footwalk-paving-stones" tag:ignore="false" tag:category="custom">
-      <notes>
-        <note>Tag key: aspect:footwalk-paving-stones</note>
-      </notes>
-      <segment state="translated">
-        <source>aspect:footwalk-paving-stones</source>
-        <target>Gehweg aus Pflastersteinen</target>
-      </segment>
-    </unit>
-    <unit id="t_5766a05f969f520f00273340bf6f8342ffc5a238dc6e84f167c99f1dcdffcfb5" name="key:aspect:footwalk-wide" tag:ignore="false" tag:category="custom">
-      <notes>
-        <note>Tag key: aspect:footwalk-wide</note>
-      </notes>
-      <segment state="translated">
-        <source>aspect:footwalk-wide</source>
-        <target>Gehweg mindestens 2 m breit</target>
       </segment>
     </unit>
     <unit id="t_70b2d689f467c00fd60dbd7a2875744fbc609a0a282244e76dd3987450666415" name="value:[&quot;width&quot;,&quot;&lt;1&quot;]" tag:ignore="false" tag:category="custom" tag:keyRef="t_810f240f6b1a3be5c7355865169773943f7acd6e7a1ef437bac663418623c31d">
@@ -140089,6 +140035,42 @@ Wiedereinfahren innerhalb 15 min gilt als ein Aufenthalt!</source>
       <segment state="translated">
         <source>&gt;2</source>
         <target>Mehr als 2</target>
+      </segment>
+    </unit>
+    <unit id="t_9156edb5847974f66e954113d21c3a810f1ddca8fb157477381aea77fa7f5d2c" name="key:aspect.sidewalk-asphalt" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect.sidewalk-asphalt</note>
+      </notes>
+      <segment state="initial">
+        <source>aspect.sidewalk-asphalt</source>
+        <target/>
+      </segment>
+    </unit>
+    <unit id="t_94bc0627658477c568c7a5f69d9cf5945da4e722231dc4b2a20416cfd6f3ba22" name="key:aspect.sidewalk-concrete" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect.sidewalk-concrete</note>
+      </notes>
+      <segment state="initial">
+        <source>aspect.sidewalk-concrete</source>
+        <target/>
+      </segment>
+    </unit>
+    <unit id="t_2cbe1142999a8931fcfe1100337ce7f149fbbdb7097b3f901b022aa9aa50a182" name="key:aspect.sidewalk-paving-stones" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect.sidewalk-paving-stones</note>
+      </notes>
+      <segment state="initial">
+        <source>aspect.sidewalk-paving-stones</source>
+        <target/>
+      </segment>
+    </unit>
+    <unit id="t_14429526263d5ccd873161094c7fcaa68a56768f7a7d4c51741af8bf0ccac2ec" name="key:aspect.sidewalk-wide" tag:ignore="false" tag:category="custom">
+      <notes>
+        <note>Tag key: aspect.sidewalk-wide</note>
+      </notes>
+      <segment state="initial">
+        <source>aspect.sidewalk-wide</source>
+        <target/>
       </segment>
     </unit>
   </file>
