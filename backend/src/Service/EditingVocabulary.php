@@ -28,11 +28,11 @@ final class EditingVocabulary
             // Symfony's JSON-compatible inline YAML parser rejects duplicate
             // object keys, which json_decode otherwise silently overwrites.
             Yaml::parse($raw);
-            if (!$data instanceof \stdClass || array_keys(get_object_vars($data)) !== ['wayVocabularies'] || !$data->wayVocabularies instanceof \stdClass) {
-                throw new \RuntimeException('Expected wayVocabularies object.');
+            if (!$data instanceof \stdClass || array_keys(get_object_vars($data)) !== ['way'] || !$data->way instanceof \stdClass) {
+                throw new \RuntimeException('Expected way object.');
             }
             $result = [];
-            foreach (get_object_vars($data->wayVocabularies) as $type => $entries) {
+            foreach (get_object_vars($data->way) as $type => $entries) {
                 $this->text($type);
                 if (!is_array($entries)) {
                     throw new \RuntimeException('Entries must be a list.');

@@ -312,7 +312,7 @@ final class MapEditingTest extends WebTestCase
         mkdir($temp . '/osm-data', recursive: true);
         file_put_contents($temp . '/osm-data/flensburg.geojson', json_encode(['features' => [['id' => 'w999999999', 'properties' => ['highway' => 'test_footway']], ['id' => 'w999999998', 'properties' => ['highway' => 'test_residential']]]]));
         $vocabularyFile = $temp . '/vocabulary.json';
-        file_put_contents($vocabularyFile, json_encode(['wayVocabularies' => ['test_footway' => [['key' => 'surface', 'values' => ['asphalt', 'uneven']]]]]));
+        file_put_contents($vocabularyFile, json_encode(['way' => ['test_footway' => [['key' => 'surface', 'values' => ['asphalt', 'uneven']]]]]));
         $vocabulary = new EditingVocabulary($vocabularyFile, new \Psr\Log\NullLogger());
         static::getContainer()->set(WayObservationVocabulary::class, new WayObservationVocabulary($vocabulary, $temp));
         try {
@@ -322,7 +322,7 @@ final class MapEditingTest extends WebTestCase
             $node = json_decode($client->getResponse()->getContent(), true);
             $this->nodes[] = $node['id'];
             $payload['providerNodeId'] = 'w999999999';
-            file_put_contents($vocabularyFile, json_encode(['wayVocabularies' => ['test_footway' => [['key' => 'tactile_paving', 'values' => []]]]]));
+            file_put_contents($vocabularyFile, json_encode(['way' => ['test_footway' => [['key' => 'tactile_paving', 'values' => []]]]]));
             $payload['tags'] = [['key' => 'surface', 'value' => 'uneven']];
             $client->jsonRequest('POST', '/api/nodes', $payload);
             self::assertResponseIsSuccessful();

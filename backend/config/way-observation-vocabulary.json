@@ -1,5 +1,5 @@
 {
-  "wayVocabularies": {
+  "way": {
     "footway": [
       { "key": "surface", "values": ["asphalt", "paving_stones", "gravel"] },
       { "key": "tactile_paving", "values": ["yes", "no"] },

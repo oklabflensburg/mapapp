@@ -16,9 +16,9 @@ final class EditingVocabularyTest extends TestCase
         $reader = new EditingVocabulary($path, new NullLogger());
         try {
             $data = ['footway' => [['key' => 'note', 'values' => []], ['key' => 'surface', 'values' => ['gravel', 'asphalt']]], 'motorway' => []];
-            file_put_contents($path, json_encode(['wayVocabularies' => $data]));
+            file_put_contents($path, json_encode(['way' => $data]));
             self::assertSame($data, $reader->read());
-            file_put_contents($path, '{"wayVocabularies":{}}');
+            file_put_contents($path, '{"way":{}}');
             self::assertSame([], $reader->read());
         } finally {
             unlink($path);
@@ -28,13 +28,13 @@ final class EditingVocabularyTest extends TestCase
     public static function invalidFiles(): iterable
     {
         yield ['{'];
-        yield ['{"wayVocabularies":[]}'];
-        yield ['{"wayVocabularies":{"footway":[],"footway":[]}}'];
-        yield ['{"wayVocabularies":{"footway":[{"key":"x","values":[]},{"key":"x","values":[]}]}}'];
-        yield ['{"wayVocabularies":{"footway":[{"key":"x","values":["yes","yes"]}]}}'];
-        yield ['{"wayVocabularies":{"footway":[{"key":"","values":[]}]}}'];
-        yield ['{"wayVocabularies":{"footway":[{"key":"x","values":[1]}]}}'];
-        yield ['{"wayVocabularies":{"footway":{}}}'];
+        yield ['{"way":[]}'];
+        yield ['{"way":{"footway":[],"footway":[]}}'];
+        yield ['{"way":{"footway":[{"key":"x","values":[]},{"key":"x","values":[]}]}}'];
+        yield ['{"way":{"footway":[{"key":"x","values":["yes","yes"]}]}}'];
+        yield ['{"way":{"footway":[{"key":"","values":[]}]}}'];
+        yield ['{"way":{"footway":[{"key":"x","values":[1]}]}}'];
+        yield ['{"way":{"footway":{}}}'];
     }
     #[DataProvider('invalidFiles')]
     public function testRejectsInvalidConfiguration(string $contents): void
