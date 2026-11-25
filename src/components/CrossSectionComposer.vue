@@ -38,6 +38,14 @@ function changeType(row: AspectRow, type: string): void {
   row.values = Object.fromEntries(Object.entries(row.values).filter(([key, value]) =>
     attributes.some(attribute => attribute.key === key && attribute.values.includes(value))))
 }
+// The next free position in a side, counting every row: approved positions
+// are frozen, so a moved or added row must not collide with them. A moved
+// row is excluded — its side already changed when the handler runs.
+function nextFreeIndex(side: AspectSide, exclude?: AspectRow): string {
+  const max = rows.value.reduce((acc, row) =>
+    row !== exclude && row.side === side && BigInt(row.index) > acc ? BigInt(row.index) : acc, 0n)
+  return String(max + 1n)
+}
 // Positions are per side: after any structural edit the editable draft
 // is renumbered 1…n in canonical display order within each side.
 function renumber(list: AspectRow[] = rows.value): void {
@@ -48,15 +56,19 @@ function renumber(list: AspectRow[] = rows.value): void {
     row.index = String(next)
   }
 }
-function changeSide(): void {
-  if (!structureLocked.value) renumber()
+function changeSide(row: AspectRow): void {
+  // Under an approved structure a renumber would rewrite frozen keys, so
+  // the moved row instead takes the next free index in its new side.
+  if (structureLocked.value) {
+    row.index = nextFreeIndex(row.side, row)
+  } else {
+    renumber()
+  }
 }
 function add(): void {
   if (props.readonly || unavailable.value || !types.value.length) return
   const side: AspectSide = 'center'
-  const lastIndex = rows.value.reduce((max, row) =>
-    row.side === side && BigInt(row.index) > max ? BigInt(row.index) : max, 0n)
-  const row: AspectRow = { type: types.value[0]!.name, side, index: String(lastIndex + 1n), values: {}, approvedKeys: [] }
+  const row: AspectRow = { type: types.value[0]!.name, side, index: nextFreeIndex(side), values: {}, approvedKeys: [] }
   rows.value.push(row)
   if (!structureLocked.value) renumber()
 }
@@ -101,9 +113,9 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           :options="sideOptions"
           option-label="label"
           option-value="side"
-          :disabled="readonly || row.approvedKeys.length > 0 || unavailable || structureLocked"
+          :disabled="readonly || row.approvedKeys.length > 0 || unavailable"
           :aria-label="t('crossSection.side')"
-          @change="changeSide"
+          @change="changeSide(row)"
         />
       </label>
       <label v-for="attribute in editableAttributes(row)" :key="attribute.key">
