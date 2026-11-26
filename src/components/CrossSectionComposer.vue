@@ -5,7 +5,7 @@ import Button from 'primevue/button'
 import Select from 'primevue/select'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { AspectSide, AspectRow } from '../lib/crossSection'
-import { compareRows, isAspectRowEditable } from '../lib/crossSection'
+import { isAspectRowEditable } from '../lib/crossSection'
 import { SIDES } from '../lib/crossSection'
 import { useTagKeyLabelsStore } from '../stores/tagKeyLabels'
 const rows = defineModel<AspectRow[]>({ required: true })
@@ -25,12 +25,13 @@ const visibleRows = computed(() => rows.value
   .map((row, index) => ({ row, index }))
   .filter(({ row }) => isAspectRowEditable(row, types.value)))
 // The row's catalog attributes that are still editable; approved ones are
-// covered by the tag table.
+// covered by the tag table. Every editable attribute becomes its own
+// observation relation on save (see specs/map-editing/observation-relations/
+// spec.md R4).
 function editableAttributes(row: AspectRow) {
   return (types.value.find(type => type.name === row.type)?.attributes ?? [])
     .filter(attribute => !row.approvedKeys.includes(attribute.key))
 }
-const structureLocked = computed(() => props.readonly || rows.value.some(row => row.approvedKeys.length > 0))
 const unavailable = computed(() => catalog.failed || catalog.loading)
 function changeType(row: AspectRow, type: string): void {
   row.type = type
@@ -38,47 +39,18 @@ function changeType(row: AspectRow, type: string): void {
   row.values = Object.fromEntries(Object.entries(row.values).filter(([key, value]) =>
     attributes.some(attribute => attribute.key === key && attribute.values.includes(value))))
 }
-// The next free position in a side, counting every row: approved positions
-// are frozen, so a moved or added row must not collide with them. A moved
-// row is excluded — its side already changed when the handler runs.
-function nextFreeIndex(side: AspectSide, exclude?: AspectRow): string {
-  const max = rows.value.reduce((acc, row) =>
-    row !== exclude && row.side === side && BigInt(row.index) > acc ? BigInt(row.index) : acc, 0n)
-  return String(max + 1n)
-}
-// Positions are per side: after any structural edit the editable draft
-// is renumbered 1…n in canonical display order within each side.
-function renumber(list: AspectRow[] = rows.value): void {
-  const counters = new Map<AspectSide, bigint>()
-  for (const row of [...list].sort(compareRows)) {
-    const next = (counters.get(row.side) ?? 0n) + 1n
-    counters.set(row.side, next)
-    row.index = String(next)
-  }
-}
-function changeSide(row: AspectRow): void {
-  // Under an approved structure a renumber would rewrite frozen keys, so
-  // the moved row instead takes the next free index in its new side.
-  if (structureLocked.value) {
-    row.index = nextFreeIndex(row.side, row)
-  } else {
-    renumber()
-  }
-}
 function add(): void {
   if (props.readonly || unavailable.value || !types.value.length) return
   const side: AspectSide = 'center'
-  const row: AspectRow = { type: types.value[0]!.name, side, index: nextFreeIndex(side), values: {}, approvedKeys: [] }
+  const row: AspectRow = { type: types.value[0]!.name, side, values: {}, approvedKeys: [] }
   rows.value.push(row)
-  if (!structureLocked.value) renumber()
 }
 function remove(index: number): void {
   if (props.readonly || rows.value[index]?.approvedKeys.length) return
   rows.value.splice(index, 1)
-  if (!structureLocked.value) renumber()
 }
 function valueLabel(row: AspectRow, key: string, value: string): string {
-  const rawKey = `${row.type}.${row.side}.${row.index}.${key}`
+  const rawKey = `${row.type}.${row.side}.${key}`
   const translated = labels.valueLabel(rawKey, value)
   if (translated !== value) return translated
   // Attribute translations are shared across every indexed observation.
@@ -91,7 +63,10 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
     <p v-if="catalog.failed" role="alert">{{ t('crossSection.loadFailed') }}</p>
     <p v-else-if="!catalog.loading && !types.length" role="status">{{ t('crossSection.noTypes') }}</p>
     <Button v-if="!readonly && (catalog.failed || !types.length)" :label="t('crossSection.reload')" :loading="catalog.loading" text @click="catalog.reload()" />
-    <div v-for="{ row, index } in visibleRows" :key="`${row.type}-${row.side}-${row.index}`" class="observation">
+    <!-- A row that carries an existing observation (relationId) keeps its element
+         identity: observing another element or side is always a new row with its
+         own relation, never a re-key of an existing observation. -->
+    <div v-for="{ row, index } in visibleRows" :key="`${row.type}-${row.side}-${index}`" class="observation">
       <label class="type-label">
         {{ t('crossSection.type') }}
         <Select
@@ -100,7 +75,7 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           :options="typeOptions"
           option-label="label"
           option-value="name"
-          :disabled="readonly || row.approvedKeys.length > 0 || unavailable"
+          :disabled="readonly || row.relationId !== undefined || row.approvedKeys.length > 0 || unavailable"
           :aria-label="t('crossSection.type')"
           @change="changeType(row, row.type)"
         />
@@ -113,9 +88,8 @@ function valueLabel(row: AspectRow, key: string, value: string): string {
           :options="sideOptions"
           option-label="label"
           option-value="side"
-          :disabled="readonly || row.approvedKeys.length > 0 || unavailable"
+          :disabled="readonly || row.relationId !== undefined || row.approvedKeys.length > 0 || unavailable"
           :aria-label="t('crossSection.side')"
-          @change="changeSide(row)"
         />
       </label>
       <label v-for="attribute in editableAttributes(row)" :key="attribute.key">

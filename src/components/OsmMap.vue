@@ -204,27 +204,45 @@ function withNameTag(tags: TagEntry[] | undefined, name: string): TagEntry[] {
   return name !== '' ? [...others, { key: 'name', value: name }] : others
 }
 
-// Commits the batch: every pending node is saved, then a single node stays a
-// plain node (the dialog name becomes its name tag) while two or more become
-// members of a new node relation (the name both names the relation and is
-// stored as its name tag). Saved nodes
-// are kept on failure, so a retry never saves a node twice.
+// Commits the batch: every pending node is saved, then every drafted
+// observation becomes its own node relation over the placed range —
+// one observation = one relation (see specs/map-editing/observation-relations/
+// spec.md). A single placed node stays a plain node when it carries nothing
+// (the dialog name becomes its name tag). Saved nodes are kept on failure,
+// so a retry never saves a node twice.
 async function savePendingNodes(input: NodeCreationInput): Promise<void> {
   if (creating.value) return
   if (pendingNodes.value.length === 0 && savedBatchNodes.value.length === 0) return
   creating.value = true
   createFailed.value = false
   try {
+    // One observation relation per drafted tag: plain observation rows plus
+    // one per composer aspect value. Translation proposals travel with the
+    // plain observation rows they belong to.
+    const observationTags: { tag: TagEntry; translations: NodeCreationInput['translations'] }[] = input.tags.map(tag => ({
+      tag,
+      translations: input.translations?.find(proposal => proposal.key === tag.key && proposal.value === tag.value)
+        ? [input.translations.find(proposal => proposal.key === tag.key && proposal.value === tag.value)!]
+        : [],
+    }))
+    for (const tag of crossSectionTags(input.crossSection)) {
+      observationTags.push({ tag, translations: [] })
+    }
+    const name = input.name.trim()
+    const isSingle = pendingNodes.value.length + savedBatchNodes.value.length === 1
+
     while (pendingNodes.value.length > 0) {
       const node = pendingNodes.value[0]
-      const name = input.name.trim()
-      const isSingle = savedBatchNodes.value.length + pendingNodes.value.length === 1
+      // A lone node keeps its name as node metadata (a name tag) whether or
+      // not observations were drafted: the observations save as their own
+      // relations anchored on this node.
+      const tags = isSingle && name !== '' ? withNameTag([], name) : []
       const saved = await userNodes.save({
         provider: 'local',
         providerNodeId: node.providerNodeId,
         latitude: node.latitude,
         longitude: node.longitude,
-        tags: isSingle ? withNameTag(input.tags, name) : [],
+        tags,
         ...(isSingle ? { translationLocale: input.translationLocale, translations: input.translations } : {}),
         ...(node.parent ? { parent: node.parent } : {}),
       })
@@ -237,7 +255,7 @@ async function savePendingNodes(input: NodeCreationInput): Promise<void> {
       savedBatchNodes.value = [...savedBatchNodes.value, saved]
     }
 
-    if (savedBatchNodes.value.length === 1) {
+    if (isSingle && observationTags.length === 0) {
       const saved = savedBatchNodes.value[0]
       finishBatch()
       createMode.value = false
@@ -247,29 +265,54 @@ async function savePendingNodes(input: NodeCreationInput): Promise<void> {
       return
     }
 
-    const name = input.name.trim()
     // Corrected direction first: members listed along the parent way when
     // the batch has a single parent way, placement order otherwise.
     const way = batchParentWay.value
     const orderedSaved = way === null ? savedBatchNodes.value : orderByWayDirection(savedBatchNodes.value, way)
-    const members = orderedSaved.map((node) => ({ id: node.id }))
-    const group = await nodeGroups.save({
-      members,
-      // The dialog name also becomes a name tag, so it reaches the
-      // translation catalog like a node name does (see NodeGroupManager).
-      // The cross-section draft from the create panel travels along as
-      // structured aspect tags, so the relation is complete in one save.
-      tags: withNameTag([...input.tags, ...crossSectionTags(input.crossSection)], name),
-      ...(name !== '' ? { name } : {}),
-    })
-    if (!group) {
-      createFailed.value = true
-      return
+    const memberReferences = orderedSaved.map((node) => ({ id: node.id }))
+
+    let firstSavedGroup: NodeGroup | null = null
+    for (const { tag, translations } of observationTags) {
+      const group = await nodeGroups.save({
+        members: memberReferences,
+        tags: [tag],
+        ...(input.translationLocale ? { translationLocale: input.translationLocale } : {}),
+        ...(translations ? { translations } : {}),
+        ...(!isSingle && name !== '' ? { name } : {}),
+      })
+      if (!group) {
+        createFailed.value = true
+        return
+      }
+      firstSavedGroup ??= group
     }
+
+    // A named range without observations: the name is the relation's
+    // metadata, carried by a naming-only relation.
+    if (observationTags.length === 0 && name !== '') {
+      const group = await nodeGroups.save({ members: memberReferences, name })
+      if (!group) {
+        createFailed.value = true
+        return
+      }
+      firstSavedGroup = group
+    }
+
+    const anchorGroup = firstSavedGroup
+      ?? [...nodeGroups.groups].find(group => orderedSaved.some((node) => group.members.some((member) => member.id === node.id)))
+      ?? null
+    const singleSaved = savedBatchNodes.value[0]
     finishBatch()
     createMode.value = false
     clearSelection()
-    emit('edit-relation', group)
+    if (isSingle && singleSaved) {
+      // A single placed point stays the edited element: its observations
+      // anchor on the node, so the node editor opens.
+      selectedProviderNodeId = nodeKey(singleSaved)
+      emit('edit-node', { ...singleSaved, osmTags: {} })
+    } else if (anchorGroup) {
+      emit('edit-relation', anchorGroup)
+    }
   } finally {
     creating.value = false
   }

@@ -241,7 +241,7 @@ final class UserNodeManager
 
         $parent = $node->getParent();
         if ($parent !== null && !$this->nodeIsVisible($parent, $user)) {
-            $this->wayVocabulary->validate($request, $node, $this->defaultUser());
+            // An invisible parent never leaks into the response.
             $parent = null;
         }
         $children = $node->getChildren()->filter(fn (Node $child): bool => $this->nodeIsVisible($child, $user));

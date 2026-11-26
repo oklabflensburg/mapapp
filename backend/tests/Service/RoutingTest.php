@@ -129,6 +129,41 @@ final class RoutingTest extends KernelTestCase
         self::assertSame($corridor, $model['areas']['features'][1]['geometry']);
     }
 
+    public function testMultiPolygonCorridorsBecomeOneAreaPerPolygon(): void
+    {
+        $routing = new Routing(
+            static::getContainer()->get('http_client'),
+            'http://127.0.0.1:1',
+        );
+
+        // A corridor clipped by an alternative observation can arrive as a
+        // MultiPolygon; GraphHopper custom areas accept Polygon features
+        // only, so the polygons become one area each.
+        $clipped = [
+            'type' => 'MultiPolygon',
+            'coordinates' => [
+                [[[9.437, 54.791], [9.4371, 54.791], [9.4371, 54.7911], [9.437, 54.7911], [9.437, 54.791]]],
+                [[[9.438, 54.792], [9.4381, 54.792], [9.4381, 54.7921], [9.438, 54.7921], [9.438, 54.792]]],
+            ],
+        ];
+        $model = $routing->customModelFor(
+            ['surface' => 'avoid'],
+            [],
+            [],
+            ['surface' => [['id' => 7, 'area' => $clipped]]],
+        );
+
+        self::assertSame(
+            ['priority' => [['if' => 'in_tag_surface_1 || in_tag_surface_2', 'multiply_by' => '0']]],
+            ['priority' => $model['priority']],
+        );
+        self::assertCount(2, $model['areas']['features']);
+        self::assertSame('Polygon', $model['areas']['features'][0]['geometry']['type']);
+        self::assertSame('Polygon', $model['areas']['features'][1]['geometry']['type']);
+        self::assertSame($clipped['coordinates'][0], $model['areas']['features'][0]['geometry']['coordinates']);
+        self::assertSame($clipped['coordinates'][1], $model['areas']['features'][1]['geometry']['coordinates']);
+    }
+
     public function testTaggedNodesWithoutAvoidanceProduceNoModel(): void
     {
         $routing = new Routing(

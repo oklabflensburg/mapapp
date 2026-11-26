@@ -99,14 +99,21 @@ await page.route('**/api/node-groups', async route => {
   if (!group) {
     group = {
       id: nextGroupId++, name: input.name ?? null, members: [], tags: input.tags ?? [],
-      observations: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      observations: input.tags ?? [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     }
     groups.push(group)
+  }
+  group = { ...group, tags: input.tags ?? group.tags, observations: input.tags ?? group.observations, name: input.name ?? null }
+  const groupIndex = groups.findIndex(entry => entry.id === group.id)
+  if (groupIndex >= 0) {
+    groups[groupIndex] = group
   }
   for (const reference of input.members ?? []) {
     const node = nodes.find(n => n.id === reference.id)
     if (node && !group.members.some(member => member.id === node.id)) {
-      group.members.push({ id: node.id, provider: node.provider, providerNodeId: node.providerNodeId, name: tagListValue(node.tags, 'name') ?? null, tags: node.tags })
+      group.members.push({ id: node.id, provider: node.provider, providerNodeId: node.providerNodeId, name: tagListValue(node.tags, 'name') ?? null, tags: node.tags, latitude: node.latitude, longitude: node.longitude })
+      const stored = groups[groups.findIndex(entry => entry.id === group.id)]
+      stored.members = group.members
     }
   }
   group.parents = [...new Map(group.members.flatMap(member => withRelations(nodes.find(n => n.id === member.id)).parents).map(parent => [`${parent.provider}:${parent.providerNodeId}`, parent])).values()]
@@ -167,21 +174,24 @@ try {
   assert.deepEqual(nodeRequests.map(request => request.parent), [undefined, undefined])
   assert.equal(groupRequests.length, 1)
   assert.equal(groupRequests[0].name, 'Hochallee north part')
-  // The dialog name also becomes a name tag, so it reaches the translation
-  // catalog like a node name does.
-  assert.equal(tagListValue(groupRequests[0].tags, 'name'), 'Hochallee north part')
+  // Names are relation metadata, never a relation tag (see
+  // specs/map-editing/observation-relations/spec.md R1).
+  assert.equal(tagListValue(groupRequests[0].tags, 'name'), undefined)
   assert.deepEqual(groupRequests[0].members.map(member => member.id), nodes.map(node => node.id))
   await expect(page.locator('.p-drawer')).toContainText('Hochallee north part')
-  // Relation tags also require both raw fields before an update can be sent.
+  // Each drafted observation requires both raw fields before a save can
+  // be sent; the removed draft sends nothing. Incomplete drafts surface as
+  // a save-attempt alert, not by disabling the button.
   await page.getByRole('button', { name: 'Add tag', exact: true }).click()
   const relationTagSave = page.locator('.p-drawer').getByRole('button', { name: 'Save', exact: true })
-  await expect(relationTagSave).toBeDisabled()
+  await relationTagSave.click()
+  await expect(page.getByRole('alert')).toContainText('Key and value required.')
   await page.getByPlaceholder('Key', { exact: true }).fill('surface')
   await page.getByPlaceholder('Value', { exact: true }).fill('   ')
-  await expect(relationTagSave).toBeDisabled()
-  assert.equal(groupRequests.length, 1, 'incomplete relation tags send no update')
+  await relationTagSave.click()
+  await expect(page.getByRole('alert')).toContainText('Key and value required.')
+  assert.equal(groupRequests.length, 1, 'incomplete observations send no relation')
   await page.getByPlaceholder('Value', { exact: true }).fill('rough')
-  await expect(relationTagSave).toBeEnabled()
   await page.getByRole('button', { name: 'Remove tag', exact: true }).click()
   await closeEditor()
 
@@ -213,14 +223,13 @@ try {
   const observation = page.locator('.tag-row').last()
   const tagSave = page.locator('.p-drawer').getByRole('button', { name: 'Save', exact: true })
   const beforeIncomplete = nodeRequests.length
-  await expect(tagSave).toBeDisabled()
+  // Incomplete drafts surface on a save attempt, not by disabling the button.
+  await tagSave.click()
   await expect(page.getByRole('alert')).toContainText('Key and value required.')
   await observation.getByLabel('Key translation', { exact: true }).pressSequentially('Surface')
   await expect(observation.getByRole('textbox', { name: 'Key', exact: true })).toHaveValue('surface')
-  await expect(tagSave).toBeDisabled()
   await observation.getByLabel('Value translation', { exact: true }).pressSequentially('Rough surface')
   await expect(observation.getByRole('textbox', { name: 'Value', exact: true })).toHaveValue('rough_surface')
-  await expect(tagSave).toBeEnabled()
   await observation.getByLabel('Key translation', { exact: true }).fill('Surface condition')
   await expect(observation.getByRole('textbox', { name: 'Key', exact: true })).toHaveValue('surface_condition')
   // Manual overrides stop automatic updates, even before the first save.
@@ -233,13 +242,19 @@ try {
   // Emptying a raw field allows the translation to generate it again.
   await observation.getByRole('textbox', { name: 'Key', exact: true }).fill('')
   await observation.getByRole('textbox', { name: 'Value', exact: true }).fill('')
-  await expect(tagSave).toBeDisabled()
+  await tagSave.click()
+  await expect(page.getByRole('alert')).toContainText('Key and value required.')
   await observation.getByLabel('Key translation', { exact: true }).fill('Surface')
   await observation.getByLabel('Value translation', { exact: true }).fill('Rough surface')
   await tagSave.click()
-  await expect.poll(() => nodeRequests.length).toBe(beforeIncomplete + 1)
-  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'name', value: 'Solo test node' }, { key: 'surface', value: 'rough_surface' }])
-  assert.deepEqual(nodeRequests.at(-1).translations, [{
+  // The pending name stays node metadata; the observation became its own
+  // point observation relation anchored on the node.
+  await expect.poll(() => groupRequests.length).toBe(2, {timeout: 5000})
+  const observationSave = groupRequests.at(-1)
+  assert.deepEqual(observationSave.tags, [{ key: 'surface', value: 'rough_surface' }])
+  assert.deepEqual(observationSave.members.map(member => member.id), [nodes.at(-1).id])
+  assert.equal(observationSave.translationLocale, 'en')
+  assert.deepEqual(observationSave.translations, [{
     key: 'surface', value: 'rough_surface', keyTranslation: 'Surface', valueTranslation: 'Rough surface',
     previousKeyTranslation: '', previousValueTranslation: '',
   }])
@@ -247,21 +262,14 @@ try {
   await expect(observation.getByRole('textbox', { name: 'Value', exact: true })).toHaveValue('rough_surface')
   await observation.getByRole('textbox', { name: 'Key', exact: true }).fill('test_surface')
   await observation.getByRole('textbox', { name: 'Value', exact: true }).fill('rough')
-  await observation.getByLabel('Key translation', { exact: true }).fill('Different surface')
-  await observation.getByLabel('Value translation', { exact: true }).fill('Different roughness')
-  await expect(observation.getByRole('textbox', { name: 'Key', exact: true })).toHaveValue('test_surface')
-  await expect(observation.getByRole('textbox', { name: 'Value', exact: true })).toHaveValue('rough')
-  await observation.getByLabel('Key translation', { exact: true }).fill('Surface')
-  await observation.getByLabel('Value translation', { exact: true }).fill('Rough surface')
   await observation.getByRole('textbox', { name: 'Value', exact: true }).fill('   ')
-  await expect(tagSave).toBeDisabled()
+  await tagSave.click()
+  await expect(page.getByRole('alert')).toContainText('Key and value required.')
   await observation.getByRole('textbox', { name: 'Value', exact: true }).fill('rough')
   await page.getByRole('button', { name: 'Add tag', exact: true }).click()
-  await expect(tagSave).toBeDisabled()
+  await tagSave.click()
+  await expect(page.getByRole('alert')).toContainText('Key and value required.')
   await page.locator('.tag-row').last().getByRole('button', { name: 'Remove tag', exact: true }).click()
-  await expect(tagSave).toBeEnabled()
-  await expect(observation.getByLabel('Key translation', { exact: true })).toHaveValue('Surface')
-  await expect(observation.getByLabel('Value translation', { exact: true })).toHaveValue('Rough surface')
   const layout = await observation.evaluate(row => {
     const inputs = row.querySelectorAll('input')
     return [...inputs].map(input => ({ y: input.getBoundingClientRect().y, font: parseFloat(getComputedStyle(input).fontSize) }))
@@ -270,14 +278,14 @@ try {
   assert.ok(layout[1].font < layout[0].font && layout[3].font < layout[2].font, 'raw fields use smaller type')
   await observation.scrollIntoViewIfNeeded()
   await page.screenshot({ path: '/tmp/map-observation-translations.png' })
+  const observationRelationId = groups.at(-1).id
+  const beforeUpdateSave = groupRequests.length
   await tagSave.click()
-  await expect(observation.getByLabel('Value translation', { exact: true })).toHaveValue('Rough surface')
-  assert.equal(nodeRequests.at(-1).translationLocale, 'en')
-  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'name', value: 'Solo test node' }, { key: 'test_surface', value: 'rough' }])
-  assert.deepEqual(nodeRequests.at(-1).translations, [{
-    key: 'test_surface', value: 'rough', keyTranslation: 'Surface', valueTranslation: 'Rough surface',
-    previousKeyTranslation: '', previousValueTranslation: '',
-  }])
+  // Editing the observation saves its own relation exactly once.
+  await expect.poll(() => groupRequests.length).toBe(beforeUpdateSave + 1)
+  const observationUpdate = groupRequests.at(-1)
+  assert.equal(observationUpdate.id, observationRelationId)
+  assert.deepEqual(observationUpdate.tags, [{ key: 'test_surface', value: 'rough' }])
   await closeEditor()
 
   // Clicking a feature places a child of that feature; its parent name
@@ -293,6 +301,7 @@ try {
 
   // A failed save keeps the placed nodes; retry re-sends without duplicating.
   failNext = true
+  const batchStartGroupCount = groupRequests.length
   await add.click()
   await page.mouse.click(400, 300)
   await page.mouse.click(430, 320)
@@ -304,12 +313,13 @@ try {
   await expect(add).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'Retry', exact: true }).click()
   await expect(dialog).toBeHidden()
-  await expect(page.locator('.p-drawer')).toBeVisible()
+  // No observations and no name were drafted, so the batch stays bare
+  // nodes without a relation and the editor closes.
+  await expect(page.locator('.p-drawer')).toBeHidden()
   await expect.poll(() => nodeRequests.length, { message: 'retry re-sends the failed node and saves the remaining one' }).toBe(failedCount + 2)
   assert.deepEqual(nodeRequests[failedCount], failed, 'retry sends the same node')
   assert.equal(nodes.length, 6, 'retry does not duplicate the committed creation')
-  assert.equal(groupRequests.length, 2, 'the relation is created once on retry')
-  await closeEditor()
+  assert.equal(groupRequests.length, batchStartGroupCount, 'a batch without observations creates no relations')
   nodes.length = 0
   groups.length = 0
   await page.reload()
@@ -324,10 +334,10 @@ try {
   const customBatchStart = nodeRequests.length
   await save.click()
   await expect(dialog).toBeHidden()
-  await expect(page.locator('.p-drawer')).toBeVisible()
+  // A bare batch (no name, no observations) creates nothing to edit.
+  await expect(page.locator('.p-drawer')).toBeHidden()
   const customBatch = nodeRequests.slice(customBatchStart)
   assert.deepEqual(customBatch.map(node => node.parent), [undefined, undefined, { providerNodeId: 'n-fixture', latitude: center.lat, longitude: center.lng }])
-  await closeEditor()
 
   nodes.length = 0
   groups.length = 0
@@ -343,13 +353,12 @@ try {
   const osmBatchStart = nodeRequests.length
   await save.click()
   await expect(dialog).toBeHidden()
-  await expect(page.locator('.p-drawer')).toBeVisible()
+  await expect(page.locator('.p-drawer')).toBeHidden()
   const osmBatch = nodeRequests.slice(osmBatchStart)
   assert.equal(osmBatch.length, 3)
   assert.equal(osmBatch[0].parent.providerNodeId, 'n-fixture')
   assert.equal(osmBatch[1].parent, undefined)
   assert.equal(osmBatch[2].parent, undefined)
-  await closeEditor()
   await page.screenshot({ path: '/tmp/map-edit-mode.png' })
   // A relation spans two streets. Each point retains the street it hit;
   // repeated parents are displayed once, including after retry and reload.
@@ -380,10 +389,10 @@ try {
   await closeEditor()
   await page.reload()
   await ready()
-  // Selecting a member and following its relation uses the saved API data.
+  // Clicking a relation member/following its relation uses the saved API
+  // data: the relation editor opens with its members' parents.
   const memberPoint = pixel(streetPoints[0][0], streetPoints[0][1])
   await page.mouse.click(memberPoint.x, memberPoint.y)
-  await page.getByRole('button', { name: 'Edit relation', exact: true }).click()
   await expect(page.locator('.p-drawer')).toHaveCount(1)
   await expect(page.locator('.p-drawer-header')).toContainText('Street Alpha, Street Beta')
   assert.equal(crossStreetGroup.members.length, 4)
@@ -391,9 +400,10 @@ try {
 
   // A relation placed on a single OSM way always adopts the way's
   // direction: with the placements clicked in reverse (east first), the
-  // created relation still runs west to east like Street Alpha.
+  // created relation still runs west to east like Street Alpha. The points
+  // sit on Street Alpha between the cross-street member markers.
   await add.click()
-  const reversedStreetPoints = [[54.797, 9.44], [54.797, 9.43]]
+  const reversedStreetPoints = [[54.797, 9.4335], [54.797, 9.425]]
   for (const [lat, lng] of reversedStreetPoints) {
     const point = pixel(lat, lng)
     await page.mouse.click(point.x, point.y)
@@ -441,8 +451,11 @@ try {
   await expect(dialog).toBeHidden()
   // The saved node's own name replaces the "Edit node" fallback headline.
   await expect(page.locator('.p-drawer-header')).toContainText('Mobile node')
-  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'surface', value: 'smooth' }, { key: 'name', value: 'Mobile node' }])
-  assert.equal(nodeRequests.at(-1).translations[0].valueTranslation, 'Smooth')
+  // The name stays on the node; the observation is its own relation.
+  assert.deepEqual(nodeRequests.at(-1).tags, [{ key: 'name', value: 'Mobile node' }])
+  assert.deepEqual(groupRequests.at(-1).tags, [{ key: 'surface', value: 'smooth' }])
+  assert.deepEqual(groupRequests.at(-1).members.map(member => member.id), [nodes.at(-1).id])
+  assert.equal(groupRequests.at(-1).translations[0].valueTranslation, 'Smooth')
   await closeEditor()
   console.log('PASS: edit mode placement, pending dialog, relation save, single node save, observation translations and layout, abort, escape, per-node OSM/custom parents, cross-street relations, parent labels after reload, retry, mobile layout and creation drafts')
 } finally {

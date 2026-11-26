@@ -91,6 +91,45 @@ final class TagApprovalListener
             $group->getGroupTags()->removeElement($other);
             $entityManager->remove($other);
         }
+
+        // Supersession is scoped to the observation identity: an unapproved
+        // same-key observation is only removed when its relation covers the
+        // same range. A different range is an independent observation and
+        // keeps its pending state. Since relations carry exactly one tag,
+        // loading the group's unapproved rows of this key is enough.
+        $signature = $this->rangeSignature($group);
+        $candidates = $entityManager->createQuery(
+            'SELECT gt, g FROM '.NodeGroupTag::class.' gt'
+            .' JOIN gt.group g JOIN gt.tag t'
+            .' WHERE t.key = :key AND gt.approved = false'
+        )->setParameter('key', $approvedTag->getKey())->getResult();
+        foreach ($candidates as $candidate) {
+            if (!($candidate instanceof NodeGroupTag) || $candidate === $approvedGroupTag) {
+                continue;
+            }
+            if ($this->rangeSignature($candidate->getGroup()) !== $signature) {
+                continue;
+            }
+            $candidateGroup = $candidate->getGroup();
+            $candidateGroup->getGroupTags()->removeElement($candidate);
+            $entityManager->remove($candidate);
+        }
+    }
+
+    /**
+     * A relation's range identity: the ordered member node identities.
+     *
+     * @return list<string>
+     */
+    private function rangeSignature(\App\Entity\NodeGroup $group): array
+    {
+        $signature = [];
+        foreach ($group->getMembers() as $member) {
+            $node = $member->getNode();
+            $signature[] = 'id:'.$node->getId();
+        }
+
+        return $signature;
     }
 
     /**

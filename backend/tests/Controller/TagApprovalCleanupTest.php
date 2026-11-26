@@ -237,40 +237,76 @@ final class TagApprovalCleanupTest extends WebTestCase
         self::assertSame(['cuisine=french-'.$identity], $this->nodeTagSummaries($manager->find(Node::class, $otherNode->getId())));
     }
 
-    public function testApprovingTagOnRelationSupersedesCompetingValuesOnlyThere(): void
+    public function testApprovingTagOnRelationSupersedesOnlyTheSameRange(): void
     {
         $identity = bin2hex(random_bytes(8));
         $client = static::createClient();
+        $manager = static::getContainer()->get('doctrine')->getManager();
         $editor = $this->createUser('tag-approval-relation-editor@example.test', ['editor']);
+        $otherEditor = $this->createUser('tag-approval-relation-other@example.test', ['editor']);
+
+        // Each observation is one relation (specs/map-editing/observation-
+        // relations/spec.md): two pending surface observations on the same
+        // range (prepared as two editors' rows here), plus same-key
+        // observations with other ranges that must stay pending.
+        $rangeNodes = [$this->createNode('tag-approval-range-a-'.$identity), $this->createNode('tag-approval-range-b-'.$identity)];
+        $otherRangeNodes = [$this->createNode('tag-approval-other-a-'.$identity), $this->createNode('tag-approval-other-b-'.$identity)];
 
         $group = new NodeGroup();
         $group->setCreatedByUser($editor);
-        $manager = static::getContainer()->get('doctrine')->getManager();
         $manager->persist($group);
+        foreach ($rangeNodes as $position => $node) {
+            $member = new \App\Entity\NodeGroupMember($group, $node, $position);
+            $manager->persist($member);
+            $group->getMembers()->add($member);
+        }
+
+        $sameRangeGroup = new NodeGroup();
+        $sameRangeGroup->setCreatedByUser($editor);
+        $manager->persist($sameRangeGroup);
+        foreach ($rangeNodes as $position => $node) {
+            $member = new \App\Entity\NodeGroupMember($sameRangeGroup, $node, $position);
+            $manager->persist($member);
+            $sameRangeGroup->getMembers()->add($member);
+        }
+
+        $otherRangeGroup = new NodeGroup();
+        $otherRangeGroup->setCreatedByUser($editor);
+        $manager->persist($otherRangeGroup);
+        foreach ($otherRangeNodes as $position => $node) {
+            $member = new \App\Entity\NodeGroupMember($otherRangeGroup, $node, $position);
+            $manager->persist($member);
+            $otherRangeGroup->getMembers()->add($member);
+        }
+        $manager->flush();
+        foreach ([$group, $sameRangeGroup, $otherRangeGroup] as $created) {
+            $this->groupIds[] = $created->getId();
+        }
 
         $cobblestone = $this->createRelationTag($group, 'surface', 'cobblestone-'.$identity, false, $editor);
-        $this->createRelationTag($group, 'surface', 'asphalt-'.$identity, false, $editor);
-        $this->createRelationTag($group, 'lit', 'yes-'.$identity, false, $editor);
-        // The same value on another relation stays pending.
-        $otherGroup = new NodeGroup();
-        $otherGroup->setCreatedByUser($editor);
-        $manager->persist($otherGroup);
-        $cobblestoneElsewhere = $this->createRelationTag($otherGroup, 'surface', 'cobblestone-'.$identity, false, $editor);
+        $asphaltElsewhereSameRange = $this->createRelationTag($sameRangeGroup, 'surface', 'asphalt-'.$identity, false, $otherEditor);
+        $gravelOtherRange = $this->createRelationTag($otherRangeGroup, 'surface', 'gravel-'.$identity, false, $otherEditor);
+        // A different key on the same range stays.
+        $this->createRelationTag($sameRangeGroup, 'lit', 'yes-'.$identity, false, $otherEditor);
         $manager->flush();
-        $this->groupIds[] = $group->getId();
-        $this->groupIds[] = $otherGroup->getId();
 
         $client->loginUser($this->createUser('admin-tag-approval-relation@example.test', ['admin']), 'admin');
         $this->approveGroupTag($client, $cobblestone);
 
         $manager->clear();
 
-        // The competing unapproved surface value is superseded; other keys,
-        // other relations and their pending state stay.
-        self::assertSame(['lit=yes-'.$identity, 'surface=cobblestone-'.$identity], $this->groupTagSummaries($manager->find(NodeGroup::class, $group->getId())));
-        self::assertSame(['surface=cobblestone-'.$identity], $this->groupTagSummaries($manager->find(NodeGroup::class, $otherGroup->getId())));
+        // The approved value publishes; a competing pending surface on the
+        // same range is superseded (even across relations), other keys stay,
+        // and a same-key observation on a different range is independent.
+        self::assertSame(['surface=cobblestone-'.$identity], $this->groupTagSummaries($manager->find(NodeGroup::class, $group->getId())));
+        $sameRange = $manager->find(NodeGroup::class, $sameRangeGroup->getId());
+        self::assertSame(['lit=yes-'.$identity], $this->groupTagSummaries($sameRange));
         self::assertTrue($manager->find(NodeGroupTag::class, $cobblestone->getId())->isApproved());
-        self::assertFalse($manager->find(NodeGroupTag::class, $cobblestoneElsewhere->getId())->isApproved());
+        $removed = $manager->find(NodeGroupTag::class, $asphaltElsewhereSameRange->getId());
+        self::assertNull($removed);
+        $keptRange = $manager->find(NodeGroup::class, $otherRangeGroup->getId());
+        self::assertSame(['surface=gravel-'.$identity], $this->groupTagSummaries($keptRange));
+        self::assertFalse($manager->find(NodeGroupTag::class, $gravelOtherRange->getId())->isApproved());
     }
 
     public function testAdminTaggingNodeRemovesUnapprovedTagsWithSameKey(): void

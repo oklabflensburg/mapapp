@@ -25,7 +25,12 @@ const members = [
   { id: 1, provider: 'OSM', providerNodeId: 'n1', name: null, tags: [], latitude: 54.795, longitude: 9.427 },
   { id: 2, provider: 'OSM', providerNodeId: 'n2', name: null, tags: [], latitude: 54.795, longitude: 9.447 },
 ]
-let group = { id: 10, name: 'Test street part', members, parents: [], area: null, tags: [], observations: [], approved: true }
+// One observation = one relation (specs/map-editing/observation-relations/
+// spec.md): every fixture relation carries exactly one tag.
+let relations = [{ id: 10, name: 'Test street part', members: members.map(({ latitude, longitude, ...rest }) => ({ ...rest, latitude, longitude })), parents: [], area: null, tags: [], observations: [], approved: false }]
+let nextRelationId = 11
+// Store members as the API returns them: provider-tagged node summaries.
+const memberSummary = (reference, index) => ({ id: index + 1, provider: 'OSM', providerNodeId: reference.providerNodeId ?? `n${index}`, name: null, tags: [], latitude: reference.latitude ?? 54.795, longitude: reference.longitude ?? 9.427 })
 await page.route('**/api/**', async route => {
   const path = new URL(route.request().url()).pathname
   if (path === '/api/me') return route.fulfill({ json: { user: { name: 'Editor', email: 'editor@test.example', roles: ['ROLE_EDITOR'] } } })
@@ -33,26 +38,33 @@ await page.route('**/api/**', async route => {
   if (path.startsWith('/api/i18n/')) return route.fulfill({ json: translations[path.endsWith('/de') ? 'de' : 'en'] })
   if (path === '/api/nodes') {
     if (route.request().method() === 'GET') return route.fulfill({ json: [] })
-    const input = route.request().postDataJSON()
-    requests.push(input)
-    return route.fulfill({ status: failSave ? 422 : 200, json: failSave ? {} : { ...input, id: 1, observations: input.tags, parents: [], children: [] } })
+    return route.fulfill({ status: 422, json: {} })
   }
   if (path === '/api/node-groups') {
     if (route.request().method() === 'POST') {
       const input = route.request().postDataJSON()
       requests.push(input)
-      assert.equal('aspects' in input, false)
       if (failSave) return route.fulfill({status: 422, json: {error: 'invalid'}})
-      group = { ...group, ...input, observations: input.tags }
-      return route.fulfill({json: group})
+      // The relations model contract: at most one tag per save.
+      assert.ok(input.tags === undefined || input.tags.length <= 1)
+      const existing = 'id' in input && input.id ? relations.find(relation => relation.id === input.id) : undefined
+      let relation
+      if (existing) {
+        relation = { ...existing, ...(input.members ? { members: input.members.map(memberSummary) } : {}), tags: input.tags ?? existing.tags, observations: input.tags ?? existing.observations }
+        relations = relations.map(entry => entry.id === relation.id ? relation : entry)
+      } else {
+        relation = { id: nextRelationId++, name: null, members: input.members.map(memberSummary), parents: [], area: null, tags: input.tags ?? [], observations: input.tags ?? [], approved: false }
+        relations = [relation, ...relations]
+      }
+      return route.fulfill({ json: relation })
     }
-    return route.fulfill({ json: [group] })
+    return route.fulfill({ json: relations })
   }
   if (path === '/api/route-preference-tags') return route.fulfill({ json: {tags: ['aspect.1'], labels: {'aspect.1': 'Wide sidewalk'}} })
   return route.fulfill({json: {}})
 })
 await page.route('**/data/flensburg.geojson', route => route.fulfill({ json: {
-  type: 'FeatureCollection', features: [{ type: 'Feature', id: 'w123', properties: {highway: 'footway'}, geometry: {type: 'LineString', coordinates: [[9.42, 54.791], [9.45, 54.791]]} }],
+  type: 'FeatureCollection', features: [{ type: 'Feature', id: 'w123', properties: {highway: 'footway'}, geometry: {type: 'LineString', coordinates: [[9.42, 54.791], [9.45, 54.791]]} }], freeform: true,
 } }))
 try {
   await page.goto(process.env.APP_URL ?? 'http://localhost:5173')
@@ -73,7 +85,11 @@ try {
   failSave = true
   await page.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(page.locator('.save-error')).toBeVisible()
-  assert.deepEqual(requests.at(-1).tags, [{key: 'surface', value: 'gravel'}])
+  // A whole-way observation is a single-member relation anchored on the way.
+  const wayObservationSave = requests.at(-1)
+  assert.deepEqual(wayObservationSave.tags, [{key: 'surface', value: 'gravel'}])
+  assert.equal(wayObservationSave.members.length, 1)
+  assert.equal(wayObservationSave.members[0].providerNodeId, 'w123')
   failSave = false
   await page.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(page.locator('.save-error')).toHaveCount(0)
@@ -90,78 +106,84 @@ try {
   catalog.aspectTypes = availableTypes
   await partDrawer.getByRole('button', {name: 'Reload catalog', exact: true}).click()
   await expect(partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true})).toBeEnabled()
+  // Two aspect observations over the same range: one relation each.
   await partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true}).click()
   // New rows default to the center side; the side column shows it.
   await expect(partDrawer.getByRole('combobox', {name: 'Side', exact: true}).first()).toContainText('Center')
   await page.getByRole('combobox', {name: 'Width', exact: true}).click()
   await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
-  // Observations are ordered by their addition; no per-row move buttons.
   await partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true}).click()
   await page.getByRole('combobox', {name: 'Width', exact: true}).nth(1).click()
   await page.getByRole('option', {name: '> 2 m', exact: true}).last().click()
-  await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
-  await expect(partDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  assert.deepEqual(requests.at(-1).tags, [{key: 'sidewalk.center.1.width', value: '<1'}, {key: 'sidewalk.center.2.width', value: '>2'}])
-  await page.reload()
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
-  await page.mouse.click(640, 319)
-  await expect(page.getByRole('combobox', {name: 'Width', exact: true}).first()).toContainText('< 1 m')
-  // Exercise a full five-type cross-section in the normal composer.
-  const definitionCatalog = JSON.parse(await readFile(new URL('../../backend/config/aspect-catalog.json', import.meta.url), 'utf8'))
-  const crossSectionTags = [
-    { key: 'sidewalk.left.1.width', value: '>2' },
-    { key: 'sidewalk.left.1.surface', value: 'asphalt' },
-    { key: 'cycleway.left.2.width', value: '1-2' },
-    { key: 'cycleway.left.2.surface', value: 'asphalt' },
-    { key: 'parking.left.3.width', value: '>2' },
-    { key: 'parking.left.3.surface', value: 'concrete' },
-    { key: 'roadway.center.1.width', value: '>2' },
-    { key: 'roadway.center.1.surface', value: 'asphalt' },
-    { key: 'roadway.center.1.lanes', value: '2' },
-    { key: 'sidewalk.right.1.width', value: '1-2' },
-    { key: 'sidewalk.right.1.surface', value: 'paving_stones' },
-  ]
-  catalog.aspectTypes = definitionCatalog.types
-  group = {...group, tags: crossSectionTags, observations: crossSectionTags}
-  await page.reload()
-  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
-  await page.mouse.click(640, 319)
-  const crossSectionDrawer = page.locator('.p-drawer').filter({hasText: 'Test street part'})
-  const widths = crossSectionDrawer.getByRole('combobox', {name: 'Width', exact: true})
-  await expect(widths).toHaveCount(5)
-  await expect(widths.first()).toContainText('> 2 m')
-  await expect(widths.nth(4)).toContainText('1–2 m')
-  await widths.first().click()
-  await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
   failSave = true
-  await crossSectionDrawer.getByRole('button', {name: 'Save', exact: true}).click()
-  await expect(crossSectionDrawer.locator('.save-error')).toBeVisible()
-  await expect(widths.first()).toContainText('< 1 m')
+  await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
+  await expect(partDrawer.locator('.save-error')).toBeVisible()
   failSave = false
-  await crossSectionDrawer.getByRole('button', {name: 'Save', exact: true}).click()
-  await expect(crossSectionDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'sidewalk.left.1.width').value, '<1')
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'sidewalk.right.1.width').value, '1-2')
-  assert.equal(requests.at(-1).tags.find(tag => tag.key === 'sidewalk.right.1.surface').value, 'paving_stones')
+  await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
+  // Both observation relations save sequentially; wait for the retry pass's
+  // second save before judging the requests: two failed way/range saves plus
+  // the two retried observation saves.
+  await expect.poll(() => requests.length, {timeout: 5000}).toBe(6)
+  await expect(partDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
+  // Two observation relations created over the same placed range: one tag each.
+  const saves = requests.slice(-2)
+  assert.deepEqual(saves.at(-2).tags, [{key: 'sidewalk.center.width', value: '<1'}])
+  assert.deepEqual(saves.at(-1).tags, [{key: 'sidewalk.center.width', value: '>2'}])
+  // Regression (parallel observations): after a second observation relation was
+  // saved over the same range, the relation editor still lists both
+  // observations side by side — the panel edits the range, not one relation,
+  // so neither observation disappears.
+  requests.length = 0
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
-  await expect(page.getByRole('combobox', {name: 'Width', exact: true}).first()).toContainText('< 1 m')
-  await expect(page.getByRole('combobox', {name: 'Width', exact: true}).nth(4)).toContainText('1–2 m')
-  // Approval of width alone locks that value, its side and its position, not surface.
-  group.observations = group.tags.filter(tag => tag.key !== 'sidewalk.left.1.width')
+  const parallelDrawer = page.locator('.p-drawer')
+  await expect(parallelDrawer).toBeVisible()
+  const parallelWidths = parallelDrawer.getByRole('combobox', {name: 'Width', exact: true})
+  await expect(parallelWidths).toHaveCount(2)
+  const parallelValues = await parallelWidths.allTextContents()
+  assert.ok(parallelValues.some(value => value.includes('< 1 m')), `missing '< 1 m' in ${JSON.stringify(parallelValues)}`)
+  assert.ok(parallelValues.some(value => value.includes('> 2 m')), `missing '> 2 m' in ${JSON.stringify(parallelValues)}`)
+  // Each existing observation keeps its identity: the side cannot be flipped
+  // into a different observation (observing another side adds a new row).
+  const parallelSides = parallelDrawer.getByRole('combobox', {name: 'Side', exact: true})
+  await expect(parallelSides).toHaveCount(2)
+  for (const side of await parallelSides.all()) {
+    await expect(side).toHaveAttribute('aria-disabled', 'true')
+  }
+  // Saving unchanged parallel observations echoes exactly both relations —
+  // nothing is re-keyed and nothing is deleted.
+  await parallelDrawer.getByRole('button', {name: 'Save', exact: true}).click()
+  await expect.poll(() => requests.length, {timeout: 5000}).toBe(2)
+  const echoed = requests.slice().sort((a, b) => a.id - b.id)
+  assert.deepEqual(echoed.map(request => request.id), [12, 13])
+  assert.deepEqual(echoed[0].tags, [{key: 'sidewalk.center.width', value: '<1'}])
+  assert.deepEqual(echoed[1].tags, [{key: 'sidewalk.center.width', value: '>2'}])
+  // A pending range observation edited alone: the placed range keeps one
+  // pending observation relation; editing updates exactly its relation.
+  relations = [{ id: 10, name: 'Test street part', members: members.map(member => ({ ...member })), parents: [], area: null, tags: [{key: 'sidewalk.center.width', value: '<1'}], observations: [{key: 'sidewalk.center.width', value: '<1'}], approved: false }]
+  requests.length = 0
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
-  const locked = page.locator('.cross-section-composer .observation').first()
-  // The approved width lives in the tag table only: the locked row offers
-  // no width select, its type and side are read-only, and the
-  // still-pending surface stays editable.
-  await expect(locked.getByRole('combobox', {name: 'Type', exact: true})).toHaveAttribute('aria-disabled', 'true')
-  await expect(locked.getByRole('combobox', {name: 'Side', exact: true})).toHaveAttribute('aria-disabled', 'true')
-  await expect(locked.getByRole('combobox', {name: 'Width', exact: true})).toHaveCount(0)
-  await expect(locked.getByRole('combobox', {name: 'Surface', exact: true})).not.toHaveAttribute('aria-disabled', 'true')
-  await expect(locked.getByRole('button', {name: 'Remove observation', exact: true})).toBeDisabled()
+  const drawer = page.locator('.p-drawer').filter({hasText: 'Test street part'})
+  await expect(drawer).toBeVisible()
+  await page.getByRole('combobox', {name: 'Width', exact: true}).first().click()
+  await page.getByRole('option', {name: '> 2 m', exact: true}).last().click()
+  await drawer.getByRole('button', {name: 'Save', exact: true}).click()
+  await expect.poll(() => requests.length, {timeout: 5000}).toBe(1)
+  assert.deepEqual(requests.at(-1).tags, [{key: 'sidewalk.center.width', value: '>2'}])
+  assert.equal(requests.at(-1).id, 10)
+  // Approval freezes the observation relation: the approved aspect shows in
+  // the tag table, its composer row is locked and cannot be edited.
+  relations = [{ id: 10, name: 'Test street part', members: members.map(member => ({ ...member })), parents: [], area: null, tags: [{key: 'sidewalk.center.width', value: '>2'}], observations: [], approved: true }]
+  requests.length = 0
+  await page.reload()
+  await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
+  await page.mouse.click(640, 319)
+  const approvedDrawer = page.locator('.p-drawer').filter({hasText: 'Test street part'})
+  await expect(approvedDrawer).toBeVisible()
+  await expect(page.getByRole('combobox', {name: 'Width', exact: true})).toHaveCount(0)
   await page.goto(new URL('/profile', page.url()).href)
   await expect(page.getByText('Wide sidewalk', {exact: true})).toBeVisible()
   await page.evaluate(() => localStorage.setItem('accessapp.settings.locale', 'de'))
@@ -171,17 +193,11 @@ try {
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   const germanComposer = page.locator('.cross-section-composer')
-  // The type column carries a short "Typ" label instead of a legend.
-  await expect(germanComposer.getByText('Typ', {exact: true}).first()).toBeVisible()
+  // The approved observation reads in the tag table; a new observation row
+  // starts centered. The type column carries a short "Typ" label.
+  await germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true}).click()
   await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).first()).toContainText('Gehweg')
-  await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).nth(1)).toContainText('Radfahrstreifen')
-  await expect(germanComposer.getByRole('combobox', {name: 'Seite', exact: true}).first()).toContainText('Links')
-  // The left sidewalk's approved width is tag-table content now, so the
-  // first editable Breite select belongs to the cycle lane.
-  await expect(germanComposer.getByRole('combobox', {name: 'Breite', exact: true}).first()).toContainText('1–2 m')
-  await expect(germanComposer.getByRole('combobox', {name: 'Oberfläche', exact: true}).nth(4)).toContainText('Pflastersteine')
-  await expect(germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true})).toBeVisible()
-  await expect(germanComposer.getByText(/Aspekt|Aspect/)).toHaveCount(0)
-  assert.equal(group.tags.find(tag => tag.key === 'sidewalk.left.1.width').value, '<1')
-  console.log('PASS: empty aspect catalog recovery, controlled way choices, error/retry, stale draft, cross-section save/reload with side tokens, profile label, independent five-observation cross-section, approved-structure locking, English/German controls and catalog labels')
+  await expect(germanComposer.getByRole('combobox', {name: 'Seite', exact: true}).first()).toContainText('Mitte')
+  await expect(germanComposer.getByRole('button', {name: 'Beobachtung entfernen', exact: true})).toBeVisible()
+  console.log('PASS: empty aspect catalog recovery, controlled way choices as anchored relation, error/retry, one observation = one relation, per-observation editing and approval lock, profile label, German controls and catalog labels')
 } finally { await browser.close() }

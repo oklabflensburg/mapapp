@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { RelatedNode, TagEntry } from './userNodes'
+import type { TagTranslationProposal } from '../lib/tagDrafts'
 
 // A group member summary carries the node's position so the map can draw the
 // line through the ordered members.
@@ -11,14 +12,16 @@ export interface GroupMember extends RelatedNode {
 
 // The street part's corridor around its member line, computed by the backend
 // with a fixed width (see backend StreetPartArea); GeoJSON polygon geometry
-// with [lon, lat] points. Null when the group has fewer than two members.
+// with [lon, lat] points. Null when the group has fewer than two members
+// (a point observation).
 export interface GroupArea {
   type: 'Polygon'
   coordinates: [number, number][][]
 }
 
-// A node relation groups multiple related nodes (e.g. a part of a road) and
-// carries its own tags.
+// A node relation is one observation (specs/map-editing/observation-relations/
+// spec.md): it carries exactly one tag over its own member range, and its
+// pending observation is that tag until an admin approves it.
 export interface NodeGroup {
   id: number
   // Human-readable name, e.g. of the road part the relation covers.
@@ -28,9 +31,9 @@ export interface NodeGroup {
   parents?: RelatedNode[]
   area: GroupArea | null
   tags: TagEntry[]
-  // Tag key/value pairs not yet approved by an admin.
+  // The relation's single tag pair while it is not yet approved.
   observations: TagEntry[]
-  // True once one of the relation's tags was approved (see NodeGroupManager),
+  // True once the relation's tag was approved (see NodeGroupManager),
   // like node approval.
   approved: boolean
   createdAt: string
@@ -45,7 +48,11 @@ export interface SaveNodeGroupInput {
   // Names the relation; empty clears it, omitted keeps the current name.
   name?: string
   members?: GroupMemberReference[]
+  // Exactly one observation tag per relation; omitting it makes a
+  // naming-only relation.
   tags?: TagEntry[]
+  translationLocale?: 'en' | 'de'
+  translations?: TagTranslationProposal[]
 }
 
 export const useNodeGroupsStore = defineStore('nodeGroups', () => {
@@ -53,6 +60,7 @@ export const useNodeGroupsStore = defineStore('nodeGroups', () => {
   const saving = ref(false)
   const loadFailed = ref(false)
   const saveFailed = ref(false)
+  const saveConflict = ref(false)
 
   // Relations containing the node, indexed by its provider identity so a
   // selected node or OSM feature shows the relations it belongs to.
@@ -89,6 +97,7 @@ export const useNodeGroupsStore = defineStore('nodeGroups', () => {
   async function save(input: SaveNodeGroupInput): Promise<NodeGroup | null> {
     saving.value = true
     saveFailed.value = false
+    saveConflict.value = false
     try {
       const response = await fetch('/api/node-groups', {
         method: 'POST',
@@ -96,6 +105,7 @@ export const useNodeGroupsStore = defineStore('nodeGroups', () => {
         body: JSON.stringify(input),
       })
       if (!response.ok) {
+        saveConflict.value = response.status === 409
         throw new Error(`HTTP ${response.status}`)
       }
       const saved = (await response.json()) as NodeGroup
@@ -114,5 +124,23 @@ export const useNodeGroupsStore = defineStore('nodeGroups', () => {
     }
   }
 
-  return { groups, byMember, saving, loadFailed, saveFailed, load, save }
+  // Removing an observation removes its relation (see the observation-
+  // relations spec R1).
+  async function remove(id: number): Promise<boolean> {
+    saveFailed.value = false
+    try {
+      const response = await fetch(`/api/node-groups/${id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      groups.value = groups.value.filter((group) => group.id !== id)
+      return true
+    } catch (error) {
+      console.warn('Failed to remove node relation', error)
+      saveFailed.value = true
+      return false
+    }
+  }
+
+  return { groups, byMember, saving, loadFailed, saveFailed, saveConflict, load, save, remove }
 })

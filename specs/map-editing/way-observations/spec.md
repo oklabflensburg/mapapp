@@ -1,6 +1,7 @@
 # Way Observations (tagging streets and other ways)
 
 **Status:** Step 3 of the node spec series. As-built, reverse-engineered from the existing implementation — **except R5**, which is a NEW design refinement (controlled per-type vocabulary) agreed with the product owner.
+Implemented change (2026-11-25): [observation relations](../observation-relations/spec.md) superseded this spec's persistence — each whole-way observation becomes its own relation tracing the way's node sequence; the vocabulary rule (R5) carries over unchanged.
 **Code:** `src/map/osmFeatureLayer.ts`, `src/map/userNodeLayer.ts`, `src/map/featureIndex.ts`, `src/components/NodeTagPanel.vue`, `src/stores/userNodes.ts`
 **Related:** builds directly on [editor-observations](../editor-observations/spec.md) — every rule there applies unchanged to ways; this spec adds only what is specific to way features.
 

@@ -5,8 +5,6 @@ namespace App\Controller\Admin;
 use App\Entity\NodeGroup;
 use App\Entity\NodeGroupMember;
 use App\Entity\NodeGroupTag;
-use App\Service\AspectObservationApproval;
-use App\Service\NodeRelationMerge;
 use App\Service\TagTranslationReview;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -29,17 +27,18 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Review queue of node relations carrying unapproved tags. The edit page is
- * a review screen without a relation edit form; it shows the unapproved tags
- * with their approve actions, the relation members and the frontend preview.
+ * Review queue of pending observation relations (specs/map-editing/
+ * observation-relations/spec.md): every observation is its own relation
+ * carrying exactly one tag, so each row here is one pending observation.
+ * The edit page is a review screen without a relation edit form; it shows
+ * the unapproved tag with its approve action, the relation members and
+ * the frontend preview.
  */
 final class PendingRelationObservationCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly TagTranslationReview $translationReview,
-        private readonly AspectObservationApproval $aspectObservationApproval,
-        private readonly NodeRelationMerge $relationMerge,
     ) {
     }
 
@@ -47,32 +46,14 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
     {
         if ($responseParameters->get('pageName') === Crud::PAGE_EDIT) {
             $forms = [];
-            // Structured street-part observations carry an update-vs-add
-            // mapping (see specs/map-editing/aspect-observation-mapping/
-            // spec.md): the approved cross-section gives the reviewer the
-            // context, the options list the same-type target elements.
-            $targetOptions = [];
             $group = $responseParameters->get('entity')->getInstance();
             foreach ($group->getGroupTags() as $entry) {
                 if (!$entry->isApproved()) {
                     $id = $entry->getTag()->getId();
                     $forms[$id] ??= $this->translationReview->form($entry->getTag(), $entry->getId(), $this->generateUrl('app_admin_node_group_tag_approve', ['id' => $entry->getId()]))->createView();
-                    $targetOptions[$id] ??= $this->aspectObservationApproval->targetOptions($group, $entry->getTag());
                 }
             }
             $responseParameters->set('observation_translation_forms', $forms);
-            $responseParameters->set('aspect_target_options', $targetOptions);
-            $approvedCrossSection = $this->aspectObservationApproval->approvedCrossSection($group);
-            if ($approvedCrossSection !== []) {
-                $responseParameters->set('approved_cross_section', $approvedCrossSection);
-            }
-            // Overlapping relations surface the merge decision (see
-            // specs/map-editing/relation-merge/spec.md): target choice and
-            // competing-key resolutions per candidate.
-            $mergeCandidates = $this->relationMerge->candidateRows($group);
-            if ($mergeCandidates !== []) {
-                $responseParameters->set('merge_candidates', $mergeCandidates);
-            }
         }
 
         return $responseParameters;
@@ -154,43 +135,6 @@ final class PendingRelationObservationCrudController extends AbstractCrudControl
                     $unapproved,
                 ));
             });
-    }
-
-    #[Route('/admin/node-group/{id}/merge/{candidateId}', name: 'app_admin_node_group_merge', methods: ['POST'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function merge(Request $request, int $id, int $candidateId): Response
-    {
-        if (!$this->isCsrfTokenValid('merge_'.$id.'_'.$candidateId, $request->request->get('_token'))) {
-            throw $this->createAccessDeniedException('Invalid CSRF token.');
-        }
-
-        // A stale snapshot (changed members or tags since rendering) throws
-        // 409 with nothing changed; an invalid payload 400.
-        $survivor = $this->relationMerge->apply($id, $candidateId, [
-            'target' => $request->request->get('merge_target'),
-            'keep' => $request->request->all('merge_keep'),
-            'snapshot' => $request->request->get('merge_snapshot'),
-        ]);
-
-        // The review continues on the surviving relation: its own review
-        // screen when pending tags remain there, the queue otherwise.
-        $hasPendingTags = false;
-        foreach ($survivor->getGroupTags() as $entry) {
-            $hasPendingTags = $hasPendingTags || !$entry->isApproved();
-        }
-        if (!$hasPendingTags) {
-            $this->addFlash('success', 'The relations were merged.');
-
-            return $this->redirect($this->container->get(AdminUrlGenerator::class)
-                ->setRoute('app_admin_pending_observations')
-                ->generateUrl());
-        }
-
-        return $this->redirect($this->container->get(AdminUrlGenerator::class)
-            ->setController(self::class)
-            ->setAction(Action::EDIT)
-            ->setEntityId($survivor->getId())
-            ->generateUrl());
     }
 
     #[Route('/admin/node-group/{id}/next-pending', name: 'app_admin_node_group_next_pending', methods: ['GET'])]

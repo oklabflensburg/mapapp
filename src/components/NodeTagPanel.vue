@@ -2,8 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { useEditingCatalogStore } from '../stores/editingCatalog'
 import type { NodeCreationState, NodeCreationInput } from '../map/nodeCreation'
-import { isAspectRowEditable, type AspectRow } from '../lib/crossSection'
-import { buildTranslationProposals, collectSaveTags, splitNodeDraft, splitRelationDraft, type TagRow } from '../lib/tagDrafts'
+import type { AspectRow } from '../lib/crossSection'
+import { isAspectRowEditable } from '../lib/crossSection'
+import { buildTranslationProposals, splitNodeDraft, splitNodeObservationRelations, splitRelationRangeDraft, type TagRow } from '../lib/tagDrafts'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
@@ -14,8 +15,7 @@ import CrossSectionComposer from './CrossSectionComposer.vue'
 import ObservationEditor from './ObservationEditor.vue'
 import TagTable from './TagTable.vue'
 import { nodeKey, tagValue, useUserNodesStore, type NodeEditTarget, type RelatedNode } from '../stores/userNodes'
-import { useNodeGroupsStore, type NodeGroup } from '../stores/nodeGroups'
-import { crossSectionTags } from '../lib/crossSection'
+import { useNodeGroupsStore, type GroupMemberReference, type NodeGroup } from '../stores/nodeGroups'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 
@@ -42,17 +42,20 @@ const settings = useSettingsStore()
 const catalog = useEditingCatalogStore()
 const osmData = useOsmDataStore()
 
-// One panel covers creating nodes, editing a node, and editing the node
-// relation a node belongs to; the view keeps the targets mutually exclusive.
+// One panel covers creating nodes, editing a node, and editing a node
+// relation; the view keeps the targets mutually exclusive.
 const isRelation = computed(() => !props.creation && !!props.relation && !props.node)
 watch(() => props.visible, visible => { if (visible) void catalog.load() }, { immediate: true })
 
 const pendingName = ref('')
 const rows = ref<TagRow[]>([])
 const observationRows = ref<TagRow[]>([])
-// Cross-section draft; while creating it belongs to the relation that two or
-// more placed nodes form, and while editing it mirrors the relation's tags.
+// Cross-section draft; while creating it belongs to the relations the
+// placed nodes form, and while editing it mirrors the relation's aspect tags.
 const aspectRows = ref<AspectRow[]>([])
+// The pending observation relations loaded into the draft: any of them not
+// saved on the next save was removed, so its relation gets deleted.
+const pendingRelationIds = ref<number[]>([])
 const isRelationDraft = computed(() => (props.creation?.count ?? 0) > 1)
 const hasIncompleteTags = computed(() => [...rows.value, ...observationRows.value]
   .some(row => !row.key.trim() || !row.value.trim())
@@ -125,7 +128,7 @@ const headerLabel = computed(() => {
   return parts.join(' > ')
 })
 
-// Relations (e.g. tagged parts of a road) that contain the selected node; the
+// Relations (e.g. observation relations) that contain the selected node; the
 // node or OSM feature is looked up by its provider identity.
 const nodeRelations = computed(() =>
   props.node ? nodeGroups.byMember.get(nodeKey(props.node)) ?? [] : [])
@@ -138,6 +141,25 @@ const namedMembers = computed(() => (props.relation?.members ?? []).filter(membe
 const hasEditableAspects = computed(() =>
   aspectRows.value.some(row => isAspectRowEditable(row, catalog.aspectTypes)))
 
+// The pending single-tag observation relations anchored on the selected node
+// (or feature): editing their value saves their relation (see
+// specs/map-editing/observation-relations/spec.md R4).
+const nodeObservationRelations = computed(() => nodeRelations.value
+  .filter(group => group.members.length === 1 && group.observations.length > 0))
+
+// The member reference anchoring new observations for the current selection.
+const anchorMembers = computed((): GroupMemberReference[] => {
+  if (isRelation.value) {
+    return props.relation!.members.map(member => ({ id: member.id }))
+  }
+  if (savedNode.value) {
+    return [{ id: savedNode.value.id }]
+  }
+  return props.node
+    ? [{ providerNodeId: props.node.providerNodeId, latitude: props.node.latitude, longitude: props.node.longitude }]
+    : []
+})
+
 // Placement counts and save progress must not reset the editor draft.
 watch(
   [() => props.visible, () => props.node, () => props.relation, () => !!props.creation],
@@ -148,40 +170,167 @@ watch(
       rows.value = []
       observationRows.value = []
       aspectRows.value = []
+      pendingRelationIds.value = []
       return
     }
     if (!visible) {
       return
     }
     if (relation && !node) {
-      const draft = splitRelationDraft(relation)
-      rows.value = draft.rows
-      observationRows.value = draft.observationRows
-      aspectRows.value = draft.aspectRows
-      if (relation.parents?.some(parent => parent.provider === 'OSM')
-        || relation.members.some(member => userNodes.byIdentity.get(nodeKey(member))?.parents.some(parent => parent.provider === 'OSM'))) {
-        void osmData.load()
-      }
+      loadRelationDraft(relation)
       return
     }
     if (!node) {
       return
     }
-    const existing = userNodes.byIdentity.get(nodeKey(node))
-    if (existing) {
-      const draft = splitNodeDraft(existing)
-      rows.value = draft.rows
-      observationRows.value = draft.observationRows
-    } else {
-      rows.value = []
-      observationRows.value = []
-    }
+    loadNodeDraft(node)
   },
 )
+
+// Every observation relation that shares the selected relation's ordered
+// member sequence: the panel edits the range, not one relation, so parallel
+// observations on the same range stay visible and editable side by side
+// (spec specs/map-editing/observation-relations/spec.md R4).
+function relationsOnRange(relation: NodeGroup): NodeGroup[] {
+  const fresh = [...nodeGroups.groups].find(group => group.id === relation.id) ?? relation
+  if (fresh.members.length === 0) {
+    return [fresh]
+  }
+  const sameMembers = (group: NodeGroup) =>
+    group.members.length === fresh.members.length
+    && group.members.every((member, index) => member.id === fresh.members[index].id)
+  return [...nodeGroups.groups].filter(sameMembers)
+}
+
+function loadRelationDraft(relation: NodeGroup): void {
+  const onRange = relationsOnRange(relation)
+  const draft = splitRelationRangeDraft(onRange)
+  rows.value = draft.rows.map(row => ({ ...row }))
+  observationRows.value = draft.observationRows.map(row => ({ ...row }))
+  aspectRows.value = draft.aspectRows.map(row => ({ ...row }))
+  pendingRelationIds.value = onRange.filter(group => group.observations.length > 0).map(group => group.id)
+  if (relation.parents?.some(parent => parent.provider === 'OSM')
+    || relation.members.some(member => userNodes.byIdentity.get(nodeKey(member))?.parents.some(parent => parent.provider === 'OSM'))) {
+    void osmData.load()
+  }
+}
+
+function loadNodeDraft(node: NodeEditTarget): void {
+  const existing = userNodes.byIdentity.get(nodeKey(node))
+  const tagDraft = existing ? splitNodeDraft(existing) : { rows: [] as TagRow[], observationRows: [] as TagRow[] }
+  rows.value = tagDraft.rows.map(row => ({ ...row }))
+  const observed = splitNodeObservationRelations(nodeObservationRelations.value)
+  // Pending node metadata (names) stays on the node and still edits in the
+  // observations section; everything else is an observation relation.
+  observationRows.value = [
+    ...tagDraft.observationRows.map(row => ({ ...row, persistedOnNode: true })),
+    ...observed.observationRows.map(row => ({ ...row })),
+  ]
+  aspectRows.value = observed.aspectRows.map(row => ({ ...row }))
+  pendingRelationIds.value = nodeObservationRelations.value.map(group => group.id)
+}
 
 function close(): void {
   if (props.creation?.saving) return
   emit('update:visible', false)
+}
+
+// Saves a pending observation: an edited value saves its relation, a new row
+// creates a relation anchored on the current selection. Removing a pending
+// observation row removes its relation (handled by deletion below).
+async function saveObservationRow(row: TagRow, members: GroupMemberReference[]): Promise<NodeGroup | null> {
+  const entry = { key: row.key.trim(), value: row.value }
+  const translations = buildTranslationProposals(row, settings.locale)
+  return row.relationId !== undefined
+    ? nodeGroups.save({ id: row.relationId, tags: [entry], translationLocale: settings.locale, translations })
+    : nodeGroups.save({ members, tags: [entry], translationLocale: settings.locale, translations })
+}
+
+// Saves one aspect entry: the relation's own aspect replaces its value;
+// every other value becomes a new observation relation on the same range.
+function aspectKey(row: AspectRow, aspect: string): string {
+  return `${row.type}.${row.side}.${aspect}`
+}
+
+async function saveObservationDrafts(): Promise<void> {
+  const members = anchorMembers.value
+  const savedIds = new Set<number>()
+  let allSaved = true
+
+  for (const row of observationRows.value) {
+    if (row.persistedOnNode) {
+      continue // Node metadata saved on the node, not a relation.
+    }
+    const saved = await saveObservationRow(row, members)
+    if (saved) {
+      savedIds.add(saved.id)
+    } else {
+      allSaved = false
+    }
+  }
+
+  for (const row of aspectRows.value) {
+    const ownsRelation = row.relationId !== undefined
+    const ownAspect = row.originAspect
+    const ownValue = ownAspect !== undefined ? row.values[ownAspect] : undefined
+    if (ownsRelation) {
+      savedIds.add(row.relationId!)
+      if (ownValue !== undefined && ownValue !== '') {
+        const saved = await nodeGroups.save({ id: row.relationId!, tags: [{ key: aspectKey(row, ownAspect!), value: ownValue }] })
+        if (saved) {
+          savedIds.add(saved.id)
+        } else {
+          allSaved = false
+        }
+      }
+    }
+    // Every further aspect value of the row is its own observation.
+    for (const [aspect, value] of Object.entries(row.values)) {
+      if ((ownsRelation && aspect === ownAspect) || value === '') {
+        continue
+      }
+      const saved = await nodeGroups.save({ members, tags: [{ key: aspectKey(row, aspect), value }] })
+      if (saved) {
+        savedIds.add(saved.id)
+      } else {
+        allSaved = false
+      }
+    }
+  }
+
+  // Removed pending observations: a drafted relation that was not saved on
+  // this pass had its row removed, so its relation goes away too.
+  for (const id of pendingRelationIds.value) {
+    if (!savedIds.has(id)) {
+      const removed = await nodeGroups.remove(id)
+      if (!removed) {
+        allSaved = false
+      }
+    }
+  }
+
+  // Failed saves leave the drafted rows untouched, so a retry resubmits them;
+  // only fully successful passes re-split the drafts from the fresh state.
+  if (!allSaved) {
+    return
+  }
+
+  // The drafts re-split from the fresh store state; the edited relation also
+  // re-targets the panel with its approved/pending tag unchanged otherwise.
+  if (isRelation.value && props.relation) {
+    const fresh = [...nodeGroups.groups].find(group => group.id === props.relation!.id)
+    // Removing the selected relation's observation deleted that relation:
+    // re-target to another relation of the same range, or close the panel.
+    const target = fresh ?? relationsOnRange(props.relation!)[0]
+    if (!target) {
+      emit('update:visible', false)
+      return
+    }
+    loadRelationDraft(target)
+    emit('saved-relation', target)
+  } else if (props.node) {
+    loadNodeDraft(props.node)
+  }
 }
 
 async function save(): Promise<void> {
@@ -189,44 +338,41 @@ async function save(): Promise<void> {
     saveAttempted.value = true
     return
   }
-  // Saving keeps the panel open: it stays as long as the element is
-  // selected, and only closing it deselects. New and edited tags are
-  // unapproved, so the sections are re-split from the saved response.
-  const tags = collectSaveTags(rows.value, observationRows.value, isRelation.value)
-  const draft = {
-    tags,
-    translationLocale: settings.locale,
-    translations: isRelation.value ? [] : buildTranslationProposals(observationRows.value, settings.locale),
-  }
+  // Creating collects the observations for the placed range; OsmMap saves
+  // every observation as its own relation.
   if (props.creation) {
-    emit('create', { ...draft, name: pendingName.value, crossSection: aspectRows.value })
+    emit('create', {
+      tags: observationRows.value.map(({ key, value }) => ({ key: key.trim(), value })),
+      translationLocale: settings.locale,
+      translations: observationRows.value.flatMap(row => buildTranslationProposals(row, settings.locale)),
+      name: pendingName.value,
+      crossSection: aspectRows.value,
+    })
     return
   }
-  if (isRelation.value) {
-    // The relation save carries the structured cross-section draft as
-    // ordinary tags; relation tags currently have no translation proposals.
-    const saved = await nodeGroups.save({ id: props.relation!.id, tags: [...tags, ...crossSectionTags(aspectRows.value)] })
-    if (saved) {
-      const resplit = splitRelationDraft(saved)
-      rows.value = resplit.rows
-      observationRows.value = resplit.observationRows
-      aspectRows.value = resplit.aspectRows
-      emit('saved-relation', saved)
+  // Pending node metadata (e.g. names) remains node data and saves on the
+  // node; all other rows are observation relations.
+  const nodeRows = observationRows.value.filter(row => row.persistedOnNode)
+  if (nodeRows.length > 0 && props.node && !isRelation.value && !props.creation) {
+    const tags = [
+      ...rows.value.map(({ key, value }) => ({ key: key.trim(), value })),
+      ...nodeRows.map(({ key, value }) => ({ key: key.trim(), value })),
+    ]
+    const savedNodeResult = await userNodes.save({
+      provider: props.node.provider,
+      providerNodeId: props.node.providerNodeId,
+      latitude: props.node.latitude,
+      longitude: props.node.longitude,
+      tags,
+      translationLocale: settings.locale,
+      translations: nodeRows.flatMap(row => buildTranslationProposals(row, settings.locale)),
+    })
+    if (!savedNodeResult) {
+      // The save error shows in the panel; relation saves wait for a retry.
+      return
     }
-    return
   }
-  const saved = await userNodes.save({
-    ...draft,
-    provider: props.node!.provider,
-    providerNodeId: props.node!.providerNodeId,
-    latitude: props.node!.latitude,
-    longitude: props.node!.longitude,
-  })
-  if (saved) {
-    const resplit = splitNodeDraft(saved)
-    rows.value = resplit.rows
-    observationRows.value = resplit.observationRows
-  }
+  await saveObservationDrafts()
 }
 </script>
 
@@ -256,9 +402,9 @@ async function save(): Promise<void> {
       <p v-if="creation.failed" class="save-error" role="alert">{{ t('map.create.failed') }}</p>
     </div>
     <fieldset :disabled="creation?.saving" class="editor-fields">
-      <!-- Two or more placed nodes form a node relation, so its edit
-           options are available here instantly: the cross-section draft is
-           saved with the relation, no second editing view is needed. -->
+      <!-- Two or more placed nodes form observation relations, so their edit
+           options are available here instantly: every drafted observation
+           saves as its own relation, no second editing view is needed. -->
       <section v-if="creation && isRelationDraft" class="cross-section-section" :aria-label="t('crossSection.title')">
         <h4 class="section-title">{{ t('crossSection.title') }}</h4>
         <CrossSectionComposer v-model="aspectRows" />
@@ -266,7 +412,7 @@ async function save(): Promise<void> {
 
       <!-- The relation editor shares the panel style: members on a compact
            list, then the parent's tag tables and the relation's approved
-           tags, then the cross-section draft. Unnamed members are not
+           tag, then the composer draft. Unnamed members are not
            listed at all. -->
       <section v-if="isRelation" class="relations-section members-section" :aria-label="t('relationEditor.members')">
         <ul class="member-list">
@@ -325,13 +471,13 @@ async function save(): Promise<void> {
         <!-- Approved tags are managed by admins, so they are read-only here. -->
         <TagTable v-if="rows.length > 0" :entries="rows" />
         <p v-if="!creation && (userNodes.saveFailed || nodeGroups.saveFailed)" class="save-error" role="alert">
-          {{ t(userNodes.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
+          {{ t(userNodes.saveConflict || nodeGroups.saveConflict ? 'nodeEditor.translationConflict' : 'nodeEditor.saveFailed') }}
         </p>
       </section>
 
-      <!-- The cross-section draft follows the read-only tag sections: like
+      <!-- The composer draft follows the read-only tag sections: like
            the observations below, it collects the editor's own pending
-           changes; approved aspects already show in the tag tables above. -->
+           observations; approved aspects already show in the tag tables above. -->
       <section v-if="isRelation && (auth.canEdit || hasEditableAspects)" class="cross-section-section" :aria-label="t('crossSection.title')">
         <h4 class="section-title">{{ t('crossSection.title') }}</h4>
         <CrossSectionComposer v-model="aspectRows" :readonly="!auth.canEdit" />
@@ -354,7 +500,7 @@ async function save(): Promise<void> {
       <Button
         v-if="auth.canEdit"
         :label="t(creation?.failed ? 'map.create.retry' : 'nodeEditor.save')"
-        :loading="creation ? creation.saving : isRelation ? nodeGroups.saving : userNodes.saving"
+        :loading="creation ? creation.saving : isRelation ? nodeGroups.saving : userNodes.saving || nodeGroups.saving"
         :disabled="creation?.count === 0"
         icon="pi pi-check"
         @click="save"
@@ -362,7 +508,6 @@ async function save(): Promise<void> {
     </template>
   </Drawer>
 </template>
-
 <style scoped>
 .editor-fields {
   border: 0;
@@ -488,7 +633,6 @@ async function save(): Promise<void> {
   color: var(--p-red-500);
 }
 </style>
-
 <style>
 /* The panel reflects the selection state instead of appearing transiently,
    so it shows and hides instantly rather than sliding. The classes are

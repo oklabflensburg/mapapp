@@ -49,7 +49,9 @@ final class Routing
      * @param array<string, list<array{id: int, area: array}>> $groupAreas
      *        street part areas of node groups carrying a prioritized tag,
      *        grouped by tag, as returned by
-     *        NodeGroupRepository::findAreaGeometriesByTagKeys()
+     *        NodeGroupRepository::findAreaGeometriesByTagKeys(); an area
+     *        geometry may be a MultiPolygon, which becomes one area per
+     *        polygon (GraphHopper accepts Polygon features only)
      *
      * @return array{distance: float, time: int, points: list<list<float>>}
      *         distance in meters, time in seconds, points as [lat, lon] pairs
@@ -185,6 +187,22 @@ final class Routing
             foreach ($groupAreas[$tag] ?? [] as $groupArea) {
                 $areaGeometries[] = $groupArea['area'];
             }
+
+            // GraphHopper custom areas accept Polygon features only; a
+            // corridor clipped by an alternative observation can arrive as
+            // a MultiPolygon (see StreetPartArea::areaGeometry), so its
+            // polygons become one area each.
+            $polygons = [];
+            foreach ($areaGeometries as $geometry) {
+                if (($geometry['type'] ?? null) === 'MultiPolygon') {
+                    foreach ($geometry['coordinates'] as $polygon) {
+                        $polygons[] = ['type' => 'Polygon', 'coordinates' => $polygon];
+                    }
+                } else {
+                    $polygons[] = $geometry;
+                }
+            }
+            $areaGeometries = $polygons;
 
             $areaIds = [];
             foreach (array_values($areaGeometries) as $index => $geometry) {

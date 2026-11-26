@@ -75,14 +75,35 @@ export class NodeGroupLayer {
 
     const { onSelect, selectedGroupId, showArrows } = options
     for (const group of groups) {
+      const selected = selectedGroupId === group.id
+      const color = group.approved ? APPROVED_COLOR : PENDING_COLOR
+      // A point observation (a single member) has no member line: it renders
+      // as a marker at its anchor instead, colored like a relation line.
       const positions = memberPositions(group)
+      if (!positions && group.members.length === 1) {
+        const [member] = group.members
+        if (!Number.isFinite(member.latitude) || !Number.isFinite(member.longitude)) {
+          continue
+        }
+        const marker = L.circleMarker([member.latitude, member.longitude], {
+          radius: selected ? 7 : 5,
+          color,
+          weight: 2,
+          fillOpacity: 0.6,
+          interactive: onSelect !== undefined,
+        })
+        if (onSelect !== undefined) {
+          marker.on('click', () => onSelect(group))
+        }
+        marker.addTo(this.layer)
+        continue
+      }
       if (!positions) {
         continue
       }
-      const selected = selectedGroupId === group.id
       const lineOptions = group.approved
-        ? { ...APPROVED_LINE_OPTIONS, color: APPROVED_COLOR }
-        : { ...PENDING_LINE_OPTIONS, color: PENDING_COLOR }
+        ? { ...APPROVED_LINE_OPTIONS, color }
+        : { ...PENDING_LINE_OPTIONS, color }
       const line = L.polyline(positions, {
         ...lineOptions,
         ...(selected ? SELECTED_LINE_OVERRIDES : {}),

@@ -1,6 +1,7 @@
 # Observations on OSM Features (editor click-to-tag flow)
 
 **Status:** Step 2 of the node spec series. As-built, reverse-engineered from the existing implementation.
+Implemented change (2026-11-25): [observation relations](../observation-relations/spec.md) will supersede this spec's observation persistence (R3–R6) once implemented — every observation becomes its own node relation (point observations as single-member relations) instead of a node tag.
 **Code:** `src/components/NodeTagPanel.vue`, `src/views/HomeView.vue`, `src/components/OsmMap.vue`, `src/map/osmFeatureLayer.ts`, `src/stores/userNodes.ts`, `src/stores/defaultObservationTags.ts`; backend approval: `backend/src/Service/UserNodeManager.php`, `backend/src/Doctrine/TagApprovalListener.php`
 **Related:** builds on [flensburg-map](../../map/flensburg-map/spec.md) (feature click and OSM tags data) and [api-authentication](../../authentication/api-authentication/spec.md) (roles). Node/observation *persistence API* details will be a later step.
 

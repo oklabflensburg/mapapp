@@ -181,15 +181,44 @@ final class NodeGroupControllerTest extends WebTestCase
         $this->assertAreaAroundMembers($data);
     }
 
-    public function testCreateRequiresAtLeastTwoPoints(): void
+    public function testPointObservationRelationWithSingleMember(): void
     {
         $client = static::createClient();
         $this->loginEditor($client);
 
-        $this->save($client, ['members' => [$this->memberPayload()], 'tags' => []], 422);
+        // One observation = one relation: a point observation is a relation
+        // with a single anchor member and no corridor area.
+        $data = $this->save($client, [
+            'members' => [$this->memberPayload()],
+            'tags' => [['key' => 'surface', 'value' => 'asphalt']],
+        ], 201);
+
+        self::assertCount(1, $data['members']);
+        self::assertNull($data['area']);
+        self::assertSame([['key' => 'surface', 'value' => 'asphalt']], $data['observations']);
     }
 
-    public function testSavingAgainAddsMembersAndReplacesOwnTags(): void
+    public function testCreateRequiresAMember(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+
+        $this->save($client, ['members' => [], 'tags' => [['key' => 'surface', 'value' => 'asphalt']]], 422);
+    }
+
+    public function testSaveRejectsMultipleTags(): void
+    {
+        $client = static::createClient();
+        $this->loginEditor($client);
+
+        // A relation carries exactly one observation tag; more is 422.
+        $this->save($client, [
+            'members' => [$this->memberPayload(), $this->memberPayload()],
+            'tags' => [['key' => 'surface', 'value' => 'asphalt'], ['key' => 'lit', 'value' => 'yes']],
+        ], 422);
+    }
+
+    public function testSavingAgainReplacesMembersAndTheObservation(): void
     {
         $client = static::createClient();
         $this->loginEditor($client);
@@ -199,8 +228,8 @@ final class NodeGroupControllerTest extends WebTestCase
             'tags' => [['key' => 'surface', 'value' => 'cobblestone']],
         ], 201);
 
-        // Repeated member references are deduplicated, and tag saves replace
-        // the editor's own tags.
+        // The observation's value and range are edited by replacing them;
+        // repeated member references are deduplicated.
         $second = $this->save($client, [
             'id' => $first['id'],
             'name' => 'Hochallee south part',
@@ -208,13 +237,37 @@ final class NodeGroupControllerTest extends WebTestCase
                 array_map(static fn (array $member): array => ['id' => $member['id']], $first['members']),
                 [$this->memberPayload()],
             ),
-            'tags' => [['key' => 'surface', 'value' => 'asphalt'], ['key' => 'lit', 'value' => 'yes']],
+            'tags' => [['key' => 'surface', 'value' => 'asphalt']],
         ], 200);
 
         self::assertSame($first['id'], $second['id']);
         self::assertSame('Hochallee south part', $second['name']);
         self::assertCount(4, $second['members']);
-        self::assertSame([['key' => 'surface', 'value' => 'asphalt'], ['key' => 'lit', 'value' => 'yes']], $second['tags']);
+        self::assertSame([['key' => 'surface', 'value' => 'asphalt']], $second['tags']);
+    }
+
+    public function testEditingApprovedObservationIsRejectedForEditors(): void
+    {
+        $client = static::createClient();
+        $user = $this->createUser(self::EDITOR_EMAIL, ['editor']);
+        $client->loginUser($user);
+
+        $data = $this->save($client, [
+            'members' => [$this->memberPayload(), $this->memberPayload()],
+            'tags' => [['key' => 'surface', 'value' => 'cobblestone']],
+        ], 201);
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $group = $entityManager->find(NodeGroup::class, $data['id']);
+        foreach ($group->getGroupTags() as $groupTag) {
+            $groupTag->setApproved(true);
+        }
+        $entityManager->flush();
+
+        // Approval freezes the observation relation for editors.
+        $this->save($client, [
+            'id' => $data['id'],
+            'tags' => [['key' => 'surface', 'value' => 'asphalt']],
+        ], 422);
     }
 
     public function testListShowsRelationsWithMembers(): void

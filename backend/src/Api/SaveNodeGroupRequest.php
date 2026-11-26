@@ -7,6 +7,8 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 final class SaveNodeGroupRequest
 {
+    private const XML_TEXT = '/^[\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]*$/uD';
+
     public function __construct(
         /** When set, the relation is updated instead of created. */
         #[Assert\Positive]
@@ -20,6 +22,8 @@ final class SaveNodeGroupRequest
          * Relation members, either as {"id": <saved node id>} or as an OSM
          * reference {"providerNodeId": ..., "latitude": ..., "longitude": ...}.
          * Validated by validateMembers(), then read via memberRequests().
+         * A single member makes a point observation; an empty list keeps the
+         * current members when updating and rejects creation.
          *
          * @var list<array{id?: int|string, providerNodeId?: string, latitude?: int|float, longitude?: int|float}>
          */
@@ -27,14 +31,32 @@ final class SaveNodeGroupRequest
         public array $members = [],
 
         /**
-         * Relation tags as key/value pairs, so a relation can carry several
-         * tags with the same key but different values.
+         * The observation tag this relation carries. Under the
+         * observation-relations model a relation is one observation
+         * (specs/map-editing/observation-relations/spec.md R1), so at most
+         * one tag is accepted; a naming-only relation (metadata, no
+         * observation) may omit it.
          *
          * @var list<array{key: string, value: string}>
          */
         #[Assert\Callback([SaveUserNodeRequest::class, 'validateTagEntries'])]
+        #[Assert\Count(max: 1, maxMessage: 'An observation carries exactly one tag.')]
         public array $tags = [],
 
+        #[Assert\Choice(choices: ['en', 'de'])]
+        public string $translationLocale = 'en',
+
+        /** @var list<array<string, string|null>> */
+        #[Assert\All([new Assert\NotNull(), new Assert\Type('array'), new Assert\Collection(fields: [
+            'key' => new Assert\Required([new Assert\Type('string'), new Assert\NotBlank(), new Assert\Length(max: 255), new Assert\Regex(pattern: self::XML_TEXT)]),
+            'value' => new Assert\Required([new Assert\Type('string'), new Assert\NotNull(), new Assert\Length(max: 255), new Assert\Regex(pattern: self::XML_TEXT)]),
+            'keyTranslation' => new Assert\Optional([new Assert\Type('string'), new Assert\Length(max: 20000), new Assert\Regex(pattern: self::XML_TEXT)]),
+            'valueTranslation' => new Assert\Optional([new Assert\Type('string'), new Assert\Length(max: 20000), new Assert\Regex(pattern: self::XML_TEXT)]),
+            'previousKeyTranslation' => new Assert\Optional([new Assert\Type('string'), new Assert\Length(max: 20000)]),
+            'previousValueTranslation' => new Assert\Optional([new Assert\Type('string'), new Assert\Length(max: 20000)]),
+        ])])]
+        #[Assert\Count(max: 500)]
+        public array $translations = [],
     ) {
     }
 

@@ -1,6 +1,25 @@
 # Map editing implementation
 
-## Current revision: OSM-based aspect naming (2026-11-22)
+## Current revision: observation relations (2026-11-25)
+
+**Status:** Implemented and verified against the [observation relations spec](observation-relations/spec.md). One observation = one node relation carrying at most one tag over its own member range; the cross-section grammar lost the index segment (`<type>.<side>.<aspect>`); point observations are single-member relations, whole-way observations anchor on the way identity node (vocabulary-enforced), street-part observations keep their placed ranges. All previous observation content was deleted via migration `Version20261125120000` instead of migrated.
+
+- [x] T1/R1: single-tag contract in `NodeGroupManager` (multi-tag 422, member replacement with staged deletes, approved-freeze for editors, per-range echo), `DELETE /api/node-groups/{id}` endpoint.
+- [x] T2/R3: `StreetPartAspects` three-segment grammar (`parse`/`isStructuredKey`), per-tag catalog validation, frontend `crossSection.ts`/`CrossSectionComposer.vue` without indexes.
+- [x] T3/R2: member minimum one, point observations render as markers (`nodeGroupLayer`), whole-way observation relations anchored on the way identity node with `WayObservationVocabulary::validateRelation`.
+- [x] T4/R5: supersession narrowed to same key + identical range (listener compares ordered member signatures across relations), `AspectObservationApproval` and `NodeRelationMerge` retired (services, admin actions, templates, tests deleted), translation proposals on relation saves via `ObservationTranslations::saveGroup`.
+- [x] T5/R8: routing corridors per observation (grouping already per relation), match modes unchanged.
+- [x] T6/R4: panel save rewritten observation-centric (edit value per relation, add per range, remove deletes the relation, drafts kept on failed passes), batch creation makes one relation per observation, naming-only relations for named ranges.
+- [x] T8/R9: content reset migration applied and verified (zero groups/tags/indexed keys/aspect priorities/local nodes).
+
+### Verification of the observation-relations revision
+
+- **Passed:** backend suite `docker compose exec -T php vendor/bin/phpunit` — 148 tests, 1134 assertions (updated `MapEditingTest`, `NodeGroupControllerTest`, `TagApprovalCleanupTest`; deleted `AspectObservationMappingTest`/`RelationMergeTest`); `lint:container`, `lint:twig`.
+- **Passed:** `npm run build`, `check-map-editing.mjs` (rewritten for the new model), `check-node-creation.mjs` (updated; previously red on the unmodified `refactoring` commit, now passing), `check-node-relation.mjs`, `check-relation-approval-color.mjs`, `check-node-selection.mjs`, `check-direction-arrows.mjs`, `check-custom-node-visibility.mjs`, `check-deep-link.mjs`.
+- **Pre-existing failures, unrelated:** `check-routing.mjs` fails identically on unmodified HEAD; `tag-translations.test.mjs` keeps its documented Node ESM import failure. Live checks needing a `:5199` server (`check-node-editing.mjs`, `check-osm-render.mjs`, `check-square-selection.mjs`) were not run; `check-node-editing.mjs` still expects `/api/nodes` observation saves and needs updating for relation saves (recorded in the spec's follow-ups).
+- **Open:** element display grouping and full `NodeTag` retirement are open questions in the spec.
+
+## Previous revision: OSM-based aspect naming (2026-11-22)
 
 **Status:** Implemented and verified against the [naming spec](osm-aspect-naming/spec.md). The cross-section key grammar is `<type>.<side>.<index>.<aspect>` (bare, no namespace prefix) with sides `left`, `right`, `center` (relative to the relation's direction of travel, like OSM); types `sidewalk`, `cycleway`, `parking`, `roadway`; preference keys use the `aspect.` prefix. All previous observation content was deleted (content reset) — no migration.
 

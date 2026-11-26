@@ -22,9 +22,11 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 /**
- * Persists street parts: node groups whose ordered members mark the course
- * of a way, e.g. the tagged part of a street. Tags live on the whole part
- * and its area is the corridor around the member line (see StreetPartArea).
+ * Persists observation relations: under the observation-relations model
+ * every observation is its own node relation carrying exactly one tag and
+ * its own member range (see specs/map-editing/observation-relations/
+ * spec.md). A street part's corridor is the area around the member line
+ * (see StreetPartArea); a single member makes a point observation.
  */
 final class NodeGroupManager
 {
@@ -43,6 +45,8 @@ final class NodeGroupManager
         private readonly UserRepository $userRepository,
         private readonly StreetPartArea $streetPartArea,
         private readonly StreetPartAspects $aspects,
+        private readonly WayObservationVocabulary $wayVocabulary,
+        private readonly ObservationTranslations $observationTranslations,
     ) {
     }
 
@@ -59,15 +63,23 @@ final class NodeGroupManager
 
             $created = $group === null;
             if ($created) {
-                // A street part is the corridor around the line through its
-                // members in order; marking the part of a street between two
-                // nodes is the smallest useful part.
-                if (\count($request->members) < 2) {
-                    throw new UnprocessableEntityHttpException('An area needs at least two points.');
+                // An observation relation is the range of the observation it
+                // carries: at least one point, even a single one for point
+                // observations (no corridor then).
+                if ($request->members === []) {
+                    throw new UnprocessableEntityHttpException('An observation needs at least one point.');
                 }
                 $group = new NodeGroup();
                 $group->setCreatedByUser($this->defaultUser());
                 $this->entityManager->persist($group);
+            } elseif (!$this->currentUserIsAdmin()) {
+                // Approval freezes the observation relation for editors;
+                // admins may still correct it.
+                foreach ($group->getGroupTags() as $entry) {
+                    if ($entry->isApproved()) {
+                        throw new UnprocessableEntityHttpException('Approved observations are read-only.');
+                    }
+                }
             }
 
             // A null name keeps the current one; an empty string clears it.
@@ -76,20 +88,67 @@ final class NodeGroupManager
                 $group->setName($trimmed === '' ? null : $trimmed);
             }
 
-            foreach ($request->memberRequests() as $reference) {
-                $node = $this->resolveMember($reference->id, $reference->providerNodeId, $reference->latitude, $reference->longitude);
-                $member = $group->addMember($node);
-                if ($member !== null) {
-                    $this->entityManager->persist($member);
+            // The observation's range: supplied members replace the current
+            // ones, so an observation can move its extent without touching
+            // any other observation. The deletions flush first: the members'
+            // unique constraint would otherwise see old and new rows at once.
+            if ($request->members !== []) {
+                foreach ($group->getMembers()->toArray() as $member) {
+                    $group->getMembers()->removeElement($member);
+                    $this->entityManager->remove($member);
+                }
+                if ($group->getMembers()->count() === 0 && $request->id !== null) {
+                    $this->entityManager->flush();
+                }
+                foreach ($request->memberRequests() as $reference) {
+                    $node = $this->resolveMember($reference->id, $reference->providerNodeId, $reference->latitude, $reference->longitude);
+                    $member = $group->addMember($node);
+                    if ($member !== null) {
+                        $this->entityManager->persist($member);
+                    }
                 }
             }
 
-            $this->aspects->validate($request->tags, $group, $this->defaultUser(), $this->currentUserIsAdmin());
-            $this->assignTags($group, $request->tags);
+            $this->entityManager->flush();
+
+            if ($request->tags !== []) {
+                $entry = $request->tags[0];
+                $this->wayVocabulary->validateRelation($group, $entry, $this->defaultUser());
+                $this->aspects->validate($request->tags, $group, $this->defaultUser(), $this->currentUserIsAdmin());
+                $this->assignTag($group, $entry);
+                $this->observationTranslations->saveGroup($request, $group, $this->defaultUser());
+            } elseif ($request->translations !== []) {
+                throw new UnprocessableEntityHttpException('Translations must belong to a submitted observation.');
+            }
+
             $group->touch();
             $this->entityManager->flush();
 
             return new SaveNodeGroupResult($this->toResponse($group), $created);
+        });
+    }
+
+    /**
+     * Deletes an observation relation; removing an observation removes its
+     * relation. Only its creator (or an admin) may delete it, and only
+     * while nothing on it is approved.
+     */
+    public function delete(NodeGroup $group): void
+    {
+        $this->entityManager->wrapInTransaction(function () use ($group): void {
+            $user = $this->currentUser();
+            if (($user === null || $group->getCreatedByUser() !== $user) && !$this->currentUserIsAdmin()) {
+                throw new UnprocessableEntityHttpException('Only the creator can delete an observation relation.');
+            }
+            if (!$this->currentUserIsAdmin()) {
+                foreach ($group->getGroupTags() as $entry) {
+                    if ($entry->isApproved()) {
+                        throw new UnprocessableEntityHttpException('Approved observations cannot be deleted.');
+                    }
+                }
+            }
+            $this->entityManager->remove($group);
+            $this->entityManager->flush();
         });
     }
 
@@ -149,52 +208,77 @@ final class NodeGroupManager
     }
 
     /**
-     * Replaces the current user's tag additions on the relation with the
-     * request tags, mirroring node tag saves; other users' tags are kept, and
-     * one user can keep several tags with the same key but different values.
+     * Sets the relation's one observation tag. An exact echo of what the
+     * relation (or an approved twin relation with the same member range)
+     * already carries creates no new pending observation; anything else
+     * replaces the current user's row.
      *
-     * @param list<array{key: string, value: string}> $tags
+     * @param array{key: string, value: string} $entry
      */
-    private function assignTags(NodeGroup $group, array $tags): void
+    private function assignTag(NodeGroup $group, array $entry): void
     {
         $user = $this->defaultUser();
-        $requested = SaveUserNodeRequest::tagEntryCounts($tags);
-
         foreach ($group->getGroupTags() as $groupTag) {
-            if ($groupTag->getCreatedByUser() !== $user || ($groupTag->isApproved() && !$this->currentUserIsAdmin())) {
+            if ($groupTag->getTag()->getKey() === $entry['key'] && $groupTag->getTag()->getValue() === $entry['value']) {
+                return; // The relation already publishes exactly this content.
+            }
+            if ($groupTag->getCreatedByUser() !== $user) {
                 continue;
             }
-            $tag = $groupTag->getTag();
-            $pair = $tag->getKey()."\0".$tag->getValue();
-            if (($requested[$pair] ?? 0) > 0) {
-                $requested[$pair]--;
-            } else {
-                $group->getGroupTags()->removeElement($groupTag);
-                $this->entityManager->remove($groupTag);
+            $group->getGroupTags()->removeElement($groupTag);
+            $this->entityManager->remove($groupTag);
+        }
+
+        $tag = $this->tagRepository->findOrCreate($entry['key'], $entry['value']);
+        $groupTag = $group->addTag($tag, $user);
+        if ($groupTag !== null) {
+            // Admins approve their own additions, and echoing already
+            // approved content on the same range is public, not pending.
+            if ($this->currentUserIsAdmin() || $this->approvedEchoOnRange($group, $tag)) {
+                $groupTag->setApproved(true);
+            }
+            $this->entityManager->persist($groupTag);
+        }
+    }
+
+    /**
+     * Whether an approved relation with the same ordered member range
+     * already carries exactly this tag: the editor's echo of public content
+     * creates no new pending observation.
+     */
+    private function approvedEchoOnRange(NodeGroup $group, \App\Entity\Tag $tag): bool
+    {
+        $signature = $this->rangeSignature($group);
+        foreach ($this->nodeGroupRepository->findAllOrderedByRecentUpdate() as $other) {
+            if ($other === $group || $this->rangeSignature($other) !== $signature) {
+                continue;
+            }
+            foreach ($other->getGroupTags() as $entry) {
+                if ($entry->isApproved() && $entry->getTag() === $tag) {
+                    return true;
+                }
             }
         }
 
-        foreach ($requested as $pair => $count) {
-            [$key, $value] = explode("\0", $pair, 2);
-            if (StreetPartAspects::parse($key) !== null) {
-                foreach ($group->getGroupTags() as $existing) {
-                    if ($existing->isApproved() && $existing->getTag()->getKey() === $key && $existing->getTag()->getValue() === $value) {
-                        continue 2; // Echoing public content must not create a new observation.
-                    }
-                }
-            }
-            for ($i = 0; $i < $count; $i++) {
-                $groupTag = $group->addTag($this->tagRepository->findOrCreate($key, $value), $user);
-                if ($groupTag !== null) {
-                    // Admins approve their own additions, but only on this
-                    // relation: the same value added elsewhere stays unapproved.
-                    if ($this->currentUserIsAdmin()) {
-                        $groupTag->setApproved(true);
-                    }
-                    $this->entityManager->persist($groupTag);
-                }
-            }
+        return false;
+    }
+
+    /**
+     * A relation's range identity: the ordered member node identities.
+     *
+     * @return list<string>
+     */
+    private function rangeSignature(NodeGroup $group): array
+    {
+        $signature = [];
+        foreach ($group->getMembers() as $member) {
+            $node = $member->getNode();
+            $signature[] = $node->getId() !== null
+                ? 'id:'.$node->getId()
+                : $node->getNodeProvider()->getName().':'.$node->getProviderNodeId();
         }
+
+        return $signature;
     }
 
     private function toResponse(NodeGroup $group): NodeGroupResponse

@@ -1,6 +1,7 @@
 # Relation Parent Direction (automatic direction inheritance)
 
 **Status:** Implemented and verified (2026-11-22).
+Implemented change (2026-11-25): the mechanics of this spec carry over unchanged under [observation relations](../observation-relations/spec.md) — every observation relation, now one per observation, inherits its parent way's direction individually, which keeps `left`/`right` sides comparable across separate observations of one element. 
 **Code:** `src/lib/parentDirection.ts` (offset projection and ordering), `src/stores/osmData.ts` (`lineStringById`), `src/components/OsmMap.vue` (batch parent way, preview/member ordering), `src/map/nodeGroupLayer.ts` (preview arrows). Browser checks: `scripts/testing/check-node-creation.mjs`, `scripts/testing/check-direction-arrows.mjs`.
 **Related:** [way-direction indicators](../../map/way-direction/spec.md) (direction of a way/relation and the arrow rendering this feature reuses), [editor observations](../editor-observations/spec.md) (creation flow), [street part aspects](../street-part-aspects/spec.md) (whose `left`/`right` sides are only meaningful against a direction).
 

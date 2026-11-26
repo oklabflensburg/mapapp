@@ -28,14 +28,20 @@ final class StreetPartArea
 
     /**
      * The corridor around the line through the ordered member coordinates as
-     * a GeoJSON polygon geometry ([lon, lat] point order), or null when the
-     * part has fewer than two points.
+     * a GeoJSON geometry ([lon, lat] point order), or null when the part has
+     * fewer than two points. Without exclusion lines the geometry is a
+     * Polygon; with them, the corridor is clipped by the corridors around
+     * those lines (ST_Difference), so only stretches no exclusion corridor
+     * reaches remain covered. The clipped geometry may be a MultiPolygon,
+     * and is null when an exclusion corridor covers it entirely.
      *
      * @param list<array{latitude: float, longitude: float}> $points
+     * @param list<list<array{latitude: float, longitude: float}>> $exclusionLines
+     *        lines whose corridors are cut out of the result
      *
      * @return array{type: string, coordinates: list<list<list<float>>>}|null
      */
-    public function areaGeometry(array $points): ?array
+    public function areaGeometry(array $points, array $exclusionLines = []): ?array
     {
         if (\count($points) < 2) {
             return null;
@@ -46,12 +52,36 @@ final class StreetPartArea
             $points,
         ));
 
+        $rings = [];
+        foreach ($exclusionLines as $line) {
+            if (\count($line) >= 2) {
+                $rings[] = '('.implode(',', array_map(
+                    static fn (array $point): string => $point['longitude'].' '.$point['latitude'],
+                    $line,
+                )).')';
+            }
+        }
+
         // Buffering the geography gives the fixed width in meters; PostGIS
         // closes the ring and GeoJSON keeps the [lon, lat] order the frontend
-        // and GraphHopper expect.
+        // and GraphHopper expect. Buffering a multilinestring dilates every
+        // component line at once, i.e. the union of the exclusion corridors.
+        $buffer = $rings === []
+            ? 'ST_Buffer(ST_GeomFromText(:line, 4326)::geography, :radius)'
+            : 'ST_Difference(
+                   ST_Buffer(ST_GeomFromText(:line, 4326)::geography, :radius)::geometry,
+                   ST_Buffer(ST_GeomFromText(:exclusions, 4326)::geography, :radius)::geometry
+               )';
+        $parameters = ['line' => 'LINESTRING('.$lineString.')', 'radius' => self::AREA_RADIUS_METERS];
+        if ($rings !== []) {
+            $parameters['exclusions'] = 'MULTILINESTRING('.implode(',', $rings).')';
+        }
+
+        // A fully covered corridor clips to an empty geometry, which the
+        // WHERE clause drops: fetchOne then finds no row.
         $geoJson = $this->connection->fetchOne(
-            'SELECT ST_AsGeoJSON(ST_Buffer(ST_GeomFromText(:line, 4326)::geography, :radius))',
-            ['line' => 'LINESTRING('.$lineString.')', 'radius' => self::AREA_RADIUS_METERS],
+            'SELECT ST_AsGeoJSON(clip.clipped) FROM (SELECT '.$buffer.' AS clipped) clip WHERE NOT ST_IsEmpty(clip.clipped::geometry)',
+            $parameters,
         );
 
         if (!\is_string($geoJson)) {

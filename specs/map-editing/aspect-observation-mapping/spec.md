@@ -1,6 +1,7 @@
 # Aspect Observation Mapping (admin update-vs-add decision)
 
 **Status:** Implemented and verified (2026-11-08). Keys updated (2026-11-11) to the revised cross-section grammar `way.<type>.<direction>.<index>.<aspect>` (see [street-part-aspects](../street-part-aspects/spec.md) R1); the update-vs-add mechanics are unchanged.
+Implemented change (2026-11-25): [observation relations](../observation-relations/spec.md) R7 retired this feature entirely — a single-tag relation has no populated cross-section within it to map a pending aspect onto.
 **Code:** `backend/src/Service/AspectObservationApproval.php` (mapping targets, effective tags, publish/replacement), `backend/src/Controller/Admin/TagCrudController.php` (`approveNodeGroupTag` mapped branch, `reviewTranslations` effective-tag factory), `backend/src/Controller/Admin/PendingRelationObservationCrudController.php` (review context), `backend/templates/admin/_unapproved_tags.html.twig` (publish-target select), `backend/templates/admin/pending_relation_observation_edit.html.twig` + `_review_styles.html.twig` (approved cross-section). Tests: `backend/tests/Controller/AspectObservationMappingTest.php`.
 **Related:** extends [street-part-aspects](../street-part-aspects/spec.md) (R3 moderation), [backend-admin-panel](../../administration/backend-admin-panel/spec.md) (R5–R7 review and approval), [editor-observations](../editor-observations/spec.md) (R5–R6 lifecycle). Situated in the moderation flow; no editor-side changes.
 

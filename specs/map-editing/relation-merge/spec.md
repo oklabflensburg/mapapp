@@ -1,6 +1,7 @@
 # Relation Merge (admin decision for overlapping relations)
 
 **Status:** Implemented and verified (2026-11-11).
+Implemented change (2026-11-25): [observation relations](../observation-relations/spec.md) R7 retired this feature — a single-tag relation has no competing keys to merge, and overlapping editors' observations resolve through per-observation approval and supersession.
 **Code:** `backend/src/Service/NodeRelationMerge.php` (candidate detection, conflict listing, snapshot, atomic merge application), `backend/src/Controller/Admin/PendingRelationObservationCrudController.php` (review context + `merge` action), `backend/templates/admin/pending_relation_observation_edit.html.twig` (merge decision forms). Tests: `backend/tests/Controller/RelationMergeTest.php`.
 **Related:** builds on [way-observations](../way-observations/spec.md) (whole-way identity), [street-part-aspects](../street-part-aspects/spec.md) (street parts, corridor areas, structured tags), [aspect-observation-mapping](../aspect-observation-mapping/spec.md) (the review-time update-vs-add precedent this feature extends to whole relations), [editor-observations](../editor-observations/spec.md) (visibility and approval lifecycle), [backend-admin-panel](../../administration/backend-admin-panel/spec.md) (R5–R7 review and approval).
 
