@@ -15,6 +15,14 @@ export default {
     remove: 'Remove observation',
     add: 'Add observation',
     loadFailed: 'Could not load the editing catalog.',
+    wizard: {
+      stepOf: 'Step {current} of {total}',
+      typeQuestion: 'What do you want to observe?',
+      positionQuestion: 'At which position?',
+      back: 'Back',
+      close: 'Close',
+      nothingToObserve: 'All attributes of this element are already approved.',
+    },
   },
   tagValues: {
     yes: 'Yes',

@@ -106,33 +106,34 @@ try {
   catalog.aspectTypes = availableTypes
   await partDrawer.getByRole('button', {name: 'Reload catalog', exact: true}).click()
   await expect(partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true})).toBeEnabled()
-  // Two aspect observations over the same range: one relation each.
+  // A new observation is collected through the wizard: the element type,
+  // its position across the way, then one select per catalog attribute.
   await partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true}).click()
-  // New rows default to the center side; the side column shows it.
-  await expect(partDrawer.getByRole('combobox', {name: 'Side', exact: true}).first()).toContainText('Center')
+  await expect(partDrawer.getByText('What do you want to observe?', {exact: true})).toBeVisible()
+  await partDrawer.getByRole('button', {name: 'Sidewalk', exact: true}).click()
+  await expect(partDrawer.getByText('At which position?', {exact: true})).toBeVisible()
+  await partDrawer.getByRole('button', {name: 'Center', exact: true}).click()
   await page.getByRole('combobox', {name: 'Width', exact: true}).click()
   await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
+  // Adding the drafted attributes leaves one row per element side.
   await partDrawer.locator('.cross-section-composer').getByRole('button', {name: 'Add observation', exact: true}).click()
-  await page.getByRole('combobox', {name: 'Width', exact: true}).nth(1).click()
-  await page.getByRole('option', {name: '> 2 m', exact: true}).last().click()
+  await expect(partDrawer.getByRole('combobox', {name: 'Side', exact: true}).first()).toContainText('Center')
   failSave = true
   await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
   await expect(partDrawer.locator('.save-error')).toBeVisible()
   failSave = false
   await partDrawer.getByRole('button', {name: 'Save', exact: true}).click()
-  // Both observation relations save sequentially; wait for the retry pass's
-  // second save before judging the requests: two failed way/range saves plus
-  // the two retried observation saves.
-  await expect.poll(() => requests.length, {timeout: 5000}).toBe(6)
+  // The failed pass and its retry each save the single drafted relation; with
+  // the way observation's failed pass and retry, four requests so far.
+  await expect.poll(() => requests.length, {timeout: 5000}).toBe(4)
   await expect(partDrawer.getByRole('button', {name: 'Save', exact: true})).not.toBeDisabled()
-  // Two observation relations created over the same placed range: one tag each.
-  const saves = requests.slice(-2)
-  assert.deepEqual(saves.at(-2).tags, [{key: 'sidewalk.center.width', value: '<1'}])
-  assert.deepEqual(saves.at(-1).tags, [{key: 'sidewalk.center.width', value: '>2'}])
-  // Regression (parallel observations): after a second observation relation was
-  // saved over the same range, the relation editor still lists both
-  // observations side by side — the panel edits the range, not one relation,
-  // so neither observation disappears.
+  // One observation = one relation: the drafted value saves as its own relation.
+  assert.deepEqual(requests.at(-1).tags, [{key: 'sidewalk.center.width', value: '<1'}])
+  // Regression (parallel observations): a parallel observation relation from
+  // another editor over the same range keeps its identity: the relation
+  // editor still lists both observations side by side — the panel edits the
+  // range, not one relation, so neither observation disappears.
+  relations = [{ id: 13, name: null, members: members.map(member => ({ ...member })), parents: [], area: null, tags: [{key: 'sidewalk.center.width', value: '>2'}], observations: [{key: 'sidewalk.center.width', value: '>2'}], approved: false }, ...relations]
   requests.length = 0
   await page.reload()
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
@@ -193,11 +194,20 @@ try {
   await expect(page.locator('.leaflet-overlay-pane canvas')).toBeVisible()
   await page.mouse.click(640, 319)
   const germanComposer = page.locator('.cross-section-composer')
-  // The approved observation reads in the tag table; a new observation row
-  // starts centered. The type column carries a short "Typ" label.
+  // The approved observation reads in the tag table; the wizard collects a
+  // new observation in German, including the approved-attribute lock.
   await germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true}).click()
-  await expect(germanComposer.getByRole('combobox', {name: 'Typ', exact: true}).first()).toContainText('Gehweg')
-  await expect(germanComposer.getByRole('combobox', {name: 'Seite', exact: true}).first()).toContainText('Mitte')
-  await expect(germanComposer.getByRole('button', {name: 'Beobachtung entfernen', exact: true})).toBeVisible()
-  console.log('PASS: empty aspect catalog recovery, controlled way choices as anchored relation, error/retry, one observation = one relation, per-observation editing and approval lock, profile label, German controls and catalog labels')
+  await expect(germanComposer.getByText('Was möchtest du beobachten?', {exact: true})).toBeVisible()
+  await germanComposer.getByRole('button', {name: 'Gehweg', exact: true}).click()
+  await expect(germanComposer.getByText('An welcher Position?', {exact: true})).toBeVisible()
+  await germanComposer.getByRole('button', {name: 'Mitte', exact: true}).click()
+  // The center sidewalk's only attribute is already approved, so the wizard
+  // has nothing left to offer there; going back picks another position.
+  await expect(germanComposer.getByText('Alle Eigenschaften dieses Elements sind bereits freigegeben.', {exact: true})).toBeVisible()
+  await germanComposer.getByRole('button', {name: 'Zurück', exact: true}).click()
+  await germanComposer.getByRole('button', {name: 'Links', exact: true}).click()
+  await germanComposer.getByRole('combobox', {name: 'Breite', exact: true}).click()
+  await page.getByRole('option', {name: '< 1 m', exact: true}).last().click()
+  await expect(germanComposer.getByRole('button', {name: 'Beobachtung hinzufügen', exact: true})).toBeEnabled()
+  console.log('PASS: empty aspect catalog recovery, controlled way choices as anchored relation, error/retry, observation wizard, one observation = one relation, per-observation editing and approval lock, profile label, German controls and catalog labels')
 } finally { await browser.close() }

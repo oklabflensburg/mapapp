@@ -15,6 +15,14 @@ export default {
     remove: 'Beobachtung entfernen',
     add: 'Beobachtung hinzufügen',
     loadFailed: 'Der Bearbeitungskatalog konnte nicht geladen werden.',
+    wizard: {
+      stepOf: 'Schritt {current} von {total}',
+      typeQuestion: 'Was möchtest du beobachten?',
+      positionQuestion: 'An welcher Position?',
+      back: 'Zurück',
+      close: 'Schließen',
+      nothingToObserve: 'Alle Eigenschaften dieses Elements sind bereits freigegeben.',
+    },
   },
   tagValues: {
     yes: 'Ja',
